@@ -5,3 +5,6 @@ node_modules/
 public/logos/
 public/images/
 public/projects.json
+public/og/
+public/p/
+public/sitemap.xml
