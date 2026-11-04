@@ -68,6 +68,13 @@ nav .links a:hover{color:var(--ink)}
 .btn.sm{height:34px;padding:0 14px;font-size:13px}
 @media (max-width:760px){nav .links{display:none}}
 
+.navdc{background:#5865f2;color:#fff;gap:7px;box-shadow:0 0 0 0 rgba(88,101,242,.55);animation:dcp 2.8s ease-out infinite}
+.navdc:hover{background:#4752c4}
+.navdc svg{width:17px;height:17px}
+.dc-on{font-size:11.5px;font-weight:600;background:rgba(255,255,255,.18);border-radius:999px;padding:2px 7px;display:inline-flex;align-items:center;gap:4px}
+.dc-on::before{content:"";width:6px;height:6px;border-radius:50%;background:#3ba55d}
+@keyframes dcp{0%{box-shadow:0 0 0 0 rgba(88,101,242,.5)}70%,100%{box-shadow:0 0 0 10px rgba(88,101,242,0)}}
+@media (max-width:420px){.navdc [data-i]{display:none}}
 /* hero */
 .hero{position:relative;padding:140px 0 80px;text-align:center;isolation:isolate}
 #aurora{position:absolute;inset:-80px 0 0;width:100%;height:calc(100% + 80px);z-index:-1;opacity:.95;
@@ -351,7 +358,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
     </div>
     <div class="right">
       <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
-      <a class="btn dark sm" href="#join" data-i="nav.join">Join us</a>
+      <a class="btn sm navdc" data-href="discord" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="nav.dc">Join Discord</span><span class="dc-on" id="dcon" hidden></span></a>
     </div>
   </div>
 </nav>
@@ -527,7 +534,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 <script>
 /* ---------- i18n ---------- */
 const VI = {
-  "nav.why":"Vì sao","nav.projects":"Dự án","nav.how":"Cách làm","nav.join":"Tham gia",
+  "nav.why":"Vì sao","nav.dc":"Vào Discord","nav.projects":"Dự án","nav.how":"Cách làm","nav.join":"Tham gia",
   "hero.badge":"Con người + AI agent, cùng xây công khai",
   "hero.title":"App miễn phí cho những người <span class=\"grad\">phần mềm bỏ quên.</span>",
   "hero.sub":"OpenYard là một nhóm nhỏ. Con người chọn điều đáng làm, AI agent cùng bắt tay xây, và mọi thứ chúng tôi ra mắt đều miễn phí.",
@@ -835,6 +842,19 @@ DATA.then(d => {
   document.getElementById("st-o").textContent = PROJECTS.filter(p => p.type === "open-source" && p.repo).length;
 }).catch(() => { links(); });
 addEventListener("oy-lang", () => { if (PROJECTS.length) { const keep = scenesStarted; renderProjects(); } links(); });
+
+
+/* ---------- Discord: show members online in the header button ---------- */
+DATA.then(d => {
+  const code = (d.site?.discord || "").split("/").pop();
+  if (!code) return;
+  return fetch(`https://discord.com/api/v10/invites/${code}?with_counts=true`).then(r => r.ok ? r.json() : null).then(j => {
+    const n = j?.approximate_presence_count;
+    if (!n) return;
+    const el = document.getElementById("dcon"); el.textContent = n; el.hidden = false;
+    el.title = T(`${n} online`, `${n} người đang online`);
+  });
+}).catch(() => {});
 
 /* ---------- submit: form typing + flow progress ---------- */
 (() => {
