@@ -1,4 +1,4 @@
-<!-- Adding a project? Run `npm run check` first. See CONTRIBUTING.md. -->
+<!-- Adding a project? Use https://openyard.cloud/submit instead, no pull request needed. -->
 
 ## What and why
 

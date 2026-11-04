@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Submit a project
+    url: https://openyard.cloud/submit
+    about: No account needed. Your project is live right away.
   - name: Chat on Discord
     url: https://discord.gg/TFKsfh6tMk
     about: Show your project, ask questions, help others.

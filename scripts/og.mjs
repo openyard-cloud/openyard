@@ -1,14 +1,16 @@
-// Renders a 1200×630 share image for each project to projects/og/<slug>.png with a
-// local Chrome-family browser. Run after adding or changing a project: npm run og [slug…]
-// The build works without these images; project pages then share the screenshot instead.
-import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, rmSync, mkdtempSync } from "node:fs";
+// Renders a 1200×630 share image for projects to public/og/<slug>.png with a local
+// Chrome-family browser, reading the list from the live site: npm run og [slug…]
+// Pages without one share the screenshot. After rendering, commit the PNG and point the
+// project at it with the SQL command this prints.
+import { writeFileSync, mkdirSync, existsSync, rmSync, mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const DIR = join(ROOT, "projects"), OUT = join(DIR, "og");
+const PUBLIC = join(ROOT, "public"), OUT = join(PUBLIC, "og");
+const API = process.env.OY_API || "https://openyard.cloud/api/projects";
 const BROWSERS = [
   process.env.CHROME,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -21,6 +23,8 @@ if (!browser) { console.error("No Chrome, Brave or Chromium found. Set CHROME=/p
 
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 const file = p => pathToFileURL(p).href;
+// site paths come from public/, anything else is already a URL
+const src = u => !u ? "" : u.startsWith("/") && !u.startsWith("/u/") ? file(join(PUBLIC, u)) : new URL(u, "https://openyard.cloud").href;
 const label = p => p.status === "soon" ? "Coming soon" : p.type === "app" ? "Free app" : "Open source";
 
 const html = p => `<!doctype html><html><head><meta charset="utf-8">
@@ -42,18 +46,17 @@ p{font-size:28px;line-height:1.3;color:#c9c9d1;margin-top:16px;letter-spacing:-.
 .mark{position:absolute;left:700px;top:120px;width:420px;height:420px;border-radius:90px;background:#fff;display:grid;place-items:center;transform:rotate(-6deg);box-shadow:0 40px 90px -20px rgba(0,0,0,.8)}
 .mark img{width:300px;height:300px;object-fit:contain}
 </style></head><body><div class="bg"></div>
-${p.image ? `<div class="shot"><img src="${file(join(DIR, "images", p.image))}"></div>` : `<div class="mark"><img src="${file(join(DIR, "logos", p.logo))}"></div>`}
+${p.image ? `<div class="shot"><img src="${src(p.image)}"></div>` : `<div class="mark"><img src="${src(p.logo)}"></div>`}
 <div class="l">
-  <img class="logo" src="${file(join(DIR, "logos", p.logo))}">
+  <img class="logo" src="${src(p.logo)}">
   <span class="pill">${label(p)}${p.license ? ` · ${esc(p.license)}` : ""}</span>
   <h1>${esc(p.name)}</h1>
-  <p>${esc(p.tagline.en)}</p>
+  <p>${esc(p.tagline.en || p.tagline.vi)}</p>
   <div class="f"><img src="${file(join(ROOT, "public", "favicon.svg"))}"><b>Open<em>Yard</em></b><span>openyard.cloud/p/${esc(p.slug)}</span></div>
 </div></body></html>`;
 
 const only = process.argv.slice(2);
-const projects = readdirSync(DIR).filter(f => f.endsWith(".json")).map(f => JSON.parse(readFileSync(join(DIR, f), "utf8")))
-  .filter(p => !only.length || only.includes(p.slug));
+const projects = (await (await fetch(API)).json()).projects.filter(p => !only.length || only.includes(p.slug));
 mkdirSync(OUT, { recursive: true });
 const tmp = mkdtempSync(join(tmpdir(), "openyard-og-"));
 for (const p of projects) {
@@ -61,6 +64,7 @@ for (const p of projects) {
   writeFileSync(page, html(p));
   execFileSync(browser, ["--headless=new", "--hide-scrollbars", "--force-device-scale-factor=1", "--window-size=1200,630",
     "--virtual-time-budget=4000", "--allow-file-access-from-files", `--screenshot=${png}`, file(page)], { stdio: "ignore" });
-  console.log(`projects/og/${p.slug}.png`);
+  console.log(`public/og/${p.slug}.png`);
+  console.log(`  npx wrangler@4 d1 execute openyard --remote --command "UPDATE projects SET og = '/og/${p.slug}.png' WHERE slug = '${p.slug}'"`);
 }
 rmSync(tmp, { recursive: true, force: true });

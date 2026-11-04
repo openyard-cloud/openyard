@@ -1,4 +1,4 @@
-name: Check projects
+name: Check
 on:
   pull_request:
   push:
@@ -11,4 +11,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/build.mjs --check
+      - run: npm run check
+      - run: npx -y wrangler@4 deploy --dry-run --outdir dist

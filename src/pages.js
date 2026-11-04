@@ -1,12 +1,15 @@
-// Static pages generated from the registry: one page per project at /p/<slug>,
+// Pages the Worker renders from the database: one page per project at /p/<slug>,
 // plus sitemap.xml. Pages are English in the HTML (what search engines and link
 // previews read) and switch to Vietnamese in the browser, like the home page.
 
 export const ORIGIN = "https://openyard.cloud";
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const en = v => (v && v.en) || "";
+const en = v => (v && (v.en || v.vi)) || "";
 const vi = v => (v && (v.vi || v.en)) || "";
+const abs = u => !u ? u : /^https?:/.test(u) ? u : ORIGIN + u;
+const ago = (iso, now) => { const d = Math.max(0, Math.round((now - Date.parse(iso)) / 86400000)); return d === 0 ? ["today", "hôm nay"] : d === 1 ? ["yesterday", "hôm qua"] : [`${d} days ago`, `${d} ngày trước`]; };
+const initials = n => esc(String(n).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase());
 // text with a Vietnamese twin, swapped in by the page script
 const t = (e, v) => `<span data-vi="${esc(v)}">${esc(e)}</span>`;
 const host = u => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ""); } catch { return u; } };
@@ -69,6 +72,18 @@ section.more{padding:72px 0 24px}
 .mini h3{font-size:16px;letter-spacing:-.02em}.mini p{margin:2px 0 0;font-size:13.5px;color:var(--muted);line-height:1.4}
 .band{margin:56px 0 0;padding:36px;border-radius:26px;background:radial-gradient(500px 200px at 10% 0%,rgba(124,156,255,.18),transparent 70%),radial-gradient(500px 200px at 90% 100%,rgba(255,126,176,.16),transparent 70%),var(--bg2);border:1px solid var(--line);display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .band h2{font-size:clamp(22px,2.6vw,30px);max-width:18em}.band p{margin:8px 0 0;color:var(--muted)}
+.act{margin:48px 0 0}.act h2{font-size:clamp(24px,2.6vw,30px);margin-bottom:6px}.act .sub{color:var(--muted);margin:0 0 20px;font-size:14.5px}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:16px}
+.num{padding:16px 18px;border-radius:16px;background:var(--bg2);border:1px solid var(--line)}.num b{display:block;font-size:26px;letter-spacing:-.03em;line-height:1.1}.num span{font-size:13px;color:var(--muted)}
+.num em{font-style:normal;font-size:13px;color:#10b981;margin-left:6px}
+.lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.list{border-radius:18px;border:1px solid var(--line2);background:var(--solid);overflow:hidden}
+.list h3{font-size:14px;letter-spacing:0;font-weight:600;padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}.list h3 a{color:var(--muted);font-weight:500}
+.it{display:flex;gap:10px;align-items:flex-start;padding:11px 16px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.4}.it:last-child{border-bottom:0}.it:hover{background:var(--bg2)}
+.it i{flex:none;margin-top:3px;width:9px;height:9px;border-radius:50%;background:#10b981}.it i.merged{background:#8b5cf6}.it i.closed{background:#f43f5e}
+.it small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}.empty{padding:16px;color:var(--muted);font-size:14px}
+.ini{display:grid;place-items:center;font-weight:700;font-size:26px;color:#fff;background:var(--c,#6d5bd0)}
+.logo.ini{padding:0}.mini .ini{width:44px;height:44px;border-radius:12px;font-size:16px;flex:none}
 footer{padding:56px 0 40px;color:var(--muted);font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line);padding-top:22px}
 footer a:hover{color:var(--ink)}`;
@@ -119,11 +134,11 @@ const LANG_JS = `<script>
 
 const logoClass = p => p.logoStyle === "tile" ? "full" : "";
 
-export function projectPage(p, all, site, og) {
+export function projectPage(p, all, site, stats, now = Date.now()) {
   const url = `${ORIGIN}/p/${p.slug}`;
   const type = TYPE(p);
-  const image = og ? { url: `${ORIGIN}/og/${p.slug}.png`, w: 1200, h: 630 } : p.image ? { url: `${ORIGIN}/images/${p.image}` } : { url: `${ORIGIN}/og.png`, w: 1200, h: 630 };
-  const maker = p.team ? { "@type": "Organization", name: "OpenYard", url: ORIGIN } : { "@type": "Person", name: p.maintainers[0], url: `https://github.com/${p.maintainers[0]}` };
+  const image = p.og ? { url: abs(p.og), w: 1200, h: 630 } : p.image ? { url: abs(p.image) } : { url: `${ORIGIN}/og.png?v=2`, w: 1200, h: 630 };
+  const maker = p.team ? { "@type": "Organization", name: "OpenYard", url: ORIGIN } : p.maintainers[0] ? { "@type": "Person", name: p.maintainers[0], url: `https://github.com/${p.maintainers[0]}` } : undefined;
   const jsonld = [{
     "@context": "https://schema.org", "@type": "SoftwareApplication", name: p.name, description: en(p.description),
     url, image: image.url, applicationCategory: p.kinds.includes("dev") ? "DeveloperApplication" : "WebApplication",
@@ -138,6 +153,7 @@ export function projectPage(p, all, site, og) {
   }];
   const people = p.team
     ? `<span class="who"><img src="/favicon.svg" alt="">OpenYard team</span>`
+    : !p.maintainers.length ? t("A community member", "Một thành viên cộng đồng")
     : p.maintainers.map(h => `<span class="who"><img src="https://github.com/${esc(h)}.png?size=48" alt="" loading="lazy"><a href="https://github.com/${esc(h)}" target="_blank" rel="noopener">@${esc(h)}</a></span>`).join("");
   const facts = [
     [["Made by", "Người làm"], people],
@@ -148,8 +164,30 @@ export function projectPage(p, all, site, og) {
   ].filter(Boolean);
   const others = all.filter(o => o.slug !== p.slug).slice(0, 6);
   const visual = p.image
-    ? `<figure class="shot"><img src="/images/${esc(p.image)}" alt="${esc(p.name)} screenshot"></figure>`
-    : `<figure class="shot gen" style="--c:${esc(p.color || "#6d5bd0")}"><img src="/logos/${esc(p.logo)}" alt=""></figure>`;
+    ? `<figure class="shot"><img src="${esc(p.image)}" alt="${esc(p.name)} screenshot"></figure>`
+    : p.logo ? `<figure class="shot gen" style="--c:${esc(p.color || "#6d5bd0")}"><img src="${esc(p.logo)}" alt=""></figure>` : "";
+  const logo = (o, cls, size) => o.logo ? `<img class="${cls} ${logoClass(o)}" src="${esc(o.logo)}" alt="" width="${size}" height="${size}" loading="lazy">` : `<span class="${cls} ini" style="--c:${esc(o.color || "#6d5bd0")}">${initials(o.name)}</span>`;
+  const repoUrl = p.repo && /^https:\/\/github\.com\/[^/]+\/[^/]+/.test(p.repo) ? p.repo.replace(/\/$/, "") : null;
+  const st = stats && stats.stars != null ? stats : null;
+  const act = st ? JSON.parse(st.activity || "{}") : {};
+  const row = (x, kind) => `<a class="it" href="${esc(x.url)}" target="_blank" rel="noopener"><i class="${esc(x.state)}"></i><div>${esc(x.title)}<small>#${esc(x.number)} · @${esc(x.user)} · ${t(...ago(x.at, now))}</small></div></a>`;
+  const list = (title, items, more) => `<div class="list"><h3>${t(...title)}<a href="${esc(more)}" target="_blank" rel="noopener">${t("All", "Tất cả")} →</a></h3>${(items || []).length ? items.slice(0, 5).map(x => row(x)).join("") : `<div class="empty">${t("Nothing in the last weeks yet.", "Mấy tuần gần đây chưa có gì.")}</div>`}</div>`;
+  const activity = st ? `<section class="act">
+    <h2>${t("Activity", "Hoạt động")}</h2>
+    <p class="sub">${t("From the GitHub repository, refreshed every few hours.", "Lấy từ repo GitHub, cập nhật vài giờ một lần.")}</p>
+    <div class="nums">
+      <div class="num"><b>${st.stars}${st.stars_7d > 0 ? `<em>+${st.stars_7d}</em>` : ""}</b><span>${t("stars", "sao")}</span></div>
+      <div class="num"><b>${st.prs_7d}</b><span>${t("pull requests this week", "pull request tuần này")}</span></div>
+      <div class="num"><b>${st.issues_7d}</b><span>${t("issues this week", "issue tuần này")}</span></div>
+      <div class="num"><b>${st.commits_7d}</b><span>${t("commits this week", "commit tuần này")}</span></div>
+      <div class="num"><b>${st.forks}</b><span>${t("forks", "fork")}</span></div>
+    </div>
+    <div class="lists">
+      ${list(["Pull requests", "Pull request"], act.prs, repoUrl + "/pulls")}
+      ${list(["Issues", "Issue"], act.issues, repoUrl + "/issues")}
+      ${act.discussions ? list(["Discussions", "Thảo luận"], act.discussions, repoUrl + "/discussions") : ""}
+    </div>
+  </section>` : "";
   return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld })}
 <body>
 <nav><div class="wrap">
@@ -162,28 +200,29 @@ export function projectPage(p, all, site, og) {
 </div></nav>
 <main>
 <header class="hero" style="--c:${esc(p.color || "#6d5bd0")}"><div class="wrap">
-  <div class="id"><img class="logo ${logoClass(p)}" src="/logos/${esc(p.logo)}" alt="${esc(p.name)} logo" width="72" height="72">
+  <div class="id">${logo(p, "logo", 72)}
     <div class="tags"><span class="pill on">${t(...type)}</span>${p.team ? `<span class="pill">OpenYard team</span>` : `<span class="pill">${t("Community", "Cộng đồng")}</span>`}</div></div>
   <h1>${esc(p.name)}</h1>
   <p class="tl">${t(en(p.tagline), vi(p.tagline))}</p>
   <p class="desc">${t(en(p.description), vi(p.description))}</p>
   <div class="cta">
-    <a class="btn dark" href="${esc(p.url)}" target="_blank" rel="noopener">${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}</a>
+    <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}</a>
     ${p.repo && p.repo !== p.url ? `<a class="btn line" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Source code", "Mã nguồn")}</a>` : ""}
   </div>
 </div></header>
 <div class="wrap">
   ${visual}
   <div class="facts">${facts.map(([[e, v], html]) => `<div class="fact"><b>${t(e, v)}</b><div>${html}</div></div>`).join("")}</div>
+  ${activity}
 </div>
 ${others.length ? `<section class="more"><div class="wrap">
   <h2>${t("More from the yard", "Thêm từ sân")}</h2>
-  <div class="grid">${others.map(o => `<a class="mini" href="/p/${esc(o.slug)}"><img class="${logoClass(o)}" src="/logos/${esc(o.logo)}" alt="" loading="lazy"><div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div></a>`).join("")}</div>
-  <div class="band"><div><h2>${t("Built something free or open source?", "Bạn cũng làm ra thứ gì đó miễn phí hoặc mã nguồn mở?")}</h2><p>${t("Put it in the yard in five minutes, no code needed.", "Đưa lên sân chỉ mất năm phút, không cần biết code.")}</p></div>
-    <div class="cta"><a class="btn dark" href="/#submit">${t("Add your project", "Đưa dự án lên")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}Discord</a></div></div>
+  <div class="grid">${others.map(o => `<a class="mini" href="/p/${esc(o.slug)}">${logo(o, "", 44)}<div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div></a>`).join("")}</div>
+  <div class="band"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed.", "Đưa lên sân chỉ mất năm phút, không cần tài khoản.")}</p></div>
+    <div class="cta"><a class="btn dark" href="/submit">${t("Add your project", "Đưa dự án lên")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}Discord</a></div></div>
 </div></section>` : ""}
 </main>
-<footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Free apps, wild ideas, open tools.", "App miễn phí, ý tưởng điên rồ, công cụ mở.")}</span><a href="${esc(site.repo)}/blob/main/projects/${esc(p.slug)}.json" target="_blank" rel="noopener">${t("Edit this listing on GitHub", "Sửa trang này trên GitHub")}</a></div></footer>
+<footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Free apps, wild ideas, open tools.", "App miễn phí, ý tưởng điên rồ, công cụ mở.")}</span><a href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Something wrong with this listing? Tell us on Discord", "Trang này có vấn đề? Báo trên Discord")}</a></div></footer>
 ${LANG_JS}
 </body>
 </html>
