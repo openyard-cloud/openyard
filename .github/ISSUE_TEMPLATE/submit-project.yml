@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for bringing your project! We list projects that are **free to use** or **open source**, that work today (or are close), and that someone maintains.
+        Thanks for bringing your project! The only rule: the project is **free to use**. Open source is welcome, not required.
         Prefer a pull request? Add `projects/<slug>.json` and a logo yourself, see CONTRIBUTING.md.
   - type: input
     id: name
@@ -90,9 +90,5 @@ body:
     attributes:
       label: Checklist
       options:
-        - label: The project is free to use (no paywall on its core features) or open source.
-          required: true
-        - label: I maintain this project or have the maintainers' permission to list it.
-          required: true
-        - label: It does not sell user data or show tracking ads.
+        - label: The project is free to use (no paywall on its core features).
           required: true

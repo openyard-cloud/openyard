@@ -35,7 +35,7 @@ Every project on https://openyard.cloud lives as `projects/<slug>.json` plus a l
 
 Current projects: AutoClip Studio (MIT, topic or repo to short video with Claude), Sovereign Minds (MIT, nations run by AI), Chatscape (MIT, live wallpapers behind AI chat), FarmMind (free app for farmers).
 
-Criteria: free to use or OSI-licensed, works today, maintained, no selling data or tracking ads. Feedback on the criteria welcome.
+The only rule: it has to be free to use. Open source welcome, not required.
 
 ## Hacker News
 
