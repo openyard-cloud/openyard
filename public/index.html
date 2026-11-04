@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>OpenYard</title>
-<meta name="description" content="OpenYard is a small team of people and AI agents building free apps and open tools for communities software forgets.">
-<meta property="og:title" content="OpenYard: free apps, built by people and AI">
-<meta property="og:description" content="FarmMind, AutoClip Studio, Sovereign Minds, Chatscape. Free to use, open where we can.">
+<meta name="description" content="OpenYard: free apps for people software forgets, wild ideas too strange for a startup, and open-source tools for developers. Built by people and AI agents.">
+<meta property="og:title" content="OpenYard: free apps, wild ideas, open tools">
+<meta property="og:description" content="Apps for people software forgets, ideas too strange for a startup, and tools for developers. Built by people and AI, free for everyone.">
 <meta property="og:url" content="https://openyard.cloud">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://openyard.cloud/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="OpenYard: free apps, built by people and AI">
+<meta property="og:image:alt" content="OpenYard: free apps, wild ideas, open tools">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://openyard.cloud/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -211,6 +211,21 @@ nav .links a:hover{color:var(--ink)}
 .btn.discord:hover{background:#4752c4}
 .btn.discord svg{width:20px;height:20px}
 
+/* pillars */
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:80px}
+@media (max-width:900px){.pillars{grid-template-columns:1fr}}
+.pillar{position:relative;overflow:hidden;border-radius:26px;padding:28px;background:var(--bg2);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .8s var(--ease),border-color .3s}
+.pillar:hover{transform:translateY(-4px);border-color:var(--line2)}
+.pillar .pk{font-size:13px;font-weight:600;color:var(--muted)}
+.pillar .pg{position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--a),var(--b));opacity:.35;filter:blur(30px);transition:opacity .5s,transform 1.2s var(--ease)}
+.pillar:hover .pg{opacity:.6;transform:scale(1.2)}
+.pillar h3{font-size:26px;margin-top:40px;position:relative}
+.pillar p{margin:0;color:var(--muted);position:relative}
+.pchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:12px;position:relative}
+.pchips span{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--solid);border:1px solid var(--line)}
+.pchips img{width:20px;height:20px;border-radius:6px;object-fit:cover;background:#fff}
+.pchips .you{padding:4px 10px;border-style:dashed;color:var(--muted);background:transparent}
+
 /* hero swarm */
 .hx{position:relative;height:100vh;height:100svh;min-height:640px;background:#05050a;color:#f4f4f5;overflow:hidden;isolation:isolate}
 #swarm{position:absolute;inset:0;width:100%;height:100%;z-index:-2;touch-action:pan-y}
@@ -370,8 +385,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
     <span class="badge rv"><b></b><span data-i="hero.badge">People + AI agents, building in the open</span></span>
     <div class="hx-bot">
       <div class="hx-l">
-        <h1 class="rv" data-i="hero.title" data-html>Free apps for the people <span class="grad">software forgets.</span></h1>
-        <p class="sub rv" data-i="hero.sub">OpenYard is a small team. People decide what's worth building, AI agents help build it, and everything we ship is free.</p>
+        <h1 class="rv" data-i="hero.title" data-html>Free apps, <span class="grad">wild ideas,</span> open tools.</h1>
+        <p class="sub rv" data-i="hero.sub">A yard where people and AI agents build three kinds of things: apps for people software forgets, ideas too strange for a startup, and open-source tools for developers. All free.</p>
         <div class="cta rv">
           <a class="btn dark" href="#projects" data-i="hero.cta1">See what we've built</a>
           <a class="btn line" href="https://github.com/openyard-cloud" target="_blank" rel="noopener">GitHub</a>
@@ -411,7 +426,27 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 <section id="why">
   <div class="wrap">
     <div class="eyebrow rv" data-i="why.eye">Why we exist</div>
-    <p class="mani" id="mani" data-i="mani">AI made building software ten times cheaper. We think those savings should reach the people nobody used to build for: farmers, small creators, local communities. So we build for them, and we give it away.</p>
+    <p class="mani" id="mani" data-i="mani">AI made building software ten times cheaper. That changes what is worth building: the app for a few hundred farmers, the experiment nobody would fund, the tool a developer needs and nobody sells. We build those in the open, and give them away.</p>
+    <div class="pillars">
+      <a class="pillar rv" href="#projects" data-kind="people">
+        <span class="pk">01</span><span class="pg" style="--a:#34d399;--b:#a3e635"></span>
+        <h3 data-i="pl1.t">For people software forgets</h3>
+        <p data-i="pl1.d">Farmers, small creators, local groups. Apps nobody would build because there is no money in it.</p>
+        <div class="pchips" data-chips="people"></div>
+      </a>
+      <a class="pillar rv" href="#projects" data-kind="wild">
+        <span class="pk">02</span><span class="pg" style="--a:#b67cff;--b:#ff7eb0"></span>
+        <h3 data-i="pl2.t">Wild ideas</h3>
+        <p data-i="pl2.d">Nations run by AI. Wallpapers that live behind your chat. Experiments too strange for a startup, built because they are fun.</p>
+        <div class="pchips" data-chips="wild"></div>
+      </a>
+      <a class="pillar rv" href="#projects" data-kind="dev">
+        <span class="pk">03</span><span class="pg" style="--a:#7c9cff;--b:#38c6d9"></span>
+        <h3 data-i="pl3.t">Tools for developers</h3>
+        <p data-i="pl3.d">Open-source building blocks, agents and workflows that make the next project faster for everyone.</p>
+        <div class="pchips" data-chips="dev"></div>
+      </a>
+    </div>
     <div class="vals">
       <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg></div><h3 data-i="v1.t">Free, for real</h3><p data-i="v1.d">No paywall, no ads, no selling data. Not a trial.</p></div>
       <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div><h3 data-i="v2.t">Open by default</h3><p data-i="v2.d">Our tools live on GitHub. Read, fork and run them yourself.</p></div>
@@ -425,11 +460,12 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
   <div class="wrap">
     <div class="eyebrow rv" data-i="proj.eye">Projects</div>
     <h2 class="h2 rv" data-i="proj.title">What's growing in the yard</h2>
-    <p class="lead2 rv" data-i="proj.lead">Apps and tools from our team and the community. All free, many open source.</p>
+    <p class="lead2 rv" data-i="proj.lead">Useful apps, strange experiments and developer tools, from our team and the community. All free, many open source.</p>
     <div class="filters rv" id="filters">
       <button class="on" data-f="all" data-i="f.all">All</button>
-      <button data-f="app" data-i="f.app">Free apps</button>
-      <button data-f="open-source" data-i="f.oss">Open source</button>
+      <button data-f="people" data-i="f.people">For people</button>
+      <button data-f="wild" data-i="f.wild">Wild ideas</button>
+      <button data-f="dev" data-i="f.dev">Dev tools</button>
       <button data-f="community" data-i="f.com">Community</button>
     </div>
     <div class="grid" id="grid"></div>
@@ -464,7 +500,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
   <div class="wrap">
     <div class="eyebrow rv" data-i="sub.eye">Bring your project</div>
     <h2 class="h2 rv" data-i="sub.title">Put your project in the yard.</h2>
-    <p class="lead2 rv" data-i="sub.lead">Made something free or open source that helps people? List it here, next to ours. It takes five minutes.</p>
+    <p class="lead2 rv" data-i="sub.lead">Built something free or open source? A useful app, a weird experiment, a tool for developers: list it here, next to ours. It takes five minutes.</p>
     <div class="paths">
       <a class="path rv" data-href="form" target="_blank" rel="noopener">
         <span class="pi"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2zM9 12h6M9 16h4"/></svg></span>
@@ -536,11 +572,14 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 const VI = {
   "nav.why":"Vì sao","nav.dc":"Vào Discord","nav.projects":"Dự án","nav.how":"Cách làm","nav.join":"Tham gia",
   "hero.badge":"Con người + AI agent, cùng xây công khai",
-  "hero.title":"App miễn phí cho những người <span class=\"grad\">phần mềm bỏ quên.</span>",
-  "hero.sub":"OpenYard là một nhóm nhỏ. Con người chọn điều đáng làm, AI agent cùng bắt tay xây, và mọi thứ chúng tôi ra mắt đều miễn phí.",
+  "hero.title":"App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.",
+  "hero.sub":"Khoảng sân nơi con người và AI agent cùng xây ba loại thứ: app cho những người phần mềm bỏ quên, ý tưởng quá lạ để làm startup, và công cụ mã nguồn mở cho dân dev. Tất cả miễn phí.",
   "hero.cta1":"Xem các dự án","nav.submit":"Gửi dự án",
-  "f.all":"Tất cả","f.app":"App miễn phí","f.oss":"Mã nguồn mở","f.com":"Cộng đồng",
-  "sub.eye":"Mang dự án của bạn tới","sub.title":"Đưa dự án của bạn vào sân.","sub.lead":"Bạn làm ra thứ gì đó miễn phí hoặc mã nguồn mở, giúp được người khác? Đưa lên đây, cạnh các dự án của chúng tôi. Chỉ mất năm phút.",
+  "f.all":"Tất cả","f.people":"Cho mọi người","f.wild":"Ý tưởng điên rồ","f.dev":"Công cụ cho dev","f.com":"Cộng đồng",
+  "pl1.t":"Cho những người phần mềm bỏ quên","pl1.d":"Nông dân, người làm nội dung nhỏ, các nhóm địa phương. Những app chẳng ai làm vì không ra tiền.",
+  "pl2.t":"Ý tưởng điên rồ","pl2.d":"Quốc gia do AI điều hành. Hình nền sống sau khung chat. Những thí nghiệm quá lạ để làm startup, làm vì vui.",
+  "pl3.t":"Công cụ cho dev","pl3.d":"Khối xây dựng, agent và quy trình mã nguồn mở giúp dự án tiếp theo của mọi người nhanh hơn.",
+  "sub.eye":"Mang dự án của bạn tới","sub.title":"Đưa dự án của bạn vào sân.","sub.lead":"Bạn làm ra thứ gì đó miễn phí hoặc mã nguồn mở? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev: đưa lên đây, cạnh các dự án của chúng tôi. Chỉ mất năm phút.",
   "sub.p1.t":"Không cần biết code","sub.p1.d":"Điền một form ngắn: link, logo và vài dòng giới thiệu. Chúng tôi đưa lên giúp bạn.","sub.p1.cta":"Mở form",
   "sub.f1":"Tên dự án","sub.f2":"Link","sub.f3":"Loại",
   "sub.p2.t":"Mở pull request","sub.p2.d":"Thêm một file JSON và logo. CI tự kiểm tra, người duyệt xem qua, merge là lên trang.","sub.p2.cta":"Đọc hướng dẫn",
@@ -549,12 +588,12 @@ const VI = {
   "join.eye":"Tham gia nhóm","join.discord":"Vào Discord","join.form":"Giới thiệu bản thân","join.gh":"Đóng góp trên GitHub","join.chat":"Vào trò chuyện",
   "ro1":"Lập trình viên","ro2":"Designer","ro3":"Người dịch","ro4":"Người test","ro5":"Người có ý tưởng","now.k":"Các agent đang lắp ráp","hero.hint":"rê chuột xuyên qua bầy hạt","demo.eye":"Từ ý tưởng tới app","demo.title":"Từ một câu nói tới một app đã ra mắt.",
   "why.eye":"Vì sao có OpenYard",
-  "mani":"AI làm phần mềm rẻ đi mười lần. Chúng tôi nghĩ phần tiết kiệm đó nên đến tay những người xưa nay chẳng ai làm cho: nông dân, người làm nội dung nhỏ, cộng đồng địa phương. Nên chúng tôi làm cho họ, và tặng luôn.",
+  "mani":"AI làm phần mềm rẻ đi mười lần. Điều đó đổi luôn thế nào là đáng làm: cái app cho vài trăm hộ nông dân, thí nghiệm chẳng ai rót vốn, công cụ dân dev cần mà không ai bán. Chúng tôi làm những thứ đó, công khai, và tặng luôn.",
   "v1.t":"Miễn phí thật","v1.d":"Không thu phí, không quảng cáo, không bán dữ liệu. Không phải dùng thử.",
   "v2.t":"Mở là mặc định","v2.d":"Công cụ của chúng tôi nằm trên GitHub. Đọc, fork, tự chạy đều được.",
   "v3.t":"AI đúng chỗ","v3.d":"Chỉ dùng khi bớt việc thật: trả lời, đọc, viết, lên kế hoạch.",
   "v4.t":"Làm cạnh người dùng","v4.d":"Bắt đầu từ vấn đề của một người thật, ra bản nhỏ, thường xuyên.",
-  "proj.eye":"Dự án","proj.title":"Những gì đang mọc trong sân","proj.lead":"App và công cụ từ nhóm và từ cộng đồng. Tất cả đều miễn phí, nhiều cái mở mã nguồn.",
+  "proj.eye":"Dự án","proj.title":"Những gì đang mọc trong sân","proj.lead":"App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, từ nhóm và từ cộng đồng. Tất cả miễn phí, nhiều cái mở mã nguồn.",
   "t.app":"App miễn phí","t.oss":"Mã nguồn mở","t.soon":"Sắp ra mắt",
   "fm.d":"Cho chủ trại chăn nuôi và thủy sản Việt Nam: sổ trại, thời tiết, trợ lý AI trả lời dễ hiểu, và cảm biến IoT.",
   "ac.d":"Biến một chủ đề, website hay repo thành video ngắn hoàn chỉnh. Claude viết, lồng tiếng và dựng; bạn duyệt rồi đăng.",
@@ -805,7 +844,7 @@ function cardHTML(p){
   const who = p.team ? `<span class="who team">${T("OpenYard team", "Nhóm OpenYard")}</span>` : `<span class="who">${T("by", "bởi")} @${esc(p.maintainers[0])}</span>`;
   const avatars = p.maintainers.slice(0, 3).map(h => `<img src="https://github.com/${esc(h)}.png?size=48" alt="" loading="lazy">`).join("");
   let host = ""; try { host = new URL(p.url).host + new URL(p.url).pathname.replace(/\/$/, ""); } catch (e) {}
-  return `<a class="card rv" href="${esc(p.url)}" target="_blank" rel="noopener" data-type="${esc(p.type)}" data-team="${p.team ? 1 : 0}">
+  return `<a class="card rv" href="${esc(p.url)}" target="_blank" rel="noopener" data-type="${esc(p.type)}" data-kinds="${esc((p.kinds || []).join(" "))}" data-team="${p.team ? 1 : 0}">
     ${vis}
     <div class="cb">
       <div class="ct"><img class="logo${tile}" src="/logos/${esc(p.logo)}" alt="${esc(p.name)} logo" width="40" height="40"><h3>${esc(p.name)}</h3><span class="tag">${label}</span></div>
@@ -829,7 +868,7 @@ let FILTER = "all";
 function applyFilter(){
   document.querySelectorAll("#grid .card").forEach(c => {
     if (c.classList.contains("yours")) return;
-    const ok = FILTER === "all" || (FILTER === "community" ? c.dataset.team === "0" : c.dataset.type === FILTER);
+    const ok = FILTER === "all" || (FILTER === "community" ? c.dataset.team === "0" : (c.dataset.kinds || "").split(" ").includes(FILTER));
     c.classList.toggle("hide", !ok);
   });
   document.querySelectorAll("#filters button").forEach(b => b.classList.toggle("on", b.dataset.f === FILTER));
@@ -837,7 +876,7 @@ function applyFilter(){
 document.getElementById("filters").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { FILTER = b.dataset.f; applyFilter(); } });
 DATA.then(d => {
   SITE = d.site || {}; PROJECTS = d.projects || [];
-  links(); renderProjects();
+  links(); renderProjects(); renderPillars();
   document.getElementById("st-p").textContent = PROJECTS.length;
   document.getElementById("st-o").textContent = PROJECTS.filter(p => p.type === "open-source" && p.repo).length;
 }).catch(() => { links(); });
@@ -855,6 +894,15 @@ DATA.then(d => {
     el.title = T(`${n} online`, `${n} người đang online`);
   });
 }).catch(() => {});
+
+function renderPillars(){
+  document.querySelectorAll("[data-chips]").forEach(el => {
+    const k = el.dataset.chips, list = PROJECTS.filter(p => (p.kinds || []).includes(k));
+    el.innerHTML = list.map(p => `<span><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</span>`).join("") + `<span class="you">${T("+ yours", "+ của bạn")}</span>`;
+  });
+}
+document.querySelectorAll(".pillar").forEach(a => a.addEventListener("click", () => { FILTER = a.dataset.kind; applyFilter(); }));
+addEventListener("oy-lang", () => { if (PROJECTS.length) renderPillars(); });
 
 /* ---------- submit: form typing + flow progress ---------- */
 (() => {
@@ -887,7 +935,7 @@ DATA.then(d => {
   const nowLogo = document.getElementById("nowlogo"), nowN = document.getElementById("nown"), nowT = document.getElementById("nowt"),
         nowS = document.getElementById("nows"), nowBar = document.getElementById("nowbar");
   const ITEMS = [
-    { name: "OpenYard", logo: "/favicon.svg", text: [["Open", "#ffffff"], ["Yard", "grad"]], t: ["A yard of free apps, built by people and AI", "Khoảng sân của các app miễn phí, do người và AI cùng xây"] },
+    { name: "OpenYard", logo: "/favicon.svg", text: [["Open", "#ffffff"], ["Yard", "grad"]], t: ["Free apps, wild ideas and open tools", "App miễn phí, ý tưởng điên rồ, công cụ mở"] },
   ];
   DATA.then(d => d.projects.filter(p => p.featured).forEach(p => ITEMS.push({
     name: p.name, logo: "/logos/" + p.logo, src: p.swarm?.src ? "/logos/" + p.swarm.src : p.swarm?.text ? null : "/logos/" + p.logo,

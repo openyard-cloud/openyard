@@ -2,6 +2,9 @@
   "slug": "chatscape",
   "name": "Chatscape",
   "type": "open-source",
+  "kinds": [
+    "wild"
+  ],
   "status": "live",
   "tagline": {
     "en": "Living wallpapers for your AI chat",
