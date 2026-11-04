@@ -51,7 +51,8 @@ nav{position:fixed;inset:0 0 auto;z-index:50;transition:background .4s var(--eas
 nav.solid{background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-bottom:1px solid var(--line)}
 nav .wrap{display:flex;align-items:center;height:64px;gap:28px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.02em}
-.brand i{width:22px;height:22px;border-radius:50%;background:conic-gradient(from 200deg,#7c9cff,#c38bff,#ff8fb1,#ffc56b,#6ee7b7,#7c9cff);animation:spin 12s linear infinite;box-shadow:inset 0 0 0 3px var(--bg)}
+.brand img{width:24px;height:24px;transition:transform .8s var(--ease)}
+.brand:hover img{transform:rotate(180deg)}
 @keyframes spin{to{transform:rotate(360deg)}}
 nav .links{display:flex;gap:24px;font-size:14px;color:var(--muted)}
 nav .links a{transition:color .2s}
@@ -161,10 +162,23 @@ nav .links a:hover{color:var(--ink)}
 .by .who{margin-left:6px}
 .by .team{font-weight:500;color:var(--ink)}
 .by .tg{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--line)}
-.card.yours{border:1.5px dashed var(--line2);background:transparent;justify-content:center;align-items:center;text-align:center;min-height:420px;padding:40px}
-.card.yours .orb{width:84px;height:84px;border-radius:50%;background:conic-gradient(from 0deg,#7c9cff,#c38bff,#ff8fb1,#ffc56b,#6ee7b7,#7c9cff);animation:spin 8s linear infinite;position:relative;margin-bottom:22px}
-.card.yours .orb::after{content:"+";position:absolute;inset:6px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:32px;font-weight:300}
-.card.yours h3{margin-bottom:8px}
+.card.yours{border:1.5px dashed var(--line2);background:transparent}
+.card.yours:hover{border-color:color-mix(in srgb,#b67cff 60%,var(--line2))}
+.vis.ghost{display:grid;place-items:center;overflow:hidden;background:repeating-linear-gradient(135deg,transparent 0 14px,var(--line) 14px 15px)}
+.gw{position:absolute;inset:26px 34px;border-radius:16px;border:1.5px dashed var(--line2);background:var(--bg);padding:34px 20px 20px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;align-content:start;overflow:hidden}
+.gw::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,color-mix(in srgb,#b67cff 18%,transparent) 50%,transparent 70%);transform:translateX(-100%);animation:sweep 3.2s var(--ease) infinite}
+@keyframes sweep{60%,100%{transform:translateX(100%)}}
+.gw i{position:absolute;top:13px;width:8px;height:8px;border-radius:50%;background:var(--line2)}
+.gw i:nth-child(1){left:16px}.gw i:nth-child(2){left:30px}.gw i:nth-child(3){left:44px}
+.gw b{height:58px;border-radius:10px;background:var(--line)}
+.gw b.s{grid-column:1/-1;height:14px;width:60%;border-radius:6px}
+.drop{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;font-size:13.5px;font-weight:500;background:var(--ink);color:var(--bg);box-shadow:0 14px 40px -12px rgba(0,0,0,.5);animation:bob 3s var(--ease) infinite}
+.drop svg{width:16px;height:16px}
+.logo.gl{display:grid;place-items:center;font-size:22px;font-weight:300;color:var(--muted);background:transparent;border:1.5px dashed var(--line2);box-shadow:none}
+.card.yours h3{min-height:1.1em}
+.tcur{display:inline-block;width:2px;height:.9em;margin-left:2px;vertical-align:-2px;background:#b67cff;animation:blink 1s steps(1) infinite}
+.card.yours .tag{border-style:dashed}
+.card.yours .go{color:#b67cff}
 
 /* submit */
 .paths{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:52px}
@@ -369,7 +383,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 <body>
 <nav id="nav">
   <div class="wrap">
-    <a class="brand" href="#"><i></i>OpenYard</a>
+    <a class="brand" href="#"><img src="/favicon.svg" alt="" width="24" height="24">OpenYard</a>
     <div class="links">
       <a href="#why" data-i="nav.why">Why</a>
       <a href="#projects" data-i="nav.projects">Projects</a>
@@ -856,9 +870,31 @@ function cardHTML(p){
       <span class="go">${esc(host)} ${ARROW}</span>
     </div></a>`;
 }
+let typerTok = 0;
+async function startTyper(){
+  const tok = ++typerTok, el = () => document.querySelector("#grid .typer");
+  const words = T(["Your project", "Rice Diary", "Bus Tracker", "a tiny CLI", "something wild"], ["Dự án của bạn", "Sổ Ruộng Lúa", "Xe Buýt Đà Nẵng", "một CLI nhỏ", "thứ gì đó điên rồ"]);
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  for (let i = 0; tok === typerTok; i = (i + 1) % words.length) {
+    const w = words[i];
+    for (let c = 1; c <= w.length; c++) { if (tok !== typerTok || !el()) return; el().textContent = w.slice(0, c); await wait(70); }
+    await wait(i === 0 ? 2600 : 1500);
+    for (let c = w.length; c >= 0; c--) { if (tok !== typerTok || !el()) return; el().textContent = w.slice(0, c); await wait(30); }
+    await wait(250);
+  }
+}
 function renderProjects(){
   const grid = document.getElementById("grid");
-  grid.innerHTML = PROJECTS.map(cardHTML).join("") + `<a class="card yours rv" href="#submit"><div class="orb"></div><h3>${T("Your project here", "Dự án của bạn ở đây")}</h3><p>${T("Free or open source? Put it in the yard.", "Miễn phí hoặc mở mã nguồn? Đưa nó vào sân.")}</p></a>`;
+  grid.innerHTML = PROJECTS.map(cardHTML).join("") + `<a class="card yours rv" href="#submit">
+    <div class="vis ghost"><div class="gw"><i></i><i></i><i></i><b></b><b></b><b></b><b class="s"></b></div>
+      <span class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>${T("Drop your screenshot here", "Thả ảnh chụp của bạn vào đây")}</span></div>
+    <div class="cb">
+      <div class="ct"><span class="logo gl">+</span><h3><span class="typer"></span><span class="tcur"></span></h3><span class="tag">${T("Open spot", "Chỗ trống")}</span></div>
+      <p>${T("A useful app, a weird experiment or a tool for developers. Free or open source, listed in five minutes.", "App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev. Miễn phí hoặc mở mã nguồn, lên sân trong năm phút.")}</p>
+      <div class="by"><span class="tg">${T("your-tag", "tag-của-bạn")}</span><span class="tg">open-source</span></div>
+      <span class="go">${T("Put it in the yard", "Đưa vào sân")} ${ARROW}</span>
+    </div></a>`;
+  startTyper();
   grid.querySelectorAll(".card").forEach((c, i) => {
     c.style.transitionDelay = ((i % 2) * 90) + "ms";
     c.addEventListener("pointermove", e => { const r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px"); });
