@@ -40,7 +40,7 @@ One Cloudflare Worker serves everything: static files from `public/` (home page,
 
 OpenYard là cộng đồng của những người làm phần mềm miễn phí. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí. Luật chỉ có một: dự án phải miễn phí.
 
-Bạn có dự án miễn phí? Điền form tại [openyard.cloud/submit](https://openyard.cloud/submit): không cần tài khoản, gửi xong là lên sân ngay.
+Bạn có dự án miễn phí? Điền form tại [openyard.cloud/submit](https://openyard.cloud/submit): không cần tài khoản, gửi xong là có mặt trên OpenYard ngay.
 
 ## License
 

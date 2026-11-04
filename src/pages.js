@@ -243,9 +243,9 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
   </section>
 </div>
 ${others.length ? `<section class="more"><div class="wrap">
-  <h2>${t("More from the yard", "Thêm từ sân")}</h2>
+  <h2>${t("More from the yard", "Thêm từ OpenYard")}</h2>
   <div class="grid">${others.map(o => `<a class="mini" href="/p/${esc(o.slug)}">${logo(o, "", 44)}<div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div></a>`).join("")}</div>
-  <div class="band"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed.", "Đưa lên sân chỉ mất năm phút, không cần tài khoản.")}</p></div>
+  <div class="band"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản.")}</p></div>
     <div class="cta"><a class="btn dark" href="/submit">${t("Add your project", "Đưa dự án lên")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}Discord</a></div></div>
 </div></section>` : ""}
 </main>
