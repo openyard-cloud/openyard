@@ -15,6 +15,8 @@ const cookies = req => Object.fromEntries((req.headers.get("Cookie") || "").spli
 const cookie = (name, value, maxAge, secure) => `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? "; Secure" : ""}`;
 // only send people back to a page on this site
 const safeReturn = r => (typeof r === "string" && /^\/(?!\/)[\w\-./?=&#%]*$/.test(r) ? r : "/");
+// back to the page with ?signin=failed so it can say so
+const failed = back => { const [path, hash = ""] = safeReturn(back).split("#"); return path + (path.includes("?") ? "&" : "?") + "signin=failed" + (hash ? "#" + hash : ""); };
 const redirect = (to, headers = []) => { const h = new Headers({ Location: to }); headers.forEach(c => h.append("Set-Cookie", c)); return new Response(null, { status: 302, headers: h }); };
 
 export async function currentUser(req, env) {
@@ -55,14 +57,14 @@ export async function handleAuth(req, env, url) {
   if (path === "/auth/callback") {
     const [state, back] = (cookies(req)[STATE] || "").split("|");
     const clear = cookie(STATE, "", 0, secure);
-    if (!state || state !== url.searchParams.get("state") || !url.searchParams.get("code")) return redirect("/", [clear]);
+    if (!state || state !== url.searchParams.get("state") || !url.searchParams.get("code")) { console.error("oauth state missing or wrong", !!state); return redirect(failed(back || "/"), [clear]); }
     const tr = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json", "User-Agent": "openyard.cloud" },
       body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code: url.searchParams.get("code"), redirect_uri: `${url.origin}/auth/callback` }),
     }).then(r => r.json());
-    if (!tr.access_token) return redirect(safeReturn(back), [clear]);
+    if (!tr.access_token) { console.error("github token exchange failed:", tr.error, tr.error_description); return redirect(failed(back), [clear]); }
     const profile = await fetch("https://api.github.com/user", { headers: { Authorization: `Bearer ${tr.access_token}`, "User-Agent": "openyard.cloud", Accept: "application/vnd.github+json" } }).then(r => r.json());
-    if (!profile?.id) return redirect(safeReturn(back), [clear]);
+    if (!profile?.id) { console.error("github profile failed:", profile?.message); return redirect(failed(back), [clear]); }
     return redirect(safeReturn(back), [clear, await startSession(env, profile, secure)]);
   }
   if (path === "/auth/logout" && req.method === "POST") {
