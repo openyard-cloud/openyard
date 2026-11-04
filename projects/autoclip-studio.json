@@ -8,8 +8,8 @@
     "en": "Turn a topic, a website or a repo into a finished short video. Claude writes, voices and animates it; you review and publish.",
     "vi": "Biến một chủ đề, website hay repo thành video ngắn hoàn chỉnh. Claude viết, lồng tiếng và dựng; bạn duyệt rồi đăng."
   },
-  "url": "https://github.com/thihodev/autoclip-studio",
-  "repo": "https://github.com/thihodev/autoclip-studio",
+  "url": "https://github.com/openyard-cloud/autoclip-studio",
+  "repo": "https://github.com/openyard-cloud/autoclip-studio",
   "license": "MIT",
   "logo": "autoclip-studio.png",
   "logoStyle": "tile",

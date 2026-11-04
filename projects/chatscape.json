@@ -2,22 +2,34 @@
   "slug": "chatscape",
   "name": "Chatscape",
   "type": "open-source",
-  "status": "soon",
-  "tagline": { "en": "Living wallpapers for your AI chat", "vi": "Hình nền sống cho khung chat AI" },
+  "status": "live",
+  "tagline": {
+    "en": "Living wallpapers for your AI chat",
+    "vi": "Hình nền sống cho khung chat AI"
+  },
   "description": {
     "en": "Live ASCII and pixel wallpapers behind your AI chat. Twenty animated scenes, no account, nothing leaves your browser.",
     "vi": "Hình nền ASCII và pixel chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, không dữ liệu nào rời trình duyệt."
   },
-  "url": "https://openyard.cloud/#projects",
+  "url": "https://github.com/openyard-cloud/chatscape",
+  "repo": "https://github.com/openyard-cloud/chatscape",
+  "license": "MIT",
   "logo": "chatscape.png",
   "logoStyle": "tile",
   "pixel": true,
   "color": "#0b4a5a",
-  "maintainers": ["thihodev"],
-  "tags": ["browser-extension", "design"],
+  "maintainers": [
+    "thihodev"
+  ],
+  "tags": [
+    "browser-extension",
+    "design"
+  ],
   "team": true,
   "featured": true,
   "scene": "flow",
-  "swarm": { "src": "chatscape.png" },
+  "swarm": {
+    "src": "chatscape.png"
+  },
   "added": "2026-11-04"
 }
