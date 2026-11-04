@@ -1,15 +1,15 @@
-name: Join the team
-description: Help build OpenYard projects.
+name: Introduce yourself
+description: Say hi to the OpenYard community.
 title: "[Join] "
 labels: ["join-team"]
 body:
   - type: markdown
     attributes:
-      value: Happy to have you. Tell us a bit about yourself and we'll reach out.
+      value: Happy to have you. Tell us a bit about yourself and what you are making.
   - type: dropdown
     id: role
     attributes:
-      label: How would you like to help?
+      label: What do you do?
       multiple: true
       options:
         - Development

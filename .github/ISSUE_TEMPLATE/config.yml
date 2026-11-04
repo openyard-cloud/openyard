@@ -2,7 +2,7 @@ blank_issues_enabled: true
 contact_links:
   - name: Chat on Discord
     url: https://discord.gg/TFKsfh6tMk
-    about: Talk with the team and other builders.
+    about: Show your project, ask questions, help others.
   - name: Say hi or ask a question
     url: https://github.com/openyard-cloud/openyard/discussions
-    about: Chat with the team and the community.
+    about: Start a discussion with the community.

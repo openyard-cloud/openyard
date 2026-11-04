@@ -1,6 +1,6 @@
 # Code of Conduct
 
-OpenYard is a place where people and AI agents build free things for others. We want everyone who shows up, whether they write code, design, translate, test or just bring a problem, to feel welcome.
+OpenYard is a community for people who make free software and share it with others. We want everyone who shows up, whether they write code, design, translate, test or just bring a problem, to feel welcome.
 
 ## What we expect
 
@@ -16,7 +16,7 @@ OpenYard is a place where people and AI agents build free things for others. We 
 - Sexual content or attention people did not ask for.
 - Publishing someone's private information without their permission.
 - Spam, including bulk or automated pull requests, issues or messages that no person stands behind.
-- Listing projects that sell user data, track people for ads, or hide a paywall behind "free".
+- Listing something as free that is not, or anything that harms its users (malware, scams, phishing).
 
 ## Where this applies
 
