@@ -109,7 +109,7 @@ async function readForm(env, form) {
 
 async function checkHuman(env, form, ip) {
   if (String(form.get("website") || "")) return false; // honeypot
-  if (!env.TURNSTILE_SECRET) return true;
+  if (!env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY) return true; // previews run without Turnstile
   const body = new FormData();
   body.append("secret", env.TURNSTILE_SECRET); body.append("response", String(form.get("cf-turnstile-response") || "")); body.append("remoteip", ip);
   const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body });
