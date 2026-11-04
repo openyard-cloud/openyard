@@ -275,6 +275,10 @@ ${LANG_JS}
     list.innerHTML = top.length ? top.slice().reverse().map(one).join("") : \`<p class="none">\${T("No comments yet. Be the first.", "Chưa có bình luận nào. Bạn là người đầu tiên nhé.")}</p>\`;
     const h = document.querySelector("#comments h2"); if (h) h.dataset.count = items.filter(c => !c.deleted).length;
   }
+  if (new URLSearchParams(location.search).get("signin") === "failed") {
+    history.replaceState(null, "", location.pathname + location.hash);
+    setTimeout(() => { const n = document.createElement("p"); n.className = "none"; n.style.color = "#e03131"; n.textContent = T("Sign-in with GitHub did not go through. Try again in a moment.", "Đăng nhập GitHub chưa thành công. Thử lại sau giây lát nhé."); box.prepend(n); }, 0);
+  }
   async function load() {
     const r = await fetch("/api/comments?slug=" + encodeURIComponent(SLUG), { credentials: "same-origin" });
     const d = await r.json(); me = d.me; items = d.comments; render();
