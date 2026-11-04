@@ -292,6 +292,7 @@ nav .links a:hover{color:var(--ink)}
 .hx .badge{align-self:flex-start;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#c9c9d1}
 .hx-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:32px}
 .hx-l{max-width:640px}
+.hx h1 .grad{white-space:nowrap}
 .hx h1{font-size:clamp(38px,5.4vw,78px);margin:0 0 18px;color:#fff;text-shadow:0 2px 30px rgba(0,0,0,.5)}
 .hx .sub{color:rgba(255,255,255,.72);font-size:clamp(16px,1.4vw,19px);margin:0 0 26px;max-width:32em}
 .hx .cta{display:flex;gap:10px;flex-wrap:wrap}
@@ -589,9 +590,9 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
         <h3 data-i="sub.p1.t">No code needed</h3>
         <p data-i="sub.p1.d">Fill in a short form with your link, logo and a few lines. We add it for you.</p>
         <div class="form-demo" aria-hidden="true">
-          <div class="fd-row"><span data-i="sub.f1">Project name</span><b class="fd-val" data-type="Rice Diary"></b></div>
-          <div class="fd-row"><span data-i="sub.f2">Link</span><b class="fd-val" data-type="https://ricediary.app"></b></div>
-          <div class="fd-row"><span data-i="sub.f3">Type</span><b class="fd-val" data-type="Free app"></b></div>
+          <div class="fd-row"><span data-i="sub.f1">Project name</span><b class="fd-val" data-type="Rice Diary" data-type-vi="Sổ Ruộng"></b></div>
+          <div class="fd-row"><span data-i="sub.f2">Link</span><b class="fd-val" data-type="https://ricediary.app" data-type-vi="https://soruong.vn"></b></div>
+          <div class="fd-row"><span data-i="sub.f3">Type</span><b class="fd-val" data-type="Free app" data-type-vi="App miễn phí"></b></div>
         </div>
         <span class="go"><span data-i="sub.p1.cta">Open the form</span> <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg></span>
       </a>
@@ -677,49 +678,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
 
 <script>
 /* ---------- i18n ---------- */
-const VI = {
-  "nav.why":"Vì sao","nav.dc":"Vào Discord","nav.projects":"Dự án","nav.how":"Cách làm","nav.join":"Tham gia",
-  "hero.badge":"Con người + AI agent, cùng xây công khai",
-  "hero.title":"App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.",
-  "hero.sub":"Khoảng sân nơi con người và AI agent cùng xây ba loại thứ: app cho những người phần mềm bỏ quên, ý tưởng quá lạ để làm startup, và công cụ mã nguồn mở cho dân dev. Tất cả miễn phí.",
-  "hero.cta1":"Xem các dự án","nav.submit":"Gửi dự án",
-  "f.all":"Tất cả","f.people":"Cho mọi người","f.wild":"Ý tưởng điên rồ","f.dev":"Công cụ cho dev","f.com":"Cộng đồng",
-  "pl1.t":"Cho những người phần mềm bỏ quên","pl1.d":"Nông dân, người làm nội dung nhỏ, các nhóm địa phương. Những app chẳng ai làm vì không ra tiền.",
-  "pl2.t":"Ý tưởng điên rồ","pl2.d":"Quốc gia do AI điều hành. Hình nền sống sau khung chat. Những thí nghiệm quá lạ để làm startup, làm vì vui.",
-  "pl3.t":"Công cụ cho dev","pl3.d":"Khối xây dựng, agent và quy trình mã nguồn mở giúp dự án tiếp theo của mọi người nhanh hơn.",
-  "sub.eye":"Mang dự án của bạn tới","sub.title":"Đưa dự án của bạn vào sân.","sub.lead":"Bạn làm ra thứ gì đó miễn phí hoặc mã nguồn mở? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev: đưa lên đây, cạnh các dự án của chúng tôi. Chỉ mất năm phút.",
-  "sub.p1.t":"Không cần biết code","sub.p1.d":"Điền một form ngắn: link, logo và vài dòng giới thiệu. Chúng tôi đưa lên giúp bạn.","sub.p1.cta":"Mở form",
-  "sub.f1":"Tên dự án","sub.f2":"Link","sub.f3":"Loại",
-  "sub.p2.t":"Mở pull request","sub.p2.d":"Thêm một file JSON và logo. CI tự kiểm tra, người duyệt xem qua, merge là lên trang.","sub.p2.cta":"Đọc hướng dẫn",
-  "fl1.t":"Gửi","fl1.d":"Qua form hoặc pull request","fl2.t":"Duyệt","fl2.d":"Thường trong vài ngày","fl3.t":"Lên trang","fl3.d":"Trên openyard.cloud, kèm tên miền con nếu bạn muốn",
-  "r1.t":"Miễn phí hoặc mở mã","r1.d":"Không thu phí tính năng chính, hoặc code công khai có giấy phép.","r2.t":"Đang chạy được","r2.d":"Đã chạy, đang beta, hoặc sắp ra mắt.","r3.t":"Có người duy trì","r3.d":"Là bạn, hoặc những người đồng ý cho đưa lên.","r4.t":"Tôn trọng người dùng","r4.d":"Không bán dữ liệu, không quảng cáo theo dõi.",
-  "join.eye":"Tham gia nhóm","join.discord":"Vào Discord","join.form":"Giới thiệu bản thân","join.gh":"Đóng góp trên GitHub","join.chat":"Vào trò chuyện",
-  "ro1":"Lập trình viên","ro2":"Designer","ro3":"Người dịch","ro4":"Người test","ro5":"Người có ý tưởng","now.k":"Các agent đang lắp ráp","hero.hint":"rê chuột xuyên qua bầy hạt","demo.eye":"Từ ý tưởng tới app","demo.title":"Từ một câu nói tới một app đã ra mắt.",
-  "why.eye":"Vì sao có OpenYard",
-  "mani":"AI làm phần mềm rẻ đi mười lần. Điều đó đổi luôn thế nào là đáng làm: cái app cho vài trăm hộ nông dân, thí nghiệm chẳng ai rót vốn, công cụ dân dev cần mà không ai bán. Chúng tôi làm những thứ đó, công khai, và tặng luôn.",
-  "v1.t":"Miễn phí thật","v1.d":"Không thu phí, không quảng cáo, không bán dữ liệu. Không phải dùng thử.",
-  "v2.t":"Mở là mặc định","v2.d":"Công cụ của chúng tôi nằm trên GitHub. Đọc, fork, tự chạy đều được.",
-  "v3.t":"AI đúng chỗ","v3.d":"Chỉ dùng khi bớt việc thật: trả lời, đọc, viết, lên kế hoạch.",
-  "v4.t":"Làm cạnh người dùng","v4.d":"Bắt đầu từ vấn đề của một người thật, ra bản nhỏ, thường xuyên.",
-  "proj.eye":"Dự án","proj.title":"Những gì đang mọc trong sân","proj.lead":"App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, từ nhóm và từ cộng đồng. Tất cả miễn phí, nhiều cái mở mã nguồn.",
-  "t.app":"App miễn phí","t.oss":"Mã nguồn mở","t.soon":"Sắp ra mắt",
-  "fm.d":"Cho chủ trại chăn nuôi và thủy sản Việt Nam: sổ trại, thời tiết, trợ lý AI trả lời dễ hiểu, và cảm biến IoT.",
-  "ac.d":"Biến một chủ đề, website hay repo thành video ngắn hoàn chỉnh. Claude viết, lồng tiếng và dựng; bạn duyệt rồi đăng.",
-  "sm.d":"Thế giới nơi mỗi quốc gia do một AI riêng điều hành, bắt đầu từ thời đồ đá. Bạn là Người Quan Sát, phán xử và ban lệnh.",
-  "cs.d":"Hình nền sống động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, không dữ liệu nào rời trình duyệt.","cs.go":"Tiện ích trình duyệt",
-  "idea.t":"Sản phẩm tiếp theo có thể là của bạn.","idea.d":"Bạn biết một nhóm người vẫn dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng tôi. Ý tưởng hay nhất đến từ chính người gặp vấn đề.","idea.cta":"Gửi ý tưởng",
-  "how.eye":"Cách chúng tôi làm","how.title":"Một người, một vấn đề, vài agent.",
-  "s1.t":"Lắng nghe","s1.d":"Người dùng thật kể về một ngày của họ. Chúng tôi ghi lại vấn đề bằng chính lời họ.",
-  "s2.t":"Agent xây","s2.d":"AI agent đọc code, viết tính năng và bài test.",
-  "s3.t":"Con người duyệt","s3.d":"Một người kiểm tra từng thay đổi và thử trên thiết bị thật.",
-  "s4.t":"Ra bản nhỏ","s4.d":"Phát hành trong vài ngày, không phải vài tháng. Rồi quay lại hỏi: có giúp được không?",
-  "chat.hd":"FarmMind · luồng xây tính năng",
-  "st1":"dự án trong sân","st2":"repo mã nguồn mở","st3":"là số tiền bạn phải trả",
-  "join.title":"Cùng chúng tôi xây cái tiếp theo.",
-  "join.d":"Chúng tôi ghép con người với AI agent để làm phần mềm miễn phí cho cộng đồng. Mang theo một kỹ năng, vài giờ mỗi tuần, hoặc chỉ một vấn đề đáng giải.",
-  "join.cta":"Tìm chúng tôi trên GitHub","join.cta2":"Xem các dự án",
-  "foot":"Miễn phí cho mọi người. Làm tại Việt Nam.","foot.tag":"App miễn phí, ý tưởng điên rồ và công cụ mở, do con người và AI agent cùng xây.","foot.dc":"Vào Discord","foot.p":"Dự án","foot.c":"Cộng đồng","foot.c1":"Gửi dự án","foot.c2":"Tham gia nhóm","foot.c3":"Thảo luận","foot.c4":"Việc cho người mới","foot.r":"Mã nguồn mở","foot.r1":"Mã nguồn trang web","foot.r2":"Hướng dẫn đóng góp","foot.r3":"Tổ chức trên GitHub","foot.r4":"Giấy phép MIT"
-};
+const VI = { "nav.why": "Vì sao", "nav.dc": "Vào Discord", "nav.projects": "Dự án", "nav.how": "Cách làm", "nav.join": "Tham gia", "nav.submit": "Gửi dự án", "hero.badge": "Người và AI cùng làm, công khai từ đầu", "hero.title": "App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.", "hero.sub": "OpenYard là nơi người và AI agent cùng làm ra ba thứ: app cho những người bị phần mềm bỏ quên, những ý tưởng quá lạ để gọi vốn, và công cụ mã nguồn mở cho dân dev. Tất cả đều miễn phí.", "hero.cta1": "Xem các dự án", "f.all": "Tất cả", "f.people": "Cho mọi người", "f.wild": "Ý tưởng điên rồ", "f.dev": "Công cụ cho dev", "f.com": "Cộng đồng", "pl1.t": "Cho những người bị phần mềm bỏ quên", "pl1.d": "Nông dân, người làm nội dung nhỏ, hội nhóm địa phương. Những app không ai làm vì chẳng có lời.", "pl2.t": "Ý tưởng điên rồ", "pl2.d": "Quốc gia do AI cai trị. Hình nền biết chuyển động sau khung chat. Những thí nghiệm quá lạ để khởi nghiệp, làm vì thấy vui.", "pl3.t": "Công cụ cho dev", "pl3.d": "Thư viện, agent và quy trình mã nguồn mở, giúp ai làm dự án sau cũng nhanh hơn.", "sub.eye": "Bạn cũng có dự án?", "sub.title": "Đưa dự án của bạn vào sân.", "sub.lead": "Bạn làm ra thứ gì đó miễn phí hoặc mã nguồn mở? Dù là app hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev, hãy đưa lên đây cạnh các dự án của chúng mình. Chỉ mất năm phút.", "sub.p1.t": "Không cần biết code", "sub.p1.d": "Điền một biểu mẫu ngắn gồm đường dẫn, logo và vài dòng giới thiệu. Chúng mình sẽ đăng giúp bạn.", "sub.p1.cta": "Mở biểu mẫu", "sub.f1": "Tên dự án", "sub.f2": "Đường dẫn", "sub.f3": "Loại", "sub.p2.t": "Gửi pull request", "sub.p2.d": "Thêm một file JSON kèm logo. CI tự kiểm tra, có người duyệt, merge xong là dự án lên trang.", "sub.p2.cta": "Xem hướng dẫn", "fl1.t": "Gửi", "fl1.d": "Qua biểu mẫu hoặc pull request", "fl2.t": "Duyệt", "fl2.d": "Thường mất vài ngày", "fl3.t": "Lên trang", "fl3.d": "Hiện trên openyard.cloud, kèm tên miền con nếu bạn cần", "r1.t": "Miễn phí hoặc mở mã nguồn", "r1.d": "Không thu phí tính năng chính, hoặc mã nguồn công khai có giấy phép.", "r2.t": "Dùng được ngay", "r2.d": "Đã chạy, đang thử nghiệm, hoặc sắp ra mắt.", "r3.t": "Có người duy trì", "r3.d": "Là bạn, hoặc chủ dự án đã đồng ý cho đăng.", "r4.t": "Tôn trọng người dùng", "r4.d": "Không bán dữ liệu, không quảng cáo theo dõi.", "join.eye": "Tham gia nhóm", "join.discord": "Vào Discord", "join.form": "Giới thiệu về bạn", "join.gh": "Đóng góp trên GitHub", "join.chat": "Tham gia thảo luận", "ro1": "Lập trình viên", "ro2": "Thiết kế", "ro3": "Dịch thuật", "ro4": "Kiểm thử", "ro5": "Góp ý tưởng", "now.k": "AI đang dựng", "hero.hint": "", "demo.eye": "Từ ý tưởng đến app", "demo.title": "Chỉ một câu mô tả, ra một app dùng được.", "why.eye": "Vì sao có OpenYard", "mani": "AI giúp làm phần mềm rẻ đi cả chục lần. Nhờ vậy, những thứ trước đây chẳng ai thèm làm giờ lại đáng làm: một cái app cho vài trăm hộ nuôi heo, một thí nghiệm không nhà đầu tư nào rót tiền, một công cụ dân dev cần mà không ai bán. Chúng mình làm những thứ đó, công khai, rồi tặng luôn.", "v1.t": "Miễn phí thật sự", "v1.d": "Không thu phí, không quảng cáo, không bán dữ liệu. Cũng không phải bản dùng thử.", "v2.t": "Mở mã nguồn", "v2.d": "Công cụ của chúng mình nằm sẵn trên GitHub. Ai muốn đọc, fork hay tự chạy đều được.", "v3.t": "Dùng AI đúng chỗ", "v3.d": "Chỉ dùng AI khi nó thật sự đỡ việc: trả lời, đọc, viết, lên kế hoạch.", "v4.t": "Làm cùng người dùng", "v4.d": "Bắt đầu từ khó khăn của một người cụ thể, làm bản nhỏ trước, cập nhật thường xuyên.", "proj.eye": "Dự án", "proj.title": "Đang có gì trong sân", "proj.lead": "App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, của nhóm lẫn của cộng đồng. Tất cả đều miễn phí, phần lớn mở mã nguồn.", "t.app": "App miễn phí", "t.oss": "Mã nguồn mở", "t.soon": "Sắp ra mắt", "fm.d": "Dành cho chủ trại chăn nuôi, thủy sản ở Việt Nam: ghi sổ trại, xem thời tiết, hỏi trợ lý AI bằng lời dễ hiểu, kết nối cảm biến IoT.", "ac.d": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng.", "sm.d": "Một thế giới nơi mỗi quốc gia do một AI riêng cai trị, khởi đầu từ thời đồ đá. Bạn là Người Quan Sát, phân xử và ban chiếu chỉ.", "cs.d": "Hình nền chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, dữ liệu không rời khỏi trình duyệt.", "cs.go": "Tiện ích trình duyệt", "idea.t": "Dự án tiếp theo có thể là của bạn.", "idea.d": "Bạn biết một nhóm người vẫn phải dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng mình nghe. Ý tưởng hay nhất thường đến từ chính người gặp khó khăn.", "idea.cta": "Gửi ý tưởng", "how.eye": "Cách chúng mình làm", "how.title": "Một người, một vấn đề, vài AI agent.", "s1.t": "Lắng nghe", "s1.d": "Một người dùng thật kể về ngày làm việc của họ. Chúng mình ghi lại khó khăn bằng đúng lời họ nói.", "s2.t": "AI agent bắt tay làm", "s2.d": "Agent đọc code, viết tính năng và viết luôn bài test.", "s3.t": "Người thật kiểm tra", "s3.d": "Một thành viên xem từng thay đổi và thử trên điện thoại thật.", "s4.t": "Ra mắt sớm", "s4.d": "Phát hành sau vài ngày chứ không phải vài tháng. Rồi quay lại hỏi: có giúp được gì không?", "chat.hd": "FarmMind · quá trình làm tính năng", "st1": "dự án trong sân", "st2": "repo mã nguồn mở", "st3": "là số tiền bạn phải trả", "join.title": "Cùng chúng mình làm dự án tiếp theo.", "join.d": "Chúng mình ghép người với AI agent để làm phần mềm miễn phí cho cộng đồng. Bạn chỉ cần một kỹ năng, vài giờ mỗi tuần, hoặc đơn giản là một vấn đề đáng giải.", "join.cta": "Tìm chúng mình trên GitHub", "join.cta2": "Xem các dự án", "foot": "Miễn phí cho tất cả. Làm tại Việt Nam.", "foot.tag": "App miễn phí, ý tưởng điên rồ và công cụ mở, do người và AI agent cùng làm.", "foot.dc": "Vào Discord", "foot.p": "Dự án", "foot.c": "Cộng đồng", "foot.c1": "Gửi dự án", "foot.c2": "Tham gia nhóm", "foot.c3": "Thảo luận", "foot.c4": "Việc dễ cho người mới", "foot.r": "Mã nguồn mở", "foot.r1": "Mã nguồn trang web", "foot.r2": "Hướng dẫn đóng góp", "foot.r3": "Tổ chức trên GitHub", "foot.r4": "Giấy phép MIT" };
 const EN = {};
 document.querySelectorAll("[data-i]").forEach(el => { EN[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
 let LANG = "en";
@@ -768,37 +727,37 @@ addEventListener("scroll", onScroll, { passive: true });
 const ICO = (n, c = "") => `<svg class="ico ${c}"><use href="#i-${n}"/></svg>`;
 const DEMOS = [
   { id: "farm", name: "FarmMind", logo: "/logos/farmmind.svg", lc: "full", grad: "linear-gradient(135deg,#10b981,#a3e635)",
-    prompt: () => T("Build an app that reminds farmers which pigs need vaccines this week", "Làm app nhắc chủ trại tuần này heo nào cần tiêm vaccine"),
+    prompt: () => T("Build an app that reminds farmers which pigs need vaccines this week", "Làm giúp app nhắc chủ trại tuần này heo nào tới lịch tiêm"),
     sub: () => T("AI assistant for farmers", "Trợ lý AI cho nhà nông"),
     body: () => `
       <div class="wx rv2">${[["13:00","sun","31°"],["14:00","sun","32°"],["15:00","rain","12mm",1],["16:00","rain","26°"],["17:00","cloud","27°"]].map(([h,i,v,n]) => `<div class="${n ? "cur" : ""}">${h}${ICO(i)}<b>${v}</b></div>`).join("")}</div>
-      <div class="row"><span class="tile" style="--tc:#f59e0b">${ICO("syringe")}</span>${T("Pen 3 · 12 pigs", "Chuồng 3 · 12 con")}<span class="r"><span class="pill p-a">${T("vaccine today", "tiêm hôm nay")}</span></span></div>
-      <div class="row"><span class="tile" style="--tc:#3b82f6">${ICO("rain")}</span>${T("Storm at 15:00", "Giông lúc 15:00")}<span class="r">${T("AI: cover the pens first", "AI: che chuồng trước")}</span></div>
-      <div class="row"><span class="tile" style="--tc:#06b6d4">${ICO("droplet")}</span>${T("Pond 2 · DO 6.1 mg/L", "Ao 2 · DO 6.1 mg/L")}<span class="r"><span class="pill p-g">${T("normal", "ổn định")}</span></span></div>` },
+      <div class="row"><span class="tile" style="--tc:#f59e0b">${ICO("syringe")}</span>${T("Pen 3 · 12 pigs", "Chuồng 3 · 12 con")}<span class="r"><span class="pill p-a">${T("vaccine today", "hôm nay tiêm")}</span></span></div>
+      <div class="row"><span class="tile" style="--tc:#3b82f6">${ICO("rain")}</span>${T("Storm at 15:00", "15:00 có giông")}<span class="r">${T("AI: cover the pens first", "AI: nên che chuồng trước")}</span></div>
+      <div class="row"><span class="tile" style="--tc:#06b6d4">${ICO("droplet")}</span>${T("Pond 2 · DO 6.1 mg/L", "Ao 2 · oxy hoà tan 6,1 mg/L")}<span class="r"><span class="pill p-g">${T("normal", "ổn định")}</span></span></div>` },
   { id: "clip", name: "AutoClip Studio", logo: "/logos/autoclip-studio.png", lc: "full", grad: "linear-gradient(135deg,#8b5cf6,#ff7eb0)",
-    prompt: () => T("Turn my GitHub repo into a 45-second video", "Biến repo GitHub của tôi thành video 45 giây"),
-    sub: () => T("Topic in, finished short video out", "Đưa chủ đề vào, ra video ngắn hoàn chỉnh"),
+    prompt: () => T("Turn my GitHub repo into a 45-second video", "Biến repo GitHub của mình thành video 45 giây"),
+    sub: () => T("Topic in, finished short video out", "Nhập chủ đề, nhận video ngắn hoàn chỉnh"),
     body: () => `
       <div class="vprev rv2"><img src="/images/autoclip-studio.webp" alt=""><span class="pb">${ICO("play")}</span><span class="vt"><i></i></span></div>
-      <div class="row"><span class="tile" style="--tc:#ff4d6d">${ICO("mic")}</span>${T("Voiceover", "Lời đọc")}<span class="r" style="display:flex;gap:6px"><span class="tile" style="--tc:#8b5cf6;width:24px;height:24px">${ICO("music")}</span><span class="tile" style="--tc:#f59e0b;width:24px;height:24px">${ICO("captions")}</span></span></div>
-      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("film")}</span>${T("6 scenes · 45.2s", "6 cảnh · 45.2s")}<span class="r">1080×1920</span></div>` },
+      <div class="row"><span class="tile" style="--tc:#ff4d6d">${ICO("mic")}</span>${T("Voiceover", "Lồng tiếng")}<span class="r" style="display:flex;gap:6px"><span class="tile" style="--tc:#8b5cf6;width:24px;height:24px">${ICO("music")}</span><span class="tile" style="--tc:#f59e0b;width:24px;height:24px">${ICO("captions")}</span></span></div>
+      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("film")}</span>${T("6 scenes · 45.2s", "6 cảnh · 45,2 giây")}<span class="r">1080×1920</span></div>` },
   { id: "world", name: "Sovereign Minds", logo: "/logos/sovereign-minds.svg", lc: "", grad: "linear-gradient(135deg,#3b82f6,#8b5cf6)",
-    prompt: () => T("A world where every nation is run by its own AI", "Một thế giới nơi mỗi quốc gia do một AI điều hành"),
+    prompt: () => T("A world where every nation is run by its own AI", "Một thế giới mà mỗi quốc gia do một AI cai trị"),
     sub: () => T("Open world of AI nations", "Thế giới mở của các quốc gia AI"),
     body: () => `
       <div class="mapg rv2">${"<i></i>".repeat(24 * 6)}</div>
       <div class="legend rv2">${[["#8b5cf6", T("Ember", "Hoả Quốc")], ["#f59e0b", T("Dune", "Sa Quốc")], ["#10b981", T("Grove", "Lâm Quốc")], ["#f43f5e", T("Tide", "Thuỷ Quốc")]].map(([c, n]) => `<span><span style="color:${c};display:grid">${ICO("flag")}</span>${n}</span>`).join("")}</div>
       <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("hourglass")}</span>${T("Bronze age · year 312", "Thời đồ đồng · năm 312")}<span class="r"><span class="pill p-v" style="display:inline-flex;align-items:center;gap:4px">${ICO("crown")}${T("4 nations", "4 quốc gia")}</span></span></div>` },
   { id: "chat", name: "Chatscape", logo: "/logos/chatscape.png", lc: "full", grad: "linear-gradient(135deg,#06b6d4,#6ee7b7)",
-    prompt: () => T("Make my AI chat feel a little more alive", "Cho khung chat AI của tôi sống động hơn chút"),
-    sub: () => T("Living wallpapers for AI chat", "Hình nền sống cho khung chat AI"),
+    prompt: () => T("Make my AI chat feel a little more alive", "Làm khung chat AI của mình sinh động hơn chút"),
+    sub: () => T("Living wallpapers for AI chat", "Hình nền sống động cho khung chat AI"),
     body: () => `
       <div class="cscene rv2">
-        <div class="bubble me" style="align-self:flex-end">${T("Pick a calm scene for tonight", "Chọn giúp cảnh nào dịu nhẹ cho tối nay")}</div>
+        <div class="bubble me" style="align-self:flex-end">${T("Pick a calm scene for tonight", "Chọn giúp mình một cảnh dịu nhẹ cho tối nay")}</div>
         <div class="bubble" style="align-self:flex-start">${ICO("sparkles")}${T("Cloud Drift is on. 19 more in the picker.", "Đã bật Cloud Drift. Còn 19 cảnh khác.")}</div>
       </div>
       <div class="chips2 rv2"><span>${ICO("cloud")}Cloud Drift</span><span>${ICO("moon")}Fireflies</span><span>${ICO("fish")}Koi Pond</span><span>${ICO("sparkles")}+17</span></div>
-      <div class="row"><span class="tile" style="--tc:#10b981">${ICO("shield")}</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
+      <div class="row"><span class="tile" style="--tc:#10b981">${ICO("shield")}</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy ngay trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
 ];const STEPS = () => T(["Reading the problem", "Planning the app", "Writing code", "Running tests", "Shipping"], ["Đọc vấn đề", "Lên kế hoạch", "Viết code", "Chạy test", "Ra mắt"]);
 let demoTok = 0, demoIdx = 0;
 const dotsEl = document.getElementById("dots");
@@ -813,7 +772,7 @@ async function runDemo(tok){
     const d = DEMOS[demoIdx % DEMOS.length];
     [...dotsEl.children].forEach((b, i) => b.classList.toggle("on", i === demoIdx % DEMOS.length));
     result.classList.remove("on", "out"); status.classList.remove("on", "ok"); send.classList.remove("on", "go");
-    ptxt.innerHTML = `<span class="ph">${T("Describe a problem worth solving…", "Kể một vấn đề đáng giải…")}</span>`;
+    ptxt.innerHTML = `<span class="ph">${T("Describe a problem worth solving…", "Mô tả một vấn đề bạn muốn giải…")}</span>`;
     await sleep(900); if (!alive()) return;
     const text = d.prompt(); ptxt.innerHTML = `<span id="pt"></span><span class="cur"></span>`;
     const pt = document.getElementById("pt"); send.classList.add("on");
@@ -822,7 +781,7 @@ async function runDemo(tok){
     send.classList.add("go"); await sleep(180); send.classList.remove("go");
     ptxt.querySelector(".cur")?.remove();
     status.classList.add("on");
-    sdone.textContent = T("✓ Shipped, free for everyone", "✓ Đã ra mắt, miễn phí cho mọi người");
+    sdone.textContent = T("✓ Shipped, free for everyone", "✓ Đã ra mắt, ai cũng dùng miễn phí");
     for (const s of STEPS()) { if (!alive()) return; stxt.textContent = s + "…"; await sleep(820); }
     result.innerHTML = `<div class="rhead"><div class="ricon"><img class="${d.lc}" src="${d.logo}" alt=""></div><div><h3>${d.name}</h3><p>${d.sub()}</p></div><span class="tag">openyard</span></div><div class="rbody">${d.body()}</div>`;
     status.classList.add("ok");
@@ -855,11 +814,11 @@ async function animateMap(root, tok){
 
 /* ---------- build-thread chat ---------- */
 const THREAD = () => [
-  { who: T("Farmer in Đồng Nai", "Chủ trại ở Đồng Nai"), user: true, av: "linear-gradient(135deg,#10b981,#a3e635)", icon: "sprout", text: T("I keep forgetting which pigs need vaccines this week.", "Tôi hay quên tuần này heo nào phải tiêm.") },
-  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#7c9cff,#b67cff)", text: T("Read the herd module. Plan: a weekly vaccine schedule per pen, with a 6:00 reminder.", "Đã đọc phần quản lý đàn. Kế hoạch: lịch tiêm theo từng chuồng, nhắc lúc 6 giờ sáng.") },
-  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#ff7eb0,#ffb35c)", text: T("Wrote the schedule, the reminder and 24 tests. All passing.", "Đã viết lịch tiêm, phần nhắc và 24 bài test. Tất cả đều đạt.") },
-  { who: T("Reviewer", "Người duyệt"), icon: "shieldcheck", av: "linear-gradient(135deg,#f59e0b,#f43f5e)", text: T("Tried it on a real phone. Wording is clear. Approved.", "Đã thử trên điện thoại thật. Câu chữ dễ hiểu. Duyệt.") },
-  { ship: T("Shipped to FarmMind", "Đã ra mắt trên FarmMind") }
+  { who: T("Farmer in Đồng Nai", "Chủ trại ở Đồng Nai"), user: true, av: "linear-gradient(135deg,#10b981,#a3e635)", icon: "sprout", text: T("I keep forgetting which pigs need vaccines this week.", "Tuần nào tôi cũng quên không biết heo nào tới lịch tiêm.") },
+  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#7c9cff,#b67cff)", text: T("Read the herd module. Plan: a weekly vaccine schedule per pen, with a 6:00 reminder.", "Đã đọc phần quản lý đàn. Kế hoạch: lập lịch tiêm theo từng chuồng, nhắc lúc 6 giờ sáng.") },
+  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#ff7eb0,#ffb35c)", text: T("Wrote the schedule, the reminder and 24 tests. All passing.", "Xong lịch tiêm, phần nhắc lịch và 24 bài test, tất cả đều đạt.") },
+  { who: T("Reviewer", "Người duyệt"), icon: "shieldcheck", av: "linear-gradient(135deg,#f59e0b,#f43f5e)", text: T("Tried it on a real phone. Wording is clear. Approved.", "Đã thử trên điện thoại thật, câu chữ dễ hiểu. Duyệt.") },
+  { ship: T("Shipped to FarmMind", "Đã ra mắt trong FarmMind") }
 ];
 let chatTok = 0, chatSeen = false;
 function restartChat(){ chatTok++; if (chatSeen) runChat(chatTok); }
@@ -951,7 +910,7 @@ function links(){
   const dl = document.querySelector('.btn.discord [data-i]');
   if (dl) {
     dl.dataset.i = SITE.discord ? "join.discord" : "join.chat";
-    dl.textContent = SITE.discord ? T("Join our Discord", "Vào Discord") : T("Join the conversation", "Vào trò chuyện");
+    dl.textContent = SITE.discord ? T("Join our Discord", "Vào Discord") : T("Join the conversation", "Tham gia thảo luận");
   }
 }
 function cardHTML(p){
@@ -975,7 +934,7 @@ function cardHTML(p){
 let typerTok = 0;
 async function startTyper(){
   const tok = ++typerTok, el = () => document.querySelector("#grid .typer");
-  const words = T(["Your project", "Rice Diary", "Bus Tracker", "a tiny CLI", "something wild"], ["Dự án của bạn", "Sổ Ruộng Lúa", "Xe Buýt Đà Nẵng", "một CLI nhỏ", "thứ gì đó điên rồ"]);
+  const words = T(["Your project", "Rice Diary", "Bus Tracker", "a tiny CLI", "something wild"], ["Dự án của bạn", "Sổ Ruộng", "Xe Buýt Đà Nẵng", "một CLI nhỏ", "một ý tưởng điên rồ"]);
   const wait = ms => new Promise(r => setTimeout(r, ms));
   for (let i = 0; tok === typerTok; i = (i + 1) % words.length) {
     const w = words[i];
@@ -989,10 +948,10 @@ function renderProjects(){
   const grid = document.getElementById("grid");
   grid.innerHTML = PROJECTS.map(cardHTML).join("") + `<a class="card yours rv" href="#submit">
     <div class="vis ghost"><div class="gw"><i></i><i></i><i></i><b></b><b></b><b></b><b class="s"></b></div>
-      <span class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>${T("Drop your screenshot here", "Thả ảnh chụp của bạn vào đây")}</span></div>
+      <span class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>${T("Drop your screenshot here", "Ảnh chụp dự án của bạn ở đây")}</span></div>
     <div class="cb">
-      <div class="ct"><span class="logo gl">+</span><h3><span class="typer"></span><span class="tcur"></span></h3><span class="tag">${T("Open spot", "Chỗ trống")}</span></div>
-      <p>${T("A useful app, a weird experiment or a tool for developers. Free or open source, listed in five minutes.", "App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev. Miễn phí hoặc mở mã nguồn, lên sân trong năm phút.")}</p>
+      <div class="ct"><span class="logo gl">+</span><h3><span class="typer"></span><span class="tcur"></span></h3><span class="tag">${T("Open spot", "Còn chỗ")}</span></div>
+      <p>${T("A useful app, a weird experiment or a tool for developers. Free or open source, listed in five minutes.", "App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev. Miễn phí hoặc mở mã nguồn là lên được sân, chỉ mất năm phút.")}</p>
       <div class="by"><span class="tg">${T("your-tag", "tag-của-bạn")}</span><span class="tg">open-source</span></div>
       <span class="go">${T("Put it in the yard", "Đưa vào sân")} ${ARROW}</span>
     </div></a>`;
@@ -1032,7 +991,7 @@ DATA.then(d => {
     if (!n) return;
     ["dcon", "fon"].forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = n; el.hidden = false; } });
     const el = document.getElementById("dcon");
-    el.title = T(`${n} online`, `${n} người đang online`);
+    el.title = T(`${n} online`, `${n} người đang trực tuyến`);
   });
 }).catch(() => {});
 
@@ -1042,7 +1001,7 @@ function renderFooterProjects(){
 function renderPillars(){
   document.querySelectorAll("[data-chips]").forEach(el => {
     const k = el.dataset.chips, list = PROJECTS.filter(p => (p.kinds || []).includes(k));
-    el.innerHTML = list.map(p => `<span><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</span>`).join("") + `<span class="you">${T("+ yours", "+ của bạn")}</span>`;
+    el.innerHTML = list.map(p => `<span><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</span>`).join("") + `<span class="you">${T("+ yours", "+ dự án của bạn")}</span>`;
   });
 }
 document.querySelectorAll(".pillar").forEach(a => a.addEventListener("click", () => { FILTER = a.dataset.kind; applyFilter(); }));
@@ -1059,7 +1018,7 @@ addEventListener("oy-lang", () => { if (PROJECTS.length) { renderPillars(); rend
       vals.forEach(v => v.textContent = "");
       for (const v of vals) {
         v.classList.add("typing");
-        for (const ch of v.dataset.type) { v.textContent += ch; await sleep2(45 + Math.random() * 40); }
+        for (const ch of (LANG === "vi" && v.dataset.typeVi) || v.dataset.type) { v.textContent += ch; await sleep2(45 + Math.random() * 40); }
         v.classList.remove("typing"); await sleep2(350);
       }
       await sleep2(3500);

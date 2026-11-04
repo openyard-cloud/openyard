@@ -9,11 +9,11 @@
   "status": "live",
   "tagline": {
     "en": "Topic in, finished short video out",
-    "vi": "Đưa chủ đề vào, ra video ngắn hoàn chỉnh"
+    "vi": "Nhập chủ đề, nhận video ngắn hoàn chỉnh"
   },
   "description": {
     "en": "Turn a topic, a website or a repo into a finished short video. Claude writes, voices and animates it; you review and publish.",
-    "vi": "Biến một chủ đề, website hay repo thành video ngắn hoàn chỉnh. Claude viết, lồng tiếng và dựng; bạn duyệt rồi đăng."
+    "vi": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng."
   },
   "url": "https://github.com/openyard-cloud/autoclip-studio",
   "repo": "https://github.com/openyard-cloud/autoclip-studio",

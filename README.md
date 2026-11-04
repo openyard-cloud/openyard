@@ -48,7 +48,9 @@ The site is a single static page (`public/index.html`) served by Cloudflare Work
 
 ## Tiếng Việt
 
-OpenYard là khoảng sân chung cho ba loại thứ: app cho những người phần mềm bỏ quên, ý tưởng điên rồ độc lạ, và công cụ mã nguồn mở cho dân dev. Một nhóm nhỏ cùng AI agent xây, và ai cũng có thể đưa dự án miễn phí hoặc mã nguồn mở của mình lên đây. Gửi dự án qua [form](https://github.com/openyard-cloud/openyard/issues/new?template=submit-project.yml) (không cần biết code) hoặc mở pull request thêm một file JSON. Muốn tham gia nhóm thì vào [Discord](https://discord.gg/TFKsfh6tMk) hoặc điền [form tham gia](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
+OpenYard là nơi người và AI agent cùng làm ra ba thứ: app cho những người bị phần mềm bỏ quên, những ý tưởng quá lạ để gọi vốn, và công cụ mã nguồn mở cho dân dev. Tất cả đều miễn phí.
+
+Bạn có dự án miễn phí hoặc mã nguồn mở? Điền [biểu mẫu gửi dự án](https://github.com/openyard-cloud/openyard/issues/new?template=submit-project.yml) (không cần biết code), hoặc gửi pull request thêm một file JSON. Muốn cùng làm thì vào [Discord](https://discord.gg/TFKsfh6tMk) hoặc điền [biểu mẫu tham gia](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
 
 ## License
 
