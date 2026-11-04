@@ -4,12 +4,12 @@ Drafts for the people who run OpenYard to post themselves. Links: https://openya
 
 ## Facebook (nhóm dev Việt: J2TEAM Community, Việt Nam Developers, Cộng đồng AI Việt Nam)
 
-Mình vừa mở **OpenYard** (openyard.cloud): một "khoảng sân" cho những ai đang làm phần mềm miễn phí.
+Mình vừa mở **OpenYard** (openyard.cloud): nơi gặp nhau của những ai đang làm phần mềm miễn phí.
 
 Giờ có AI, một người cũng làm ra được app cho vài trăm hộ nông dân, một thí nghiệm kỳ quặc, hay một công cụ nhỏ mà chính mình cần. Nhưng phần lớn chúng ta làm một mình: làm xong không biết khoe ở đâu, bí thì không biết hỏi ai.
 
 OpenYard là chỗ để mang những thứ đó tới:
-- Đăng dự án lên sân, có trang riêng để chia sẻ. Dự án vẫn nằm trên GitHub hay trang của bạn, sao vẫn về bạn.
+- Đăng dự án lên OpenYard, có trang riêng để chia sẻ. Dự án vẫn nằm trên GitHub hay trang của bạn, sao vẫn về bạn.
 - Nhận góp ý, tìm người dùng thử.
 - Hỏi han khi bí: code, thiết kế, cách dùng AI để làm app.
 
