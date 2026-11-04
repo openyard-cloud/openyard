@@ -24,6 +24,7 @@
   // Worker Previews: every pull request gets its own preview URL. It uses a separate
   // database (seeded with the same migrations) and no Turnstile or GitHub sign-in,
   // since those only accept openyard.cloud. The cron trigger does not run there.
+  "preview_urls": true,
   "previews": {
     "vars": {
       "TURNSTILE_SITE_KEY": "",
