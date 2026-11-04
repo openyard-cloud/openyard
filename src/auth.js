@@ -47,7 +47,7 @@ export async function handleAuth(req, env, url) {
       const login = String(env.DEV_LOGIN);
       return redirect(back, [await startSession(env, { id: 1000000 + login.length, login, name: login, avatar_url: `https://github.com/${login}.png` }, secure)]);
     }
-    if (!env.GITHUB_CLIENT_ID) return new Response("GitHub sign-in is not set up yet.", { status: 503 });
+    if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) return new Response("GitHub sign-in is not set up yet.", { status: 503 });
     const state = randomToken(16);
     const q = new URLSearchParams({ client_id: env.GITHUB_CLIENT_ID, redirect_uri: `${url.origin}/auth/callback`, state, allow_signup: "true" });
     return redirect(`https://github.com/login/oauth/authorize?${q}`, [cookie(STATE, `${state}|${back}`, 600, secure)]);

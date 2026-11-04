@@ -17,7 +17,7 @@
   "vars": {
     "TURNSTILE_SITE_KEY": "0x4AAAAAAFzE7AU_0L_sZhiu",
     // GitHub OAuth App for sign-in; its client secret is the GITHUB_CLIENT_SECRET secret
-    "GITHUB_CLIENT_ID": "",
+    "GITHUB_CLIENT_ID": "Ov23lifGhhmjkD6yJzue",
     // GitHub logins that can remove any comment
     "ADMIN_LOGINS": "thihodev"
   },
