@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: Chat on Discord
+    url: https://discord.gg/TFKsfh6tMk
+    about: Talk with the team and other builders.
   - name: Say hi or ask a question
     url: https://github.com/thihodev/openyard/discussions
     about: Chat with the team and the community.
