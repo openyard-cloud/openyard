@@ -214,17 +214,59 @@ nav .links a:hover{color:var(--ink)}
 @media (max-width:900px){.rules{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){.rules{grid-template-columns:1fr}}
 .rule{display:flex;gap:12px}
-.rule>span{width:24px;height:24px;border-radius:50%;background:#10b98122;color:#10b981;display:grid;place-items:center;font-size:13px;flex:none}
+
 .rule h4{margin:0;font-size:15.5px;font-weight:600}
 .rule p{margin:3px 0 0;color:var(--muted);font-size:14px}
 
 /* join v2 */
 .join .eyebrow{margin-bottom:14px}
 .roles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 auto 30px}
-.roles span{font-size:13.5px;padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);backdrop-filter:blur(8px)}
+.roles>span{font-size:13.5px;padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);backdrop-filter:blur(8px)}
 .btn.discord{background:#5865f2;color:#fff}
 .btn.discord:hover{background:#4752c4}
 .btn.discord svg{width:20px;height:20px}
+
+/* icons */
+.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tile{--tc:#b67cff;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;flex:none;color:var(--tc);background:color-mix(in srgb,var(--tc) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tc) 22%,transparent)}
+.tile .ico{width:16px;height:16px}
+.rv2{opacity:0;transform:translateY(8px);filter:blur(6px);transition:all .8s var(--ease)}
+.rv2.on{opacity:1;transform:none;filter:none}
+.wx{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px;border-radius:16px;background:linear-gradient(160deg,#3b82f622,#06b6d41a);border:1px solid var(--line)}
+.wx div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:var(--muted);padding:6px 0;border-radius:10px}
+.wx div b{font-size:14px;font-weight:600;color:var(--ink)}
+.wx div .ico{width:20px;height:20px;color:#f59e0b}
+.wx div.cur{background:color-mix(in srgb,#3b82f6 18%,transparent)}
+.wx div.cur .ico{color:#3b82f6}
+.vprev{position:relative;height:150px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.vprev img{width:100%;height:100%;object-fit:cover;object-position:top left}
+.vprev .pb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);color:#ff4d6d;box-shadow:0 10px 30px -8px rgba(0,0,0,.5);animation:bob 2.4s var(--ease) infinite}
+.vprev .pb .ico{width:20px;height:20px;margin-left:3px}
+.vprev .vt{position:absolute;left:10px;right:10px;bottom:10px;height:4px;border-radius:4px;background:rgba(255,255,255,.3);overflow:hidden}
+.vprev .vt i{display:block;height:100%;width:0;background:#ff4d6d;transition:width 3s linear}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px 4px 6px;border-radius:999px;background:var(--bg2);border:1px solid var(--line)}
+.legend .ico{width:14px;height:14px}
+.cscene{position:relative;height:178px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#8ec5f0 url(/images/chatscape.webp) -26px -24px/460% auto no-repeat;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.cscene .bubble{background:rgba(255,255,255,.88);color:#0d0d0f;backdrop-filter:blur(6px);display:inline-flex;align-items:center;gap:6px}
+.cscene .bubble.me{background:#0d0d0f;color:#fff}
+.cscene .bubble .ico{width:14px;height:14px;color:#8b5cf6}
+.chips2{display:flex;flex-wrap:wrap;gap:6px}
+.chips2 span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);color:var(--muted)}
+.chips2 .ico{width:14px;height:14px}
+.team i{display:grid;place-items:center;color:#fff}
+.team i .ico{width:12px;height:12px;stroke-width:2.2}
+.team i:nth-child(4){color:#5b4630}
+.msg .av{display:grid;place-items:center;color:#fff}
+.msg .av .ico{width:15px;height:15px;stroke-width:2}
+.sti{width:44px;height:44px;border-radius:14px;margin-bottom:18px}
+.sti .ico{width:22px;height:22px}
+.pic{width:46px;height:46px;border-radius:14px;margin-top:22px;position:relative}
+.pic .ico{width:24px;height:24px}
+.pillar h3{margin-top:18px}
+.roles>span{display:inline-flex;align-items:center;gap:7px}
+.roles .ico{width:15px;height:15px;color:#b67cff}
+.fl b .ico{width:16px;height:16px}
 
 /* pillars */
 .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:80px}
@@ -402,6 +444,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-syringe" viewBox="0 0 24 24"><path d="m18 2 4 4M17 7l3-3M19 9 8.7 19.3a2.4 2.4 0 0 1-3.4 0l-.6-.6a2.4 2.4 0 0 1 0-3.4L15 5M9 11l4 4M5 19l-3 3M14 4l6 6"/></symbol><symbol id="i-rain" viewBox="0 0 24 24"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2M16 14v6M8 14v6M12 16v6"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></symbol><symbol id="i-cloud" viewBox="0 0 24 24"><path d="M17.5 19H9a7 7 0 1 1 6.7-9h1.8a4.5 4.5 0 1 1 0 9Z"/></symbol><symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z"/></symbol><symbol id="i-mic" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></symbol><symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol><symbol id="i-captions" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></symbol><symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 7.5h4M3 12h18M3 16.5h4M17 7.5h4M17 16.5h4"/></symbol><symbol id="i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8z" fill="currentColor"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14M5 2h14M17 22v-4.2a2 2 0 0 0-.6-1.4L12 12l-4.4 4.4a2 2 0 0 0-.6 1.4V22M7 2v4.2a2 2 0 0 0 .6 1.4L12 12l4.4-4.4a2 2 0 0 0 .6-1.4V2"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></symbol><symbol id="i-crown" viewBox="0 0 24 24"><path d="m2 6 4 12h12l4-12-6 5-4-7-4 7-6-5zM6 21h12"/></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6-4.6-1.9 4.6-1.9zM19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol><symbol id="i-shieldcheck" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-bot" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M9 4h6M9 14h.01M15 14h.01M2 13v2M22 13v2"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol><symbol id="i-sprout" viewBox="0 0 24 24"><path d="M7 20h10M10 20c5.5-2.5.8-6.4 3-10M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8zM14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></symbol><symbol id="i-terminal" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.3-2 5-2 5s3.7-.5 5-2c.7-.8.7-2.1-.1-2.9a2.2 2.2 0 0 0-2.9-.1zM12 15l-3-3a22 22 0 0 1 2-3.9A12.9 12.9 0 0 1 22 2c0 2.7-.8 7.5-6 11a22.4 22.4 0 0 1-4 2zM9 12H4s.6-3 2-4c1.6-1.1 5 0 5 0M12 15v5s3-.6 4-2c1.1-1.6 0-5 0-5"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4zM22 2 11 13"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-gift" viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></symbol><symbol id="i-code" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5.5"/></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 1 10-10c0 2.8-2.2 4-4 4h-2a2 2 0 0 0-1 3.7A2 2 0 0 1 12 22z"/><path d="M7.5 10.5h.01M10.5 7.5h.01M15.5 8.5h.01"/></symbol><symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6M4 14l6-6 2-3M2 5h12M7 2h1M22 22l-5-10-5 10M14 18h6"/></symbol><symbol id="i-bug" viewBox="0 0 24 24"><path d="M9 7.1V6a3 3 0 1 1 6 0v1.1M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6zM12 20v-9M6 13H2M22 13h-4M6.5 9C4.6 8.8 3 7.1 3 5M21 5c0 2.1-1.6 3.8-3.5 4M3 21c0-2.1 1.7-3.9 3.8-4M17.2 17c2.1.1 3.8 1.9 3.8 4"/></symbol><symbol id="i-bulb" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5M9 18h6M10 22h4"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7zM2 17l10 5 10-5M2 12l10 5 10-5"/></symbol><symbol id="i-git" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 8.5v7M18 11.5c0 4-6 3-10.5 5"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></symbol><symbol id="i-fish" viewBox="0 0 24 24"><path d="M6.5 12c.9-3 4-6 9-6 3 0 5.5 3 6.5 6-1 3-3.5 6-6.5 6-5 0-8.1-3-9-6zM6.5 12 2 8v8zM17 11h.01"/></symbol><symbol id="i-thermo" viewBox="0 0 24 24"><path d="M14 4v10.5a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z"/></symbol></svg>
 <nav id="nav">
   <div class="wrap">
     <a class="brand" href="#"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
@@ -452,7 +495,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
         <button class="send" id="send" type="button" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
       </div>
       <div class="status" id="status">
-        <div class="team"><i></i><i></i><i></i><i></i></div>
+        <div class="team"><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-user"/></svg></i></div>
         <span class="shimmer" id="stxt">Agents are building</span>
         <span class="done" id="sdone">✓ Shipped</span>
       </div>
@@ -468,19 +511,19 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
     <p class="mani" id="mani" data-i="mani">AI made building software ten times cheaper. That changes what is worth building: the app for a few hundred farmers, the experiment nobody would fund, the tool a developer needs and nobody sells. We build those in the open, and give them away.</p>
     <div class="pillars">
       <a class="pillar rv" href="#projects" data-kind="people">
-        <span class="pk">01</span><span class="pg" style="--a:#34d399;--b:#a3e635"></span>
+        <span class="pk">01</span><span class="tile pic" style="--tc:#10b981"><svg class="ico "><use href="#i-sprout"/></svg></span><span class="pg" style="--a:#34d399;--b:#a3e635"></span>
         <h3 data-i="pl1.t">For people software forgets</h3>
         <p data-i="pl1.d">Farmers, small creators, local groups. Apps nobody would build because there is no money in it.</p>
         <div class="pchips" data-chips="people"></div>
       </a>
       <a class="pillar rv" href="#projects" data-kind="wild">
-        <span class="pk">02</span><span class="pg" style="--a:#b67cff;--b:#ff7eb0"></span>
+        <span class="pk">02</span><span class="tile pic" style="--tc:#b67cff"><svg class="ico "><use href="#i-sparkles"/></svg></span><span class="pg" style="--a:#b67cff;--b:#ff7eb0"></span>
         <h3 data-i="pl2.t">Wild ideas</h3>
         <p data-i="pl2.d">Nations run by AI. Wallpapers that live behind your chat. Experiments too strange for a startup, built because they are fun.</p>
         <div class="pchips" data-chips="wild"></div>
       </a>
       <a class="pillar rv" href="#projects" data-kind="dev">
-        <span class="pk">03</span><span class="pg" style="--a:#7c9cff;--b:#38c6d9"></span>
+        <span class="pk">03</span><span class="tile pic" style="--tc:#3b82f6"><svg class="ico "><use href="#i-terminal"/></svg></span><span class="pg" style="--a:#7c9cff;--b:#38c6d9"></span>
         <h3 data-i="pl3.t">Tools for developers</h3>
         <p data-i="pl3.d">Open-source building blocks, agents and workflows that make the next project faster for everyone.</p>
         <div class="pchips" data-chips="dev"></div>
@@ -524,13 +567,13 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
         <div class="st" style="padding-bottom:0"><h3 data-i="s4.t">Ship small</h3><p data-i="s4.d">Release in days, not months. Then go back and ask: did it help?</p></div>
       </div>
       <div class="chat rv" id="chat">
-        <div class="hd"><div class="team"><i></i><i></i><i></i><i></i></div><span data-i="chat.hd">FarmMind · build thread</span></div>
+        <div class="hd"><div class="team"><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-user"/></svg></i></div><span data-i="chat.hd">FarmMind · build thread</span></div>
       </div>
     </div>
     <div class="stats">
-      <div class="stat rv"><b id="st-p">0</b><span data-i="st1">projects in the yard</span></div>
-      <div class="stat rv"><b id="st-o">0</b><span data-i="st2">open-source repos</span></div>
-      <div class="stat rv"><b>0₫</b><span data-i="st3">what any of it costs you</span></div>
+      <div class="stat rv"><span class="tile sti" style="--tc:#8b5cf6"><svg class="ico "><use href="#i-layers"/></svg></span><b id="st-p">0</b><span data-i="st1">projects in the yard</span></div>
+      <div class="stat rv"><span class="tile sti" style="--tc:#3b82f6"><svg class="ico "><use href="#i-git"/></svg></span><b id="st-o">0</b><span data-i="st2">open-source repos</span></div>
+      <div class="stat rv"><span class="tile sti" style="--tc:#10b981"><svg class="ico "><use href="#i-gift"/></svg></span><b>0₫</b><span data-i="st3">what any of it costs you</span></div>
     </div>
   </div>
 </section>
@@ -565,16 +608,16 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
       </a>
     </div>
     <div class="flow rv" id="flow">
-      <div class="fl"><b>1</b><div><h4 data-i="fl1.t">Submit</h4><p data-i="fl1.d">Form or pull request</p></div></div>
-      <div class="fl"><b>2</b><div><h4 data-i="fl2.t">Review</h4><p data-i="fl2.d">Usually within a few days</p></div></div>
-      <div class="fl"><b>3</b><div><h4 data-i="fl3.t">Listed</h4><p data-i="fl3.d">On openyard.cloud, with a subdomain if you want one</p></div></div>
+      <div class="fl"><b><svg class="ico "><use href="#i-send"/></svg></b><div><h4 data-i="fl1.t">Submit</h4><p data-i="fl1.d">Form or pull request</p></div></div>
+      <div class="fl"><b><svg class="ico "><use href="#i-eye"/></svg></b><div><h4 data-i="fl2.t">Review</h4><p data-i="fl2.d">Usually within a few days</p></div></div>
+      <div class="fl"><b><svg class="ico "><use href="#i-rocket"/></svg></b><div><h4 data-i="fl3.t">Listed</h4><p data-i="fl3.d">On openyard.cloud, with a subdomain if you want one</p></div></div>
       <i class="fl-line"><i id="flfill"></i></i>
     </div>
     <div class="rules">
-      <div class="rule rv"><span>✓</span><div><h4 data-i="r1.t">Free or open source</h4><p data-i="r1.d">No paywall on core features, or public code with a license.</p></div></div>
-      <div class="rule rv"><span>✓</span><div><h4 data-i="r2.t">Works today</h4><p data-i="r2.d">Live, in beta, or close to launch.</p></div></div>
-      <div class="rule rv"><span>✓</span><div><h4 data-i="r3.t">Someone maintains it</h4><p data-i="r3.d">You, or people who agreed to be listed.</p></div></div>
-      <div class="rule rv"><span>✓</span><div><h4 data-i="r4.t">Respects its users</h4><p data-i="r4.d">No selling data, no tracking ads.</p></div></div>
+      <div class="rule rv"><span class="tile" style="--tc:#10b981"><svg class="ico "><use href="#i-gift"/></svg></span><div><h4 data-i="r1.t">Free or open source</h4><p data-i="r1.d">No paywall on core features, or public code with a license.</p></div></div>
+      <div class="rule rv"><span class="tile" style="--tc:#f59e0b"><svg class="ico "><use href="#i-zap"/></svg></span><div><h4 data-i="r2.t">Works today</h4><p data-i="r2.d">Live, in beta, or close to launch.</p></div></div>
+      <div class="rule rv"><span class="tile" style="--tc:#3b82f6"><svg class="ico "><use href="#i-users"/></svg></span><div><h4 data-i="r3.t">Someone maintains it</h4><p data-i="r3.d">You, or people who agreed to be listed.</p></div></div>
+      <div class="rule rv"><span class="tile" style="--tc:#8b5cf6"><svg class="ico "><use href="#i-shield"/></svg></span><div><h4 data-i="r4.t">Respects its users</h4><p data-i="r4.d">No selling data, no tracking ads.</p></div></div>
     </div>
   </div>
 </section>
@@ -587,7 +630,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
       <h2 data-i="join.title">Build the next one with us.</h2>
       <p data-i="join.d">We pair people with AI agents to ship free software for communities. Bring a skill, a few hours a week, or just a problem worth solving.</p>
       <div class="roles">
-        <span data-i="ro1">Developers</span><span data-i="ro2">Designers</span><span data-i="ro3">Translators</span><span data-i="ro4">Testers</span><span data-i="ro5">Idea people</span>
+        <span><svg class="ico "><use href="#i-code"/></svg><span data-i="ro1">Developers</span></span><span><svg class="ico "><use href="#i-palette"/></svg><span data-i="ro2">Designers</span></span><span><svg class="ico "><use href="#i-languages"/></svg><span data-i="ro3">Translators</span></span><span><svg class="ico "><use href="#i-bug"/></svg><span data-i="ro4">Testers</span></span><span><svg class="ico "><use href="#i-bulb"/></svg><span data-i="ro5">Idea people</span></span>
       </div>
       <div class="cta">
         <a class="btn discord" data-href="discord" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="join.discord">Join our Discord</span></a>
@@ -722,36 +765,41 @@ function onScroll(){
 addEventListener("scroll", onScroll, { passive: true });
 
 /* ---------- hero demo: idea → app ---------- */
+const ICO = (n, c = "") => `<svg class="ico ${c}"><use href="#i-${n}"/></svg>`;
 const DEMOS = [
   { id: "farm", name: "FarmMind", logo: "/logos/farmmind.svg", lc: "full", grad: "linear-gradient(135deg,#10b981,#a3e635)",
     prompt: () => T("Build an app that reminds farmers which pigs need vaccines this week", "Làm app nhắc chủ trại tuần này heo nào cần tiêm vaccine"),
     sub: () => T("AI assistant for farmers", "Trợ lý AI cho nhà nông"),
     body: () => `
-      <div class="row"><span class="ic">🐖</span>${T("Pen 3 · 12 pigs", "Chuồng 3 · 12 con")}<span class="r"><span class="pill p-a">${T("vaccine today", "tiêm hôm nay")}</span></span></div>
-      <div class="row"><span class="ic">🌧</span>${T("Rain this afternoon", "Chiều nay có mưa")}<span class="r">${T("AI: delay spraying", "AI: hoãn phun thuốc")}</span></div>
-      <div class="row"><span class="ic">💧</span>${T("Pond 2 · 28.4°C · DO 6.1", "Ao 2 · 28.4°C · DO 6.1")}<span class="r"><span class="pill p-g">${T("normal", "ổn định")}</span></span></div>` },
+      <div class="wx rv2">${[["13:00","sun","31°"],["14:00","sun","32°"],["15:00","rain","12mm",1],["16:00","rain","26°"],["17:00","cloud","27°"]].map(([h,i,v,n]) => `<div class="${n ? "cur" : ""}">${h}${ICO(i)}<b>${v}</b></div>`).join("")}</div>
+      <div class="row"><span class="tile" style="--tc:#f59e0b">${ICO("syringe")}</span>${T("Pen 3 · 12 pigs", "Chuồng 3 · 12 con")}<span class="r"><span class="pill p-a">${T("vaccine today", "tiêm hôm nay")}</span></span></div>
+      <div class="row"><span class="tile" style="--tc:#3b82f6">${ICO("rain")}</span>${T("Storm at 15:00", "Giông lúc 15:00")}<span class="r">${T("AI: cover the pens first", "AI: che chuồng trước")}</span></div>
+      <div class="row"><span class="tile" style="--tc:#06b6d4">${ICO("droplet")}</span>${T("Pond 2 · DO 6.1 mg/L", "Ao 2 · DO 6.1 mg/L")}<span class="r"><span class="pill p-g">${T("normal", "ổn định")}</span></span></div>` },
   { id: "clip", name: "AutoClip Studio", logo: "/logos/autoclip-studio.png", lc: "full", grad: "linear-gradient(135deg,#8b5cf6,#ff7eb0)",
     prompt: () => T("Turn my GitHub repo into a 45-second video", "Biến repo GitHub của tôi thành video 45 giây"),
     sub: () => T("Topic in, finished short video out", "Đưa chủ đề vào, ra video ngắn hoàn chỉnh"),
     body: () => `
-      <div class="thumbs">${["#7c9cff","#b67cff","#ff7eb0","#ffb35c","#6ee7b7","#3bb9ff"].map(c => `<i style="background:linear-gradient(160deg,${c},${c}55)"></i>`).join("")}</div>
-      <div class="row"><span class="ic">🎙</span>${T("Voiceover · music · captions", "Lời đọc · nhạc · phụ đề")}<span class="r">45.2s</span></div>
-      <div class="row"><span class="ic">🎬</span><div class="bar"><i></i></div><span class="r">1080×1920</span></div>` },
+      <div class="vprev rv2"><img src="/images/autoclip-studio.webp" alt=""><span class="pb">${ICO("play")}</span><span class="vt"><i></i></span></div>
+      <div class="row"><span class="tile" style="--tc:#ff4d6d">${ICO("mic")}</span>${T("Voiceover", "Lời đọc")}<span class="r" style="display:flex;gap:6px"><span class="tile" style="--tc:#8b5cf6;width:24px;height:24px">${ICO("music")}</span><span class="tile" style="--tc:#f59e0b;width:24px;height:24px">${ICO("captions")}</span></span></div>
+      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("film")}</span>${T("6 scenes · 45.2s", "6 cảnh · 45.2s")}<span class="r">1080×1920</span></div>` },
   { id: "world", name: "Sovereign Minds", logo: "/logos/sovereign-minds.svg", lc: "", grad: "linear-gradient(135deg,#3b82f6,#8b5cf6)",
     prompt: () => T("A world where every nation is run by its own AI", "Một thế giới nơi mỗi quốc gia do một AI điều hành"),
     sub: () => T("Open world of AI nations", "Thế giới mở của các quốc gia AI"),
     body: () => `
-      <div class="mapg">${"<i></i>".repeat(24 * 6)}</div>
-      <div class="row"><span class="ic">⏳</span>${T("Bronze age · year 312", "Thời đồ đồng · năm 312")}<span class="r"><span class="pill p-v">${T("4 nations", "4 quốc gia")}</span></span></div>` },
+      <div class="mapg rv2">${"<i></i>".repeat(24 * 6)}</div>
+      <div class="legend rv2">${[["#8b5cf6", T("Ember", "Hoả Quốc")], ["#f59e0b", T("Dune", "Sa Quốc")], ["#10b981", T("Grove", "Lâm Quốc")], ["#f43f5e", T("Tide", "Thuỷ Quốc")]].map(([c, n]) => `<span><span style="color:${c};display:grid">${ICO("flag")}</span>${n}</span>`).join("")}</div>
+      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("hourglass")}</span>${T("Bronze age · year 312", "Thời đồ đồng · năm 312")}<span class="r"><span class="pill p-v" style="display:inline-flex;align-items:center;gap:4px">${ICO("crown")}${T("4 nations", "4 quốc gia")}</span></span></div>` },
   { id: "chat", name: "Chatscape", logo: "/logos/chatscape.png", lc: "full", grad: "linear-gradient(135deg,#06b6d4,#6ee7b7)",
     prompt: () => T("Make my AI chat feel a little more alive", "Cho khung chat AI của tôi sống động hơn chút"),
     sub: () => T("Living wallpapers for AI chat", "Hình nền sống cho khung chat AI"),
     body: () => `
-      <div class="bubble me">${T("Pick a calm scene for tonight", "Chọn giúp cảnh nào dịu nhẹ cho tối nay")}</div>
-      <div class="bubble">${T("Cloud Drift is on. 19 more scenes in the picker.", "Đã bật Cloud Drift. Còn 19 cảnh khác trong bảng chọn.")}</div>
-      <div class="row"><span class="ic">✨</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
-];
-const STEPS = () => T(["Reading the problem", "Planning the app", "Writing code", "Running tests", "Shipping"], ["Đọc vấn đề", "Lên kế hoạch", "Viết code", "Chạy test", "Ra mắt"]);
+      <div class="cscene rv2">
+        <div class="bubble me" style="align-self:flex-end">${T("Pick a calm scene for tonight", "Chọn giúp cảnh nào dịu nhẹ cho tối nay")}</div>
+        <div class="bubble" style="align-self:flex-start">${ICO("sparkles")}${T("Cloud Drift is on. 19 more in the picker.", "Đã bật Cloud Drift. Còn 19 cảnh khác.")}</div>
+      </div>
+      <div class="chips2 rv2"><span>${ICO("cloud")}Cloud Drift</span><span>${ICO("moon")}Fireflies</span><span>${ICO("fish")}Koi Pond</span><span>${ICO("sparkles")}+17</span></div>
+      <div class="row"><span class="tile" style="--tc:#10b981">${ICO("shield")}</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
+];const STEPS = () => T(["Reading the problem", "Planning the app", "Writing code", "Running tests", "Shipping"], ["Đọc vấn đề", "Lên kế hoạch", "Viết code", "Chạy test", "Ra mắt"]);
 let demoTok = 0, demoIdx = 0;
 const dotsEl = document.getElementById("dots");
 dotsEl.innerHTML = DEMOS.map((d, i) => `<button aria-label="${d.name}" data-i-d="${i}"></button>`).join("");
@@ -780,9 +828,9 @@ async function runDemo(tok){
     status.classList.add("ok");
     requestAnimationFrame(() => result.classList.add("on"));
     await sleep(300);
-    const items = result.querySelectorAll(".row,.thumbs i");
+    const items = result.querySelectorAll(".row,.rv2");
     for (const it of items) { if (!alive()) return; it.classList.add("on"); await sleep(170); }
-    const bar = result.querySelector(".bar i"); if (bar) setTimeout(() => bar.style.width = "100%", 100);
+    const bar = result.querySelector(".bar i, .vt i"); if (bar) setTimeout(() => bar.style.width = "100%", 100);
     if (d.id === "world") animateMap(result, tok);
     await sleep(4200); if (!alive()) return;
     result.classList.add("out"); status.classList.remove("on"); await sleep(650);
@@ -807,10 +855,10 @@ async function animateMap(root, tok){
 
 /* ---------- build-thread chat ---------- */
 const THREAD = () => [
-  { who: T("Farmer in Đồng Nai", "Chủ trại ở Đồng Nai"), user: true, text: T("I keep forgetting which pigs need vaccines this week.", "Tôi hay quên tuần này heo nào phải tiêm.") },
-  { who: "Agent", av: "linear-gradient(135deg,#7c9cff,#b67cff)", text: T("Read the herd module. Plan: a weekly vaccine schedule per pen, with a 6:00 reminder.", "Đã đọc phần quản lý đàn. Kế hoạch: lịch tiêm theo từng chuồng, nhắc lúc 6 giờ sáng.") },
-  { who: "Agent", av: "linear-gradient(135deg,#ff7eb0,#ffb35c)", text: T("Wrote the schedule, the reminder and 24 tests. All passing.", "Đã viết lịch tiêm, phần nhắc và 24 bài test. Tất cả đều đạt.") },
-  { who: T("Reviewer", "Người duyệt"), av: "#e8d8c4", text: T("Tried it on a real phone. Wording is clear. Approved.", "Đã thử trên điện thoại thật. Câu chữ dễ hiểu. Duyệt.") },
+  { who: T("Farmer in Đồng Nai", "Chủ trại ở Đồng Nai"), user: true, av: "linear-gradient(135deg,#10b981,#a3e635)", icon: "sprout", text: T("I keep forgetting which pigs need vaccines this week.", "Tôi hay quên tuần này heo nào phải tiêm.") },
+  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#7c9cff,#b67cff)", text: T("Read the herd module. Plan: a weekly vaccine schedule per pen, with a 6:00 reminder.", "Đã đọc phần quản lý đàn. Kế hoạch: lịch tiêm theo từng chuồng, nhắc lúc 6 giờ sáng.") },
+  { who: "Agent", icon: "bot", av: "linear-gradient(135deg,#ff7eb0,#ffb35c)", text: T("Wrote the schedule, the reminder and 24 tests. All passing.", "Đã viết lịch tiêm, phần nhắc và 24 bài test. Tất cả đều đạt.") },
+  { who: T("Reviewer", "Người duyệt"), icon: "shieldcheck", av: "linear-gradient(135deg,#f59e0b,#f43f5e)", text: T("Tried it on a real phone. Wording is clear. Approved.", "Đã thử trên điện thoại thật. Câu chữ dễ hiểu. Duyệt.") },
   { ship: T("Shipped to FarmMind", "Đã ra mắt trên FarmMind") }
 ];
 let chatTok = 0, chatSeen = false;
@@ -823,8 +871,8 @@ async function runChat(tok){
     for (const m of THREAD()) {
       if (!alive()) return;
       const el = document.createElement("div"); el.className = "msg" + (m.user ? " user" : "");
-      if (m.ship) el.innerHTML = `<span class="ship">✓ ${m.ship}</span>`;
-      else el.innerHTML = `${m.user ? "" : `<span class="av" style="background:${m.av}"></span>`}<div><div class="who">${m.who}</div><div class="bd">${m.user ? m.text : m.text.split(" ").map(w => `<span class="w">${w}</span>`).join(" ")}</div></div>`;
+      if (m.ship) el.innerHTML = `<span class="ship">${ICO("rocket")} ${m.ship}</span>`;
+      else el.innerHTML = `<span class="av" style="background:${m.av}">${ICO(m.icon)}</span><div><div class="who">${m.who}</div><div class="bd">${m.user ? m.text : m.text.split(" ").map(w => `<span class="w">${w}</span>`).join(" ")}</div></div>`;
       chat.appendChild(el); await sleep(40); el.classList.add("on");
       if (!m.user && !m.ship) { for (const w of el.querySelectorAll(".w")) { if (!alive()) return; w.classList.add("on"); await sleep(55); } }
       await sleep(900);
@@ -901,7 +949,10 @@ function links(){
   };
   document.querySelectorAll("[data-href]").forEach(a => a.href = map[a.dataset.href]);
   const dl = document.querySelector('.btn.discord [data-i]');
-  if (dl && !SITE.discord) { dl.dataset.i = "join.chat"; dl.textContent = T("Join the conversation", "Vào trò chuyện"); }
+  if (dl) {
+    dl.dataset.i = SITE.discord ? "join.discord" : "join.chat";
+    dl.textContent = SITE.discord ? T("Join our Discord", "Vào Discord") : T("Join the conversation", "Vào trò chuyện");
+  }
 }
 function cardHTML(p){
   const label = p.status === "soon" ? T("Coming soon", "Sắp ra mắt") : p.type === "app" ? T("Free app", "App miễn phí") : T("Open source", "Mã nguồn mở");
