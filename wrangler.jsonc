@@ -21,6 +21,19 @@
     // GitHub logins that can remove any comment
     "ADMIN_LOGINS": "thihodev"
   },
+  // Worker Previews: every pull request gets its own preview URL. It uses a separate
+  // database (seeded with the same migrations) and no Turnstile or GitHub sign-in,
+  // since those only accept openyard.cloud. The cron trigger does not run there.
+  "previews": {
+    "vars": {
+      "TURNSTILE_SITE_KEY": "",
+      "GITHUB_CLIENT_ID": "",
+      "ADMIN_LOGINS": "thihodev"
+    },
+    "d1_databases": [
+      { "binding": "DB", "database_name": "openyard-preview", "database_id": "86964cba-9462-4365-8aca-ec5ac78dee6b" }
+    ]
+  },
   "routes": [
     { "pattern": "openyard.cloud", "custom_domain": true },
     { "pattern": "www.openyard.cloud", "custom_domain": true }
