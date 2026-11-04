@@ -15,6 +15,12 @@ npx wrangler@4 d1 execute openyard --remote --command "UPDATE projects SET hidde
 npx wrangler@4 d1 execute openyard --remote --command "UPDATE projects SET team = 1, featured = 1 WHERE slug = 'some-slug'"
 ```
 
+Each pull request gets a preview URL from Cloudflare Worker Previews. Previews use the `openyard-preview` database, so after adding a migration, apply it there too:
+
+```sh
+npx wrangler@4 d1 execute openyard-preview --remote --file migrations/000X_name.sql
+```
+
 `npm run og <slug>` renders a share card to `public/og/<slug>.png` and prints the command that points the project at it.
 
 ## Work on the site
