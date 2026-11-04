@@ -5,10 +5,12 @@
 //   GET/POST /api/edit/<slug>  change or remove a project with the edit token from submitting
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
+//   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
 import { projectPage, sitemap } from "./pages.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
+import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
 const DAY = 86400000;
 const TYPES = ["app", "open-source"], STATUSES = ["live", "beta", "soon"], KINDS = ["people", "wild", "dev"];
@@ -25,10 +27,10 @@ const token = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8
 const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "project";
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
-function trend(p, s, clicks, now) {
+function trend(p, s, clicks, talk, now) {
   const age = (now - Date.parse(p.added)) / DAY;
   const gh = s ? s.stars_7d * 3 + s.prs_7d * 2 + s.issues_7d + s.discussions_7d * 2 + Math.min(s.commits_7d, 30) * 0.3 : 0;
-  return Math.round((gh + clicks * 0.5 + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
+  return Math.round((gh + clicks * 0.5 + talk * 2 + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
 }
 
 function toApi(row, now) {
@@ -41,15 +43,17 @@ function toApi(row, now) {
     team: !!row.team, featured: !!row.featured, ...(row.swarm ? { swarm: JSON.parse(row.swarm) } : {}), added: row.added,
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
-  return { ...p, ...(s ? { stats: s } : {}), clicks7d: row.clicks || 0, trend: trend(p, s, row.clicks || 0, now) };
+  return { ...p, ...(s ? { stats: s } : {}), comments: row.comments || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now) };
 }
 
 const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
 async function listProjects(env, now = Date.now()) {
   const since = today(now - 7 * DAY);
   const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated,
-      (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks
-    FROM projects p LEFT JOIN stats s ON s.slug = p.slug WHERE p.hidden = 0`).bind(since).all();
+      (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks,
+      (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
+      (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk
+    FROM projects p LEFT JOIN stats s ON s.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
   return results.map(r => toApi(r, now)).sort((a, b) => {
     const ra = rank(a), rb = rank(b);
     for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
@@ -197,6 +201,41 @@ async function refreshStats(env, now = Date.now()) {
   await env.DB.prepare("DELETE FROM submits WHERE created_at < ?1").bind(now - 2 * DAY).run();
 }
 
+// Comments: anyone can read; signed-in GitHub users can post and remove their own.
+async function comments(req, env, url, id) {
+  const user = await currentUser(req, env), admin = isAdmin(env, user), now = Date.now();
+  if (req.method === "GET") {
+    const slug = url.searchParams.get("slug") || "";
+    const { results } = await env.DB.prepare(`SELECT c.id, c.parent_id, c.body, c.deleted, c.created_at, c.user_id, u.login, u.name, u.avatar
+      FROM comments c JOIN users u ON u.id = c.user_id WHERE c.slug = ?1 AND u.banned = 0 ORDER BY c.created_at`).bind(slug).all();
+    const replied = new Set(results.filter(r => r.parent_id && !r.deleted).map(r => r.parent_id));
+    const list = results.filter(r => !r.deleted || replied.has(r.id)).map(r => ({
+      id: r.id, parent: r.parent_id, at: r.created_at, deleted: !!r.deleted, body: r.deleted ? "" : r.body,
+      user: r.deleted ? null : { login: r.login, name: r.name, avatar: r.avatar }, mine: !!user && r.user_id === user.id,
+    }));
+    return json({ me: user ? { login: user.login, avatar: user.avatar, admin } : null, comments: list }, 200, { "Cache-Control": "private, no-store" });
+  }
+  // a cookie alone must not be enough: the request has to come from our own pages
+  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!user) return fail("Sign in with GitHub to comment.", 401);
+  if (user.banned) return fail("You cannot comment here.", 403);
+  if (req.method === "DELETE") {
+    const c = await env.DB.prepare("SELECT user_id FROM comments WHERE id = ?1").bind(id).first();
+    if (!c || (c.user_id !== user.id && !admin)) return fail("Not your comment.", 403);
+    await env.DB.prepare("UPDATE comments SET deleted = 1 WHERE id = ?1").bind(id).run();
+    return json({ deleted: id });
+  }
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const slug = String(b.slug || ""), body = String(b.body || "").replace(/\r\n/g, "\n").trim(), parent = b.parent ? Number(b.parent) : null;
+  if (!body || body.length > 2000) return fail("Write between 1 and 2,000 characters.");
+  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first())) return fail("No such project.", 404);
+  if (parent && !(await env.DB.prepare("SELECT 1 FROM comments WHERE id = ?1 AND slug = ?2 AND parent_id IS NULL AND deleted = 0").bind(parent, slug).first())) return fail("That comment is gone.");
+  const recent = await env.DB.prepare("SELECT SUM(created_at > ?2) AS minute, COUNT(*) AS day FROM comments WHERE user_id = ?1 AND created_at > ?3").bind(user.id, now - 60000, now - DAY).first();
+  if ((recent.minute || 0) >= 3 || (recent.day || 0) >= 60) return fail("Slow down a little, then try again.", 429);
+  const r = await env.DB.prepare("INSERT INTO comments (slug, user_id, parent_id, body, created_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id").bind(slug, user.id, parent, body, now).first();
+  return json({ id: r.id, parent, at: now, body, deleted: false, mine: true, user: { login: user.login, name: user.name, avatar: user.avatar } }, 201);
+}
+
 async function page(env, slug) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
@@ -219,7 +258,12 @@ export default {
         catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
-      let m = /^\/api\/edit\/([a-z0-9-]+)$/.exec(path);
+      if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
+      if (path === "/api/me") { const u = await currentUser(req, env); return json(u ? { login: u.login, avatar: u.avatar } : null, 200, { "Cache-Control": "private, no-store" }); }
+      if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url);
+      let m = /^\/api\/comments\/(\d+)$/.exec(path);
+      if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]));
+      m = /^\/api\/edit\/([a-z0-9-]+)$/.exec(path);
       if (m && (req.method === "GET" || req.method === "POST")) return edit(req, env, ctx, m[1]);
       if ((m = /^\/u\/([A-Za-z0-9_-]+)$/.exec(path))) {
         const u = await env.DB.prepare("SELECT type, data FROM uploads WHERE id = ?1").bind(m[1]).first();

@@ -84,6 +84,26 @@ section.more{padding:72px 0 24px}
 .it small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}.empty{padding:16px;color:var(--muted);font-size:14px}
 .ini{display:grid;place-items:center;font-weight:700;font-size:26px;color:#fff;background:var(--c,#6d5bd0)}
 .logo.ini{padding:0}.mini .ini{width:44px;height:44px;border-radius:12px;font-size:16px;flex:none}
+.talk{margin:48px 0 0}.talk h2{font-size:clamp(24px,2.6vw,30px);margin-bottom:6px}.talk .sub{color:var(--muted);margin:0 0 18px;font-size:14.5px}
+.me{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted);margin-bottom:10px}.me img{width:24px;height:24px;border-radius:50%}
+.me button,.cm .acts button{background:none;border:0;padding:0;color:var(--muted);font:500 13px Inter,sans-serif;cursor:pointer}.me button:hover,.cm .acts button:hover{color:var(--ink)}
+.compose{border:1px solid var(--line2);border-radius:18px;background:var(--solid);padding:12px;transition:border-color .2s,box-shadow .2s}
+.compose:focus-within{border-color:#8b7cff;box-shadow:0 0 0 4px rgba(139,124,255,.16)}
+.compose textarea{width:100%;min-height:76px;border:0;outline:0;resize:vertical;background:transparent;color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+.compose .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}.compose small{color:var(--muted);font-size:12.5px}
+.compose .err{color:#e03131;font-size:13px}
+.signin{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:18px 20px;border-radius:18px;border:1px dashed var(--line2);background:var(--bg2)}
+.signin p{margin:0;color:var(--muted);font-size:14.5px}
+.cms{margin-top:22px;display:flex;flex-direction:column;gap:18px}
+.cm{display:flex;gap:12px}.cm > img,.cm > .ph{width:36px;height:36px;border-radius:50%;flex:none;background:var(--bg2)}
+.cm .bd{flex:1;min-width:0}.cm .hd{font-size:14px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}.cm .hd a{font-weight:600}.cm .hd span{color:var(--muted);font-size:12.5px}
+.cm .tx{margin-top:2px;font-size:15px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}.cm .tx a{color:#7c6cff;text-decoration:underline}
+.cm .tx.gone{color:var(--muted);font-style:italic}
+.cm .acts{display:flex;gap:14px;margin-top:4px}
+.cm .replies{margin-top:14px;display:flex;flex-direction:column;gap:14px;padding-left:14px;border-left:2px solid var(--line)}
+.cm .replies .cm > img,.cm .replies .cm > .ph{width:28px;height:28px}
+.cm .compose{margin-top:10px}
+.none{color:var(--muted);font-size:14.5px}
 footer{padding:56px 0 40px;color:var(--muted);font-size:13.5px}
 footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line);padding-top:22px}
 footer a:hover{color:var(--ink)}`;
@@ -123,6 +143,7 @@ const LANG_JS = `<script>
   const set = l => {
     els.forEach(e => e.textContent = l === "vi" ? e.dataset.vi : e.dataset.en);
     document.documentElement.lang = l; document.getElementById("lang").textContent = l === "vi" ? "EN" : "VI";
+    window.OY_LANG = l; dispatchEvent(new Event("oy-lang"));
     try { localStorage.setItem("oy-lang", l); } catch (e) {}
   };
   let l = null; try { l = localStorage.getItem("oy-lang"); } catch (e) {}
@@ -214,6 +235,12 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
   ${visual}
   <div class="facts">${facts.map(([[e, v], html]) => `<div class="fact"><b>${t(e, v)}</b><div>${html}</div></div>`).join("")}</div>
   ${activity}
+  <section class="talk" id="comments">
+    <h2>${t("Comments", "Bình luận")}</h2>
+    <p class="sub">${t("Questions, feedback, ideas for the maker. Sign in with GitHub to join in.", "Hỏi, góp ý hay gợi ý cho người làm. Đăng nhập bằng GitHub để tham gia.")}</p>
+    <div id="cbox"></div>
+    <div class="cms" id="clist"></div>
+  </section>
 </div>
 ${others.length ? `<section class="more"><div class="wrap">
   <h2>${t("More from the yard", "Thêm từ sân")}</h2>
@@ -224,6 +251,60 @@ ${others.length ? `<section class="more"><div class="wrap">
 </main>
 <footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Free apps, wild ideas, open tools.", "App miễn phí, ý tưởng điên rồ, công cụ mở.")}</span><a href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Something wrong with this listing? Tell us on Discord", "Trang này có vấn đề? Báo trên Discord")}</a></div></footer>
 ${LANG_JS}
+<script>
+(() => {
+  const SLUG = ${JSON.stringify(p.slug)}, box = document.getElementById("cbox"), list = document.getElementById("clist");
+  const T = (en, vi) => window.OY_LANG === "vi" ? vi : en;
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const linkify = s => esc(s).replace(/https?:\\/\\/[^\\s<]+[^\\s<.,:;!?)\\]'"]/g, u => \`<a href="\${u}" target="_blank" rel="nofollow ugc noopener">\${u}</a>\`);
+  const ago = ms => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? T("just now", "vừa xong") : m < 60 ? T(m + " min ago", m + " phút trước") : m < 1440 ? T(Math.round(m / 60) + " h ago", Math.round(m / 60) + " giờ trước") : T(Math.round(m / 1440) + " d ago", Math.round(m / 1440) + " ngày trước"); };
+  let me = null, items = [], replyTo = null;
+  const back = encodeURIComponent(location.pathname + "#comments");
+  const compose = (parent, ph) => \`<form class="compose" data-parent="\${parent || ""}"><textarea maxlength="2000" placeholder="\${esc(ph)}" required></textarea><div class="row"><small>\${T("Plain text, links work.", "Chữ thường, có thể dán link.")}</small><span class="err"></span><button class="btn sm dark" type="submit">\${parent ? T("Reply", "Trả lời") : T("Post", "Gửi")}</button></div></form>\`;
+  const one = c => \`<div class="cm" id="c\${c.id}">\${c.user ? \`<img src="\${esc(c.user.avatar)}" alt="">\` : '<span class="ph"></span>'}<div class="bd">
+      <div class="hd">\${c.user ? \`<a href="https://github.com/\${esc(c.user.login)}" target="_blank" rel="noopener">\${esc(c.user.name || c.user.login)}</a><span>@\${esc(c.user.login)}</span>\` : ""}<span>\${ago(c.at)}</span></div>
+      <div class="tx\${c.deleted ? " gone" : ""}">\${c.deleted ? T("This comment was removed.", "Bình luận này đã bị xoá.") : linkify(c.body)}</div>
+      <div class="acts">\${me && !c.parent && !c.deleted ? \`<button data-reply="\${c.id}">\${T("Reply", "Trả lời")}</button>\` : ""}\${(c.mine || me?.admin) && !c.deleted ? \`<button data-del="\${c.id}">\${T("Delete", "Xoá")}</button>\` : ""}</div>
+      \${c.parent ? "" : \`<div class="replies">\${items.filter(r => r.parent === c.id).map(one).join("")}\${replyTo === c.id ? compose(c.id, T("Write a reply…", "Viết trả lời…")) : ""}</div>\`}
+    </div></div>\`;
+  function render() {
+    box.innerHTML = me
+      ? \`<div class="me"><img src="\${esc(me.avatar)}" alt="">\${T("Signed in as", "Đang đăng nhập:")} @\${esc(me.login)} · <button id="out">\${T("Sign out", "Đăng xuất")}</button></div>\${compose(null, T("Say something nice, ask a question, share an idea…", "Khen một câu, hỏi một câu, góp một ý…"))}\`
+      : \`<div class="signin"><p>\${T("Sign in with GitHub to comment. We only read your public profile.", "Đăng nhập bằng GitHub để bình luận. Chỉ đọc hồ sơ công khai của bạn.")}</p><a class="btn dark" href="/auth/github?return=\${back}">${svg(GITHUB)}\${T("Sign in with GitHub", "Đăng nhập bằng GitHub")}</a></div>\`;
+    const top = items.filter(c => !c.parent);
+    list.innerHTML = top.length ? top.slice().reverse().map(one).join("") : \`<p class="none">\${T("No comments yet. Be the first.", "Chưa có bình luận nào. Bạn là người đầu tiên nhé.")}</p>\`;
+    const h = document.querySelector("#comments h2"); if (h) h.dataset.count = items.filter(c => !c.deleted).length;
+  }
+  async function load() {
+    const r = await fetch("/api/comments?slug=" + encodeURIComponent(SLUG), { credentials: "same-origin" });
+    const d = await r.json(); me = d.me; items = d.comments; render();
+  }
+  document.getElementById("comments").addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target, ta = f.querySelector("textarea"), err = f.querySelector(".err"), btn = f.querySelector("button");
+    if (!ta.value.trim()) return;
+    btn.disabled = true; err.textContent = "";
+    try {
+      const r = await fetch("/api/comments", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: SLUG, body: ta.value, parent: f.dataset.parent || null }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      items.push(d); replyTo = null; render();
+    } catch (x) { err.textContent = x.message; btn.disabled = false; }
+  });
+  document.getElementById("comments").addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "out") { await fetch("/auth/logout", { method: "POST", credentials: "same-origin" }); me = null; render(); return; }
+    if (b.dataset.reply) { replyTo = +b.dataset.reply; render(); document.querySelector(\`#c\${replyTo} .replies textarea\`)?.focus(); return; }
+    if (b.dataset.del) {
+      if (!b.dataset.sure) { b.dataset.sure = 1; b.textContent = T("Sure? Click again", "Chắc chưa? Bấm lần nữa"); return; }
+      const r = await fetch("/api/comments/" + b.dataset.del, { method: "DELETE", credentials: "same-origin" });
+      if (r.ok) { const c = items.find(x => x.id === +b.dataset.del); c.deleted = true; c.body = ""; c.user = null; render(); }
+    }
+  });
+  addEventListener("oy-lang", render);
+  load();
+})();
+</script>
 </body>
 </html>
 `;
