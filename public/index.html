@@ -261,6 +261,7 @@ nav .links a:hover{color:var(--ink)}
 .now-bar{height:3px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
 .now-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7c9cff,#b67cff,#ff7eb0)}
 .hint2{position:absolute;left:50%;top:92px;transform:translateX(-50%);font-size:12px;color:rgba(255,255,255,.4);letter-spacing:.04em;pointer-events:none}
+@media (max-width:520px) and (max-height:820px){.now{display:none}}
 @media (max-width:860px){
   .hx-bot{flex-direction:column;align-items:stretch}
   .now{width:auto}.now-steps{display:none}
@@ -269,6 +270,7 @@ nav .links a:hover{color:var(--ink)}
 .demo-sec{padding:120px 0 40px}
 nav:not(.solid){--ink:#f4f4f5;--muted:#b4b4bd;--line2:rgba(255,255,255,.2);--bg:#05050a;--bg2:rgba(255,255,255,.08)}
 section{padding:130px 0}
+@media (max-width:600px){section{padding:84px 0}.card h3{font-size:22px}.card .cb{padding:20px}.pillars{margin-top:56px}.vals{margin-top:56px}.demo-sec{padding:72px 0 24px}}
 .eyebrow{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:16px}
 .h2{font-size:clamp(34px,5vw,60px);max-width:16em}
 .lead2{color:var(--muted);font-size:18px;max-width:34em;margin:20px 0 0}
@@ -301,7 +303,7 @@ section{padding:130px 0}
 .ricon img.full{padding:0;object-fit:cover}
 .card .ct{display:flex;align-items:center;gap:10px}
 .card h3{font-size:26px;letter-spacing:-.03em}
-.card .tag{margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
+.card .tag{white-space:nowrap;flex:none;margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
 .card p{margin:0;color:var(--muted);font-size:15.5px;max-width:30em}
 .card .go{margin-top:auto;padding-top:14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
 .card .go svg{width:14px;height:14px;transition:transform .5s var(--ease)}
@@ -1053,6 +1055,7 @@ addEventListener("oy-lang", () => { if (PROJECTS.length) renderPillars(); });
   const u = { t: U("t"), mo: U("mo"), asp: U("asp"), px: U("px"), sc: U("sc"), ms: U("ms"), rot: U("rot"), off: U("off") };
   gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.clearColor(.0196, .0196, .039, 1);
 
+  const badgeEl = document.querySelector(".hx .badge"), titleEl = document.querySelector(".hx h1"), cvTop = () => cv.getBoundingClientRect().top;
   let W = 1, H = 1, dpr = 1;
   const size = () => { dpr = Math.min(2, devicePixelRatio || 1); const r = cv.getBoundingClientRect(); W = r.width; H = r.height; cv.width = W * dpr; cv.height = H * dpr; gl.viewport(0, 0, cv.width, cv.height); };
   addEventListener("resize", size); size();
@@ -1087,11 +1090,19 @@ addEventListener("oy-lang", () => { if (PROJECTS.length) renderPillars(); });
       m = phase === "in" ? p : phase === "hold" ? 1 : phase === "out" ? 1 - p : 0;
       setProgress(phase === "in" ? p * .92 : phase === "hold" ? 1 : phase === "out" ? 1 : 0);
       mx += (tmx - mx) * .08; my += (tmy - my) * .08; rx += (trx - rx) * .04; ry += (try_ - ry) * .04;
-      const asp = W / H, sc = Math.min(1, asp / 1.25), wide = asp > 1.2;
+      const asp = W / H, wide = asp > 1.2, narrow = asp < .9;
+      let sc = Math.min(1, asp / 1.25), offY = wide ? .72 : .62;
+      if (narrow) {
+        // fit the logo into the empty band between the badge and the headline
+        const top = badgeEl.getBoundingClientRect().bottom - cvTop(), bottom = titleEl.getBoundingClientRect().top - cvTop();
+        const band = Math.max(60, bottom - top), mid = (top + bottom) / 2;
+        sc = Math.min(1, asp, band * .82 / (.4125 * H));
+        offY = 2 * (1 - 2 * mid / H) / sc;
+      }
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.uniform1f(u.t, time); gl.uniform1f(u.mo, m); gl.uniform1f(u.asp, asp); gl.uniform1f(u.px, dpr * (isMobile ? 1.7 : 2)); gl.uniform1f(u.sc, sc);
       gl.uniform2f(u.ms, mx / sc, my / sc); gl.uniform2f(u.rot, rx + Math.sin(time * .15) * .12, ry);
-      gl.uniform2f(u.off, wide ? 1.35 : 0, wide ? .72 : .62);
+      gl.uniform2f(u.off, wide ? 1.35 : 0, offY);
       gl.drawArrays(gl.POINTS, 0, N);
     }
     requestAnimationFrame(frame);
