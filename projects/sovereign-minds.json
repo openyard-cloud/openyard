@@ -18,6 +18,7 @@
   "repo": "https://github.com/openyard-cloud/sovereign-minds",
   "license": "MIT",
   "logo": "sovereign-minds.svg",
+  "image": "sovereign-minds.webp",
   "color": "#22305c",
   "maintainers": [
     "thihodev"
@@ -29,7 +30,6 @@
   ],
   "team": true,
   "featured": true,
-  "scene": "globe",
   "swarm": {
     "src": "sovereign-minds.svg"
   },

@@ -3,7 +3,7 @@
 ## Add a project by pull request
 
 1. Fork this repository and create a branch, for example `project/my-app`.
-2. Add your logo to `projects/logos/` (square SVG, PNG or WebP, at most 150 KB). Name it after your slug, for example `my-app.svg`.
+2. Add your logo to `projects/logos/` and a screenshot to `projects/images/` (square SVG, PNG or WebP, at most 150 KB). Name it after your slug, for example `my-app.svg`.
 3. Add `projects/my-app.json`:
 
 ```json
@@ -19,6 +19,7 @@
   "repo": "https://github.com/you/my-app",
   "license": "MIT",
   "logo": "my-app.svg",
+  "image": "my-app.webp",
   "color": "#3b5bdb",
   "maintainers": ["your-github-username"],
   "tags": ["education", "ai"],
@@ -43,12 +44,13 @@
 | `url` | yes | `https://` link people should open. |
 | `repo`, `license` | open source | Required for `open-source` unless `status` is `soon`. |
 | `logo` | yes | File name inside `projects/logos/`. |
+| `image` | recommended | A screenshot of your project in `projects/images/` (WebP, PNG or JPG, at most 400 KB, about 1200×600). It is the big picture on your card. |
 | `logoStyle` | no | `tile` if your logo is a full app icon, `mark` (default) if it needs a white tile behind it. |
 | `color` | no | Hex color used for your card's glow. |
 | `maintainers` | yes | GitHub usernames. |
 | `tags` | no | Up to 5 lowercase tags. |
 
-`team`, `featured`, `scene` and `swarm` are set by maintainers.
+`team`, `featured` and `swarm` are set by maintainers.
 
 ## Work on the site
 
