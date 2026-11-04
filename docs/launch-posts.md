@@ -4,53 +4,55 @@ Drafts for the people who run OpenYard to post themselves. Links: https://openya
 
 ## Facebook (nhóm dev Việt: J2TEAM Community, Việt Nam Developers, Cộng đồng AI Việt Nam)
 
-Mình vừa mở **OpenYard** (openyard.cloud): một "khoảng sân" nơi con người và AI agent cùng làm ba loại thứ, tất cả miễn phí:
+Mình vừa mở **OpenYard** (openyard.cloud): một "khoảng sân" cho những ai đang làm phần mềm miễn phí.
 
-1. App cho những người phần mềm bỏ quên. Ví dụ FarmMind: trợ lý AI cho chủ trại chăn nuôi, thủy sản.
-2. Ý tưởng điên rồ, quá lạ để làm startup. Ví dụ Sovereign Minds: một thế giới nơi mỗi quốc gia do một AI điều hành, bắt đầu từ thời đồ đá.
-3. Công cụ mã nguồn mở cho dân dev. Ví dụ AutoClip Studio: đưa chủ đề hoặc repo vào, ra video ngắn hoàn chỉnh.
+Giờ có AI, một người cũng làm ra được app cho vài trăm hộ nông dân, một thí nghiệm kỳ quặc, hay một công cụ nhỏ mà chính mình cần. Nhưng phần lớn chúng ta làm một mình: làm xong không biết khoe ở đâu, bí thì không biết hỏi ai.
 
-Ai có dự án miễn phí hoặc open source (app hữu ích, thí nghiệm kỳ quặc, tool cho dev) đều đưa lên được: điền form 5 phút, không cần biết code. Muốn cùng làm thì vào Discord, đang cần dev, designer, người dịch, người test và cả người có ý tưởng.
+OpenYard là chỗ để mang những thứ đó tới:
+- Đăng dự án lên sân, có trang riêng để chia sẻ. Dự án vẫn nằm trên GitHub hay trang của bạn, sao vẫn về bạn.
+- Nhận góp ý, tìm người dùng thử.
+- Hỏi han khi bí: code, thiết kế, cách dùng AI để làm app.
+
+Luật chỉ có một: **phải miễn phí**. Mở mã nguồn hay không, mới làm hay đã chạy lâu, web, mobile hay tool cho dev đều được. Đăng mất năm phút, không cần biết code.
 
 👉 openyard.cloud
 💬 discord.gg/TFKsfh6tMk
 
-Góp ý thẳng tay giúp mình nhé, trang còn mới tinh.
+Trang còn mới tinh, mọi người cứ góp ý thẳng tay nhé.
 
 ## Reddit r/SideProject
 
-**Title:** I built a "yard" where people and AI agents make free apps, wild experiments and dev tools. Bring yours.
+**Title:** I made a small community for people building free software. One rule: it has to be free.
 
-AI made building software about ten times cheaper, so I started building the things nobody funds: an AI assistant for small livestock farmers in Vietnam, an open-source studio that turns a repo into a short video, and a world where every nation is run by its own AI.
+AI made it cheap to build things nobody would fund: an app for a few hundred farmers, a strange experiment, the tool you needed yourself. But most of us build alone, and there is no obvious place to show a free project, get feedback or ask for help.
 
-OpenYard (https://openyard.cloud) puts them in one place, and anyone can add their own free or open-source project through a short form or a pull request (one JSON file). The site itself is open source: https://github.com/openyard-cloud/openyard
+OpenYard (https://openyard.cloud) is that place. You keep building on your own GitHub or site; here you get a page for your project, people who try it and a Discord to ask questions. Open source is welcome but not required. Listing takes five minutes through a form or a pull request (one JSON file): https://github.com/openyard-cloud/openyard
 
-Looking for feedback on the idea, and for strange projects to list. Discord if you want to hang out: https://discord.gg/TFKsfh6tMk
+Would love feedback, and free projects to list. Discord: https://discord.gg/TFKsfh6tMk
 
 ## Reddit r/opensource
 
-**Title:** OpenYard: a community list of free apps, wild ideas and dev tools, where every listing is a JSON file in the repo
+**Title:** OpenYard: a community directory of free projects where every listing is a JSON file in the repo
 
-Every project on https://openyard.cloud lives as `projects/<slug>.json` plus a logo in https://github.com/openyard-cloud/openyard. CI validates submissions, merges deploy automatically. Non-developers can use an issue form instead.
+Every project on https://openyard.cloud lives as `projects/<slug>.json` plus a logo in https://github.com/openyard-cloud/openyard. CI validates submissions, merges deploy automatically, and each listing gets its own page with a share card. Non-developers can use an issue form instead.
 
-Current projects: AutoClip Studio (MIT, topic or repo to short video with Claude), Sovereign Minds (MIT, nations run by AI), Chatscape (MIT, live wallpapers behind AI chat), FarmMind (free app for farmers).
-
-The only rule: it has to be free to use. Open source welcome, not required.
+The only rule is that the project is free to use. Open source is welcome, not required; the code stays in your own repository. There is a Discord for feedback and help.
 
 ## Hacker News
 
-**Title:** Show HN: OpenYard – free apps, wild ideas and dev tools built with AI agents
+**Title:** Show HN: OpenYard – a community for people who build free software
 
-Text: AI agents made it cheap enough to build software for audiences nobody would fund: small farmers, weird simulations, niche dev tools. OpenYard is where we put those, and anyone can add theirs with a pull request. Every listing is a JSON file; the site is a single static page on Cloudflare Workers. https://openyard.cloud
+Text: AI agents made it cheap to build software for audiences nobody would fund. Most people doing this build alone. OpenYard is a place to show those projects, get feedback and help each other. The only rule is that it is free. Projects stay in their own repos; the listing is a JSON file you add by pull request, and the site is static on Cloudflare Workers. https://openyard.cloud
 
 ## X / Threads
 
 AI made software 10x cheaper.
 
-So we build what nobody funds:
-🌾 an AI assistant for small farmers
+So people build what nobody funds:
+🌾 apps for small farmers
 🌍 a world where every nation is run by its own AI
-🎬 a repo → short video studio (open source)
+🎬 a repo → short video studio
 
-Free. Open. Bring your own project 👇
+Most of them build alone. OpenYard is the yard to bring it to.
+One rule: it's free 👇
 openyard.cloud
