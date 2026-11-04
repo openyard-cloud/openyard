@@ -367,7 +367,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
         <p class="sub rv" data-i="hero.sub">OpenYard is a small team. People decide what's worth building, AI agents help build it, and everything we ship is free.</p>
         <div class="cta rv">
           <a class="btn dark" href="#projects" data-i="hero.cta1">See what we've built</a>
-          <a class="btn line" href="https://github.com/thihodev" target="_blank" rel="noopener">GitHub</a>
+          <a class="btn line" href="https://github.com/openyard-cloud" target="_blank" rel="noopener">GitHub</a>
         </div>
       </div>
       <div class="now rv" id="now">
@@ -638,7 +638,7 @@ const DEMOS = [
     body: () => `
       <div class="bubble me">${T("Pick a calm scene for tonight", "Chọn giúp cảnh nào dịu nhẹ cho tối nay")}</div>
       <div class="bubble">${T("Cloud Drift is on. 19 more scenes in the picker.", "Đã bật Cloud Drift. Còn 19 cảnh khác trong bảng chọn.")}</div>
-      <div class="row"><span class="ic">✨</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy trong trình duyệt")}<span class="r"><span class="pill p-b">${T("soon", "sắp ra")}</span></span></div>` },
+      <div class="row"><span class="ic">✨</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
 ];
 const STEPS = () => T(["Reading the problem", "Planning the app", "Writing code", "Running tests", "Shipping"], ["Đọc vấn đề", "Lên kế hoạch", "Viết code", "Chạy test", "Ra mắt"]);
 let demoTok = 0, demoIdx = 0;
@@ -663,7 +663,7 @@ async function runDemo(tok){
     send.classList.add("go"); await sleep(180); send.classList.remove("go");
     ptxt.querySelector(".cur")?.remove();
     status.classList.add("on");
-    sdone.textContent = d.id === "chat" ? T("✓ Built, launching soon", "✓ Đã xây xong, sắp ra mắt") : T("✓ Shipped, free for everyone", "✓ Đã ra mắt, miễn phí cho mọi người");
+    sdone.textContent = T("✓ Shipped, free for everyone", "✓ Đã ra mắt, miễn phí cho mọi người");
     for (const s of STEPS()) { if (!alive()) return; stxt.textContent = s + "…"; await sleep(820); }
     result.innerHTML = `<div class="rhead"><div class="ricon"><img class="${d.lc}" src="${d.logo}" alt=""></div><div><h3>${d.name}</h3><p>${d.sub()}</p></div><span class="tag">openyard</span></div><div class="rbody">${d.body()}</div>`;
     status.classList.add("ok");
@@ -777,7 +777,7 @@ let SITE = {}, PROJECTS = [], scenesStarted = false;
 const tr = v => (v && (v[LANG] || v.en)) || "";
 const ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M8 7h9v9"/></svg>';
 function links(){
-  const repo = SITE.repo || "https://github.com/thihodev/openyard";
+  const repo = SITE.repo || "https://github.com/openyard-cloud/openyard";
   const map = {
     form: repo + "/issues/new?template=submit-project.yml",
     contrib: repo + "/blob/main/CONTRIBUTING.md",
