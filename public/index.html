@@ -161,6 +161,7 @@ nav .links a:hover{color:var(--ink)}
 .by{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:6px}
 .by img{width:22px;height:22px;border-radius:50%;margin-right:-4px;border:2px solid var(--bg2)}
 .by .who{margin-left:6px}
+.by img.tlogo{border:0;border-radius:0;margin-right:-2px}
 .by .team{font-weight:500;color:var(--ink)}
 .by .tg{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--line)}
 .card.yours{border:1.5px dashed var(--line2);background:transparent}
@@ -919,8 +920,8 @@ function cardHTML(p){
   const vis = p.image
     ? `<div class="vis shot" style="--c:${esc(p.color || "#6d5bd0")}"><img src="/images/${esc(p.image)}" alt="${esc(p.name)} screenshot" loading="lazy"></div>`
     : `<div class="vis gen" style="--c:${esc(p.color || "#6d5bd0")}"><img class="${tile}" src="/logos/${esc(p.logo)}" alt="" loading="lazy"></div>`;
-  const who = p.team ? `<span class="who team">${T("OpenYard team", "Nhóm OpenYard")}</span>` : `<span class="who">${T("by", "bởi")} @${esc(p.maintainers[0])}</span>`;
-  const avatars = p.maintainers.slice(0, 3).map(h => `<img src="https://github.com/${esc(h)}.png?size=48" alt="" loading="lazy">`).join("");
+  const who = p.team ? `<span class="who team">OpenYard team</span>` : `<span class="who">${T("by", "bởi")} @${esc(p.maintainers[0])}</span>`;
+  const avatars = p.team ? `<img class="tlogo" src="/favicon.svg" alt="">` : p.maintainers.slice(0, 3).map(h => `<img src="https://github.com/${esc(h)}.png?size=48" alt="" loading="lazy">`).join("");
   let host = ""; try { host = new URL(p.url).host + new URL(p.url).pathname.replace(/\/$/, ""); } catch (e) {}
   return `<a class="card rv" href="${esc(p.url)}" target="_blank" rel="noopener" data-type="${esc(p.type)}" data-kinds="${esc((p.kinds || []).join(" "))}" data-team="${p.team ? 1 : 0}">
     ${vis}
