@@ -16,7 +16,8 @@ const LOGO_EXT = [".svg", ".png", ".webp"];
 const MAX_LOGO = 150 * 1024;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
-const KNOWN = new Set(["slug", "name", "type", "status", "tagline", "description", "url", "repo", "license", "logo", "logoStyle", "pixel", "color", "maintainers", "tags", "team", "featured", "scene", "swarm", "added"]);
+const KINDS = ["people", "wild", "dev"];
+const KNOWN = new Set(["slug", "name", "type", "kinds", "status", "tagline", "description", "url", "repo", "license", "logo", "logoStyle", "pixel", "color", "maintainers", "tags", "team", "featured", "scene", "swarm", "added"]);
 
 const errors = [];
 const projects = [];
@@ -41,6 +42,7 @@ for (const f of readdirSync(DIR).filter(f => f.endsWith(".json")).sort()) {
   if (p.slug !== slug || !SLUG.test(slug)) err(`"slug" must equal the file name and use a-z, 0-9 and dashes`);
   if (typeof p.name !== "string" || !p.name.trim() || p.name.length > 40) err(`"name" is required, at most 40 characters`);
   if (!TYPES.includes(p.type)) err(`"type" must be one of ${TYPES.join(", ")}`);
+  if (!Array.isArray(p.kinds) || !p.kinds.length || !p.kinds.every(k => KINDS.includes(k))) err(`"kinds" must list one or more of ${KINDS.join(", ")}`);
   if (!STATUSES.includes(p.status)) err(`"status" must be one of ${STATUSES.join(", ")}`);
   for (const [key, max] of [["tagline", 80], ["description", 300]]) {
     const v = p[key];

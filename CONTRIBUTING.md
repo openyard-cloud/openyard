@@ -11,6 +11,7 @@
   "slug": "my-app",
   "name": "My App",
   "type": "open-source",
+  "kinds": ["dev"],
   "status": "live",
   "tagline": { "en": "One line, at most 80 characters", "vi": "Tùy chọn: một dòng tiếng Việt" },
   "description": { "en": "Who it is for and what it does, at most 300 characters." },
@@ -35,6 +36,7 @@
 | `slug` | yes | Same as the file name. Lowercase letters, numbers, dashes. |
 | `name` | yes | At most 40 characters. |
 | `type` | yes | `app` (free to use) or `open-source` (public code + license). |
+| `kinds` | yes | One or more of `people` (an app for people software forgets), `wild` (a strange or experimental idea), `dev` (a tool for developers). |
 | `status` | yes | `live`, `beta` or `soon`. |
 | `tagline.en` | yes | At most 80 characters. Add `vi` or other languages if you like. |
 | `description.en` | yes | At most 300 characters. |

@@ -1,7 +1,7 @@
 <p align="center"><a href="https://openyard.cloud"><img src="assets/logo.svg" width="96" alt="OpenYard logo"></a></p>
 <h1 align="center">OpenYard</h1>
 
-<p align="center"><a href="https://openyard.cloud"><img src="assets/banner.png" alt="OpenYard: free apps, built by people and AI"></a></p>
+<p align="center"><a href="https://openyard.cloud"><img src="assets/banner.png" alt="OpenYard: free apps, wild ideas, open tools"></a></p>
 
 <p align="center">
   <a href="https://discord.gg/TFKsfh6tMk"><img src="https://img.shields.io/discord/1567359859119231056?label=Discord&logo=discord&logoColor=white&color=5865F2" alt="Discord"></a>
@@ -9,11 +9,13 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
-**Free apps and open-source tools, built by people and AI, for people software forgets.**
+**Free apps, wild ideas and open-source tools, built by people and AI.**
+
+Three kinds of things grow here: apps for people software forgets, ideas too strange for a startup, and tools for developers. All free.
 
 [openyard.cloud](https://openyard.cloud) · [Discord](https://discord.gg/TFKsfh6tMk) · [Submit a project](https://github.com/openyard-cloud/openyard/issues/new?template=submit-project.yml) · [Join the team](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml) · [Discussions](https://github.com/openyard-cloud/openyard/discussions)
 
-OpenYard is a shared yard: a small team builds free apps with AI agents, and anyone can bring their own free or open-source project to sit next to ours. Every project listed on the site lives in this repository as one JSON file.
+OpenYard is a shared yard: a small team builds with AI agents, and anyone can bring their own free or open-source project to sit next to ours, whether it helps people, tries something wild, or makes developers' lives easier. Every project listed on the site lives in this repository as one JSON file.
 
 ## Put your project in the yard
 
@@ -46,7 +48,7 @@ The site is a single static page (`public/index.html`) served by Cloudflare Work
 
 ## Tiếng Việt
 
-OpenYard là khoảng sân chung: một nhóm nhỏ dùng AI để làm app miễn phí, và ai cũng có thể đưa dự án miễn phí hoặc mã nguồn mở của mình lên đây. Gửi dự án qua [form](https://github.com/openyard-cloud/openyard/issues/new?template=submit-project.yml) (không cần biết code) hoặc mở pull request thêm một file JSON. Muốn tham gia nhóm thì vào [Discord](https://discord.gg/TFKsfh6tMk) hoặc điền [form tham gia](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
+OpenYard là khoảng sân chung cho ba loại thứ: app cho những người phần mềm bỏ quên, ý tưởng điên rồ độc lạ, và công cụ mã nguồn mở cho dân dev. Một nhóm nhỏ cùng AI agent xây, và ai cũng có thể đưa dự án miễn phí hoặc mã nguồn mở của mình lên đây. Gửi dự án qua [form](https://github.com/openyard-cloud/openyard/issues/new?template=submit-project.yml) (không cần biết code) hoặc mở pull request thêm một file JSON. Muốn tham gia nhóm thì vào [Discord](https://discord.gg/TFKsfh6tMk) hoặc điền [form tham gia](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
 
 ## License
 

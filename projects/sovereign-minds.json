@@ -2,8 +2,14 @@
   "slug": "sovereign-minds",
   "name": "Sovereign Minds",
   "type": "open-source",
+  "kinds": [
+    "wild"
+  ],
   "status": "live",
-  "tagline": { "en": "An open world of nations run by AI", "vi": "Thế giới mở của các quốc gia do AI điều hành" },
+  "tagline": {
+    "en": "An open world of nations run by AI",
+    "vi": "Thế giới mở của các quốc gia do AI điều hành"
+  },
   "description": {
     "en": "A world where every nation is run by its own AI mind, starting from the stone age. You are the Watcher who judges and decrees.",
     "vi": "Thế giới nơi mỗi quốc gia do một AI riêng điều hành, bắt đầu từ thời đồ đá. Bạn là Người Quan Sát, phán xử và ban lệnh."
@@ -13,11 +19,19 @@
   "license": "MIT",
   "logo": "sovereign-minds.svg",
   "color": "#22305c",
-  "maintainers": ["thihodev"],
-  "tags": ["simulation", "ai", "game"],
+  "maintainers": [
+    "thihodev"
+  ],
+  "tags": [
+    "simulation",
+    "ai",
+    "game"
+  ],
   "team": true,
   "featured": true,
   "scene": "globe",
-  "swarm": { "src": "sovereign-minds.svg" },
+  "swarm": {
+    "src": "sovereign-minds.svg"
+  },
   "added": "2026-11-04"
 }

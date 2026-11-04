@@ -2,8 +2,15 @@
   "slug": "autoclip-studio",
   "name": "AutoClip Studio",
   "type": "open-source",
+  "kinds": [
+    "people",
+    "dev"
+  ],
   "status": "live",
-  "tagline": { "en": "Topic in, finished short video out", "vi": "Đưa chủ đề vào, ra video ngắn hoàn chỉnh" },
+  "tagline": {
+    "en": "Topic in, finished short video out",
+    "vi": "Đưa chủ đề vào, ra video ngắn hoàn chỉnh"
+  },
   "description": {
     "en": "Turn a topic, a website or a repo into a finished short video. Claude writes, voices and animates it; you review and publish.",
     "vi": "Biến một chủ đề, website hay repo thành video ngắn hoàn chỉnh. Claude viết, lồng tiếng và dựng; bạn duyệt rồi đăng."
@@ -14,11 +21,28 @@
   "logo": "autoclip-studio.png",
   "logoStyle": "tile",
   "color": "#4b2a8a",
-  "maintainers": ["thihodev"],
-  "tags": ["video", "ai", "creators"],
+  "maintainers": [
+    "thihodev"
+  ],
+  "tags": [
+    "video",
+    "ai",
+    "creators"
+  ],
   "team": true,
   "featured": true,
   "scene": "clip",
-  "swarm": { "text": [["Auto", "#e8eaee"], ["Clip", "#ff4d6d"]] },
+  "swarm": {
+    "text": [
+      [
+        "Auto",
+        "#e8eaee"
+      ],
+      [
+        "Clip",
+        "#ff4d6d"
+      ]
+    ]
+  },
   "added": "2026-11-04"
 }

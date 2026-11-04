@@ -30,6 +30,17 @@ body:
         - Open source (public code with a license)
     validations:
       required: true
+  - type: dropdown
+    id: kinds
+    attributes:
+      label: Which fits best?
+      multiple: true
+      options:
+        - An app for people software forgets
+        - A wild or experimental idea
+        - A tool for developers
+    validations:
+      required: true
   - type: input
     id: repo
     attributes:
