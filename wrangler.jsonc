@@ -13,6 +13,7 @@
   ],
   // GitHub stats for the trending list, a few repositories per run
   "triggers": { "crons": ["17 * * * *"] },
+  "observability": { "enabled": true },
   "vars": { "TURNSTILE_SITE_KEY": "0x4AAAAAAFzE7AU_0L_sZhiu" },
   "routes": [
     { "pattern": "openyard.cloud", "custom_domain": true },
