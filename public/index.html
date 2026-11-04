@@ -52,6 +52,7 @@ nav.solid{background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filte
 nav .wrap{display:flex;align-items:center;height:64px;gap:28px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.02em}
 .brand img{width:24px;height:24px;transition:transform .8s var(--ease)}
+.brand em{font-style:normal;background:linear-gradient(100deg,#7c9cff 0%,#b67cff 35%,#ff7eb0 70%,#ffc56b 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 6s ease-in-out infinite alternate}
 .brand:hover img{transform:rotate(180deg)}
 @keyframes spin{to{transform:rotate(360deg)}}
 nav .links{display:flex;gap:24px;font-size:14px;color:var(--muted)}
@@ -369,8 +370,28 @@ section{padding:130px 0}
 .join p{color:var(--muted);max-width:32em;margin:22px auto 34px;font-size:18px}
 .join .cta{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 
-footer{padding:56px 0 72px;color:var(--muted);font-size:14px}
-footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}
+footer{position:relative;padding:88px 0 40px;color:var(--muted);font-size:14px;border-top:1px solid var(--line);overflow:hidden;isolation:isolate}
+footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;height:520px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(182,124,255,.22),rgba(255,126,176,.10) 50%,transparent);z-index:-1;pointer-events:none}
+.ft{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:40px}
+@media (max-width:860px){.ft{grid-template-columns:1fr 1fr}.fbrand{grid-column:1/-1}}
+.fbrand .brand{font-size:20px}
+.fbrand p{margin:14px 0 20px;max-width:22em;color:var(--muted)}
+.fsocial{display:flex;gap:10px;align-items:center}
+.fdc{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;background:#5865f2;color:#fff;font-weight:500;transition:background .2s}
+.fdc:hover{background:#4752c4}
+.fdc svg{width:18px;height:18px}
+.fon{font-size:11.5px;font-weight:600;background:rgba(255,255,255,.18);border-radius:999px;padding:2px 7px;display:inline-flex;align-items:center;gap:4px}
+.fon::before{content:"";width:6px;height:6px;border-radius:50%;background:#3ba55d}
+.fic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line2);color:var(--ink);transition:background .2s}
+.fic:hover{background:var(--bg2)}
+.fic svg{width:18px;height:18px}
+.fcol h4{margin:4px 0 14px;font-size:13px;font-weight:600;color:var(--ink);letter-spacing:.02em}
+.fcol a{display:flex;align-items:center;gap:8px;padding:5px 0;color:var(--muted);transition:color .2s,transform .3s var(--ease)}
+.fcol a:hover{color:var(--ink);transform:translateX(3px)}
+.fcol a img{width:18px;height:18px;border-radius:5px;object-fit:cover;background:#fff}
+.fword{margin:72px 0 0;font-weight:700;letter-spacing:-.06em;line-height:.8;font-size:clamp(72px,17vw,250px);color:color-mix(in srgb,var(--ink) 7%,transparent);user-select:none;white-space:nowrap}
+.fword em{font-style:normal;background:linear-gradient(100deg,#7c9cff 0%,#b67cff 35%,#ff7eb0 70%,#ffc56b 100%);-webkit-background-clip:text;background-clip:text;color:transparent;opacity:.9}
+.fbot{display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid var(--line);font-size:13px}
 
 .rv{opacity:0;transform:translateY(24px);filter:blur(8px);transition:opacity 1.1s var(--ease),transform 1.1s var(--ease),filter 1.1s var(--ease)}
 .rv.in{opacity:1;transform:none;filter:none}
@@ -383,7 +404,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 <body>
 <nav id="nav">
   <div class="wrap">
-    <a class="brand" href="#"><img src="/favicon.svg" alt="" width="24" height="24">OpenYard</a>
+    <a class="brand" href="#"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
     <div class="links">
       <a href="#why" data-i="nav.why">Why</a>
       <a href="#projects" data-i="nav.projects">Projects</a>
@@ -580,8 +601,34 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 
 <footer>
   <div class="wrap">
-    <span>© <span id="y">2026</span> OpenYard</span>
-    <span data-i="foot">Free apps, open tools. Made in Vietnam.</span>
+    <div class="ft">
+      <div class="fbrand">
+        <a class="brand" href="#"><img src="/favicon.svg" alt="" width="28" height="28"><span>Open<em>Yard</em></span></a>
+        <p data-i="foot.tag">Free apps, wild ideas and open tools, built by people and AI agents.</p>
+        <div class="fsocial">
+          <a class="fdc" data-href="discord" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="foot.dc">Join the Discord</span><span class="fon" id="fon" hidden></span></a>
+          <a class="fic" data-href="repo" href="https://github.com/openyard-cloud/openyard" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5Z"/></svg></a>
+        </div>
+      </div>
+      <div class="fcol"><h4 data-i="foot.p">Projects</h4><div id="fprojects"></div></div>
+      <div class="fcol"><h4 data-i="foot.c">Community</h4>
+        <a data-href="form" target="_blank" rel="noopener" data-i="foot.c1">Submit a project</a>
+        <a data-href="joinform" target="_blank" rel="noopener" data-i="foot.c2">Join the team</a>
+        <a data-href="discussions" target="_blank" rel="noopener" data-i="foot.c3">Discussions</a>
+        <a data-href="issues" target="_blank" rel="noopener" data-i="foot.c4">Good first issues</a>
+      </div>
+      <div class="fcol"><h4 data-i="foot.r">Open source</h4>
+        <a data-href="repo" target="_blank" rel="noopener" data-i="foot.r1">Site source code</a>
+        <a data-href="contrib" target="_blank" rel="noopener" data-i="foot.r2">Contributing guide</a>
+        <a data-href="org" target="_blank" rel="noopener" data-i="foot.r3">GitHub organization</a>
+        <a data-href="license" target="_blank" rel="noopener" data-i="foot.r4">MIT license</a>
+      </div>
+    </div>
+    <div class="fword" aria-hidden="true">Open<em>Yard</em></div>
+    <div class="fbot">
+      <span>© <span id="y">2026</span> OpenYard · openyard.cloud</span>
+      <span data-i="foot">Free for everyone. Made in Vietnam.</span>
+    </div>
   </div>
 </footer>
 
@@ -628,7 +675,7 @@ const VI = {
   "join.title":"Cùng chúng tôi xây cái tiếp theo.",
   "join.d":"Chúng tôi ghép con người với AI agent để làm phần mềm miễn phí cho cộng đồng. Mang theo một kỹ năng, vài giờ mỗi tuần, hoặc chỉ một vấn đề đáng giải.",
   "join.cta":"Tìm chúng tôi trên GitHub","join.cta2":"Xem các dự án",
-  "foot":"Ứng dụng miễn phí, công cụ mở. Làm tại Việt Nam."
+  "foot":"Miễn phí cho mọi người. Làm tại Việt Nam.","foot.tag":"App miễn phí, ý tưởng điên rồ và công cụ mở, do con người và AI agent cùng xây.","foot.dc":"Vào Discord","foot.p":"Dự án","foot.c":"Cộng đồng","foot.c1":"Gửi dự án","foot.c2":"Tham gia nhóm","foot.c3":"Thảo luận","foot.c4":"Việc cho người mới","foot.r":"Mã nguồn mở","foot.r1":"Mã nguồn trang web","foot.r2":"Hướng dẫn đóng góp","foot.r3":"Tổ chức trên GitHub","foot.r4":"Giấy phép MIT"
 };
 const EN = {};
 document.querySelectorAll("[data-i]").forEach(el => { EN[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
@@ -846,6 +893,10 @@ function links(){
     contrib: repo + "/blob/main/CONTRIBUTING.md",
     joinform: repo + "/issues/new?template=join-team.yml",
     repo,
+    discussions: repo + "/discussions",
+    issues: repo + "/issues?q=is%3Aopen+label%3A%22good+first+issue%22",
+    license: repo + "/blob/main/LICENSE",
+    org: repo.replace(/\/[^/]+$/, ""),
     discord: SITE.discord || repo + "/discussions"
   };
   document.querySelectorAll("[data-href]").forEach(a => a.href = map[a.dataset.href]);
@@ -914,7 +965,7 @@ function applyFilter(){
 document.getElementById("filters").addEventListener("click", e => { const b = e.target.closest("button"); if (b) { FILTER = b.dataset.f; applyFilter(); } });
 DATA.then(d => {
   SITE = d.site || {}; PROJECTS = d.projects || [];
-  links(); renderProjects(); renderPillars();
+  links(); renderProjects(); renderPillars(); renderFooterProjects();
   document.getElementById("st-p").textContent = PROJECTS.length;
   document.getElementById("st-o").textContent = PROJECTS.filter(p => p.type === "open-source" && p.repo).length;
 }).catch(() => { links(); });
@@ -928,11 +979,15 @@ DATA.then(d => {
   return fetch(`https://discord.com/api/v10/invites/${code}?with_counts=true`).then(r => r.ok ? r.json() : null).then(j => {
     const n = j?.approximate_presence_count;
     if (!n) return;
-    const el = document.getElementById("dcon"); el.textContent = n; el.hidden = false;
+    ["dcon", "fon"].forEach(id => { const el = document.getElementById(id); if (el) { el.textContent = n; el.hidden = false; } });
+    const el = document.getElementById("dcon");
     el.title = T(`${n} online`, `${n} người đang online`);
   });
 }).catch(() => {});
 
+function renderFooterProjects(){
+  document.getElementById("fprojects").innerHTML = PROJECTS.map(p => `<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</a>`).join("") + `<a href="#submit" style="color:#b67cff">${T("+ Add yours", "+ Thêm dự án của bạn")}</a>`;
+}
 function renderPillars(){
   document.querySelectorAll("[data-chips]").forEach(el => {
     const k = el.dataset.chips, list = PROJECTS.filter(p => (p.kinds || []).includes(k));
@@ -940,7 +995,7 @@ function renderPillars(){
   });
 }
 document.querySelectorAll(".pillar").forEach(a => a.addEventListener("click", () => { FILTER = a.dataset.kind; applyFilter(); }));
-addEventListener("oy-lang", () => { if (PROJECTS.length) renderPillars(); });
+addEventListener("oy-lang", () => { if (PROJECTS.length) { renderPillars(); renderFooterProjects(); } });
 
 /* ---------- submit: form typing + flow progress ---------- */
 (() => {
