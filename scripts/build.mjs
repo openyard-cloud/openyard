@@ -7,6 +7,8 @@ import { join, extname } from "node:path";
 const ROOT = new URL("..", import.meta.url).pathname;
 const DIR = join(ROOT, "projects");
 const LOGOS = join(DIR, "logos");
+const IMAGES = join(DIR, "images");
+const MAX_IMAGE = 400 * 1024;
 const OUT = join(ROOT, "public");
 const checkOnly = process.argv.includes("--check");
 
@@ -17,11 +19,12 @@ const MAX_LOGO = 150 * 1024;
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HANDLE = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/;
 const KINDS = ["people", "wild", "dev"];
-const KNOWN = new Set(["slug", "name", "type", "kinds", "status", "tagline", "description", "url", "repo", "license", "logo", "logoStyle", "pixel", "color", "maintainers", "tags", "team", "featured", "scene", "swarm", "added"]);
+const KNOWN = new Set(["slug", "name", "type", "kinds", "status", "tagline", "description", "url", "repo", "license", "logo", "logoStyle", "pixel", "image", "color", "maintainers", "tags", "team", "featured", "swarm", "added"]);
 
 const errors = [];
 const projects = [];
 const logos = new Set();
+const images = new Set();
 
 const isHttps = v => { try { return new URL(v).protocol === "https:"; } catch { return false; } };
 const checkLogo = (slug, file) => {
@@ -56,6 +59,13 @@ for (const f of readdirSync(DIR).filter(f => f.endsWith(".json")).sort()) {
     if (typeof p.license !== "string" || !p.license.trim()) err(`open-source projects need a "license" (for example MIT)`);
   }
   const le = checkLogo(slug, p.logo); if (le) err(le);
+  if (p.image != null) {
+    const ip = join(IMAGES, String(p.image));
+    if (typeof p.image !== "string" || p.image.includes("/") || ![".webp", ".png", ".jpg", ".jpeg"].includes(extname(p.image).toLowerCase())) err(`"image" must be a file name in projects/images/ ending in .webp, .png or .jpg`);
+    else if (!existsSync(ip)) err(`projects/images/${p.image} does not exist`);
+    else if (statSync(ip).size > MAX_IMAGE) err(`projects/images/${p.image} is larger than 400 KB`);
+    else images.add(p.image);
+  }
   if (p.logoStyle != null && !["tile", "mark"].includes(p.logoStyle)) err(`"logoStyle" must be "tile" or "mark"`);
   if (p.color != null && !/^#[0-9a-fA-F]{6}$/.test(p.color)) err(`"color" must look like #1d6b4f`);
   if (!Array.isArray(p.maintainers) || !p.maintainers.length || !p.maintainers.every(h => HANDLE.test(h))) err(`"maintainers" must list at least one GitHub username`);
@@ -83,6 +93,10 @@ const outLogos = join(OUT, "logos");
 rmSync(outLogos, { recursive: true, force: true });
 mkdirSync(outLogos, { recursive: true });
 for (const f of logos) copyFileSync(join(LOGOS, f), join(outLogos, f));
+const outImages = join(OUT, "images");
+rmSync(outImages, { recursive: true, force: true });
+mkdirSync(outImages, { recursive: true });
+for (const f of images) copyFileSync(join(IMAGES, f), join(outImages, f));
 const site = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
 writeFileSync(join(OUT, "projects.json"), JSON.stringify({ site, projects }, null, 2) + "\n");
-console.log(`Wrote public/projects.json and ${logos.size} logo(s).`);
+console.log(`Wrote public/projects.json, ${logos.size} logo(s) and ${images.size} screenshot(s).`);

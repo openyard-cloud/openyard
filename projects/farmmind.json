@@ -17,6 +17,7 @@
   "url": "https://farmmind.openyard.cloud",
   "logo": "farmmind.svg",
   "logoStyle": "tile",
+  "image": "farmmind.webp",
   "color": "#1d6b4f",
   "maintainers": [
     "thihodev"
@@ -28,7 +29,6 @@
   ],
   "team": true,
   "featured": true,
-  "scene": "farm",
   "swarm": {
     "src": "farmmind-mark-dark.svg"
   },

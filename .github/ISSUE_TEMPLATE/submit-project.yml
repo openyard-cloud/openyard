@@ -66,6 +66,13 @@ body:
       description: Drag in a square SVG or PNG (at most 150 KB).
     validations:
       required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag in a screenshot that shows what your project looks like (wide, about 1200×600).
+    validations:
+      required: true
   - type: input
     id: maintainers
     attributes:

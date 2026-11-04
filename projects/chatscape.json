@@ -19,6 +19,7 @@
   "license": "MIT",
   "logo": "chatscape.png",
   "logoStyle": "tile",
+  "image": "chatscape.webp",
   "pixel": true,
   "color": "#0b4a5a",
   "maintainers": [
@@ -30,7 +31,6 @@
   ],
   "team": true,
   "featured": true,
-  "scene": "flow",
   "swarm": {
     "src": "chatscape.png"
   },
