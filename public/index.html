@@ -272,17 +272,23 @@ nav .links a:hover{color:var(--ink)}
 /* pillars */
 .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:80px}
 @media (max-width:900px){.pillars{grid-template-columns:1fr}}
-.pillar{position:relative;overflow:hidden;border-radius:26px;padding:28px;background:var(--bg2);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .8s var(--ease),border-color .3s}
+.pillar{position:relative;overflow:hidden;border-radius:26px;padding:28px 28px 24px;background:var(--bg2);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px;transition:transform .8s var(--ease),border-color .3s}
 .pillar:hover{transform:translateY(-4px);border-color:var(--line2)}
 .pillar .pk{font-size:13px;font-weight:600;color:var(--muted)}
 .pillar .pg{position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--a),var(--b));opacity:.35;filter:blur(30px);transition:opacity .5s,transform 1.2s var(--ease)}
 .pillar:hover .pg{opacity:.6;transform:scale(1.2)}
 .pillar h3{font-size:26px;margin-top:40px;position:relative}
 .pillar p{margin:0;color:var(--muted);position:relative}
-.pchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:12px;position:relative}
-.pchips span{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:4px 10px 4px 4px;border-radius:999px;background:var(--solid);border:1px solid var(--line)}
-.pchips img{width:20px;height:20px;border-radius:6px;object-fit:cover;background:#fff}
-.pchips .you{padding:4px 10px;border-style:dashed;color:var(--muted);background:transparent}
+.pchips{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:18px;border-top:1px solid var(--line);position:relative}
+.pstack{display:flex}
+.pstack img{width:30px;height:30px;border-radius:9px;object-fit:cover;background:#fff;box-shadow:0 0 0 2px var(--bg2);margin-left:-8px;transition:transform .4s var(--ease)}
+.pstack img:first-child{margin-left:0}
+.pillar:hover .pstack img{transform:translateY(-2px)}
+.pillar:hover .pstack img:nth-child(2){transition-delay:.05s}
+.pcount{font-size:13.5px;color:var(--muted);white-space:nowrap}
+.pcount b{color:var(--ink);font-weight:600}
+.padd{margin-left:auto;font-size:13px;font-weight:500;white-space:nowrap;padding:5px 11px;border-radius:999px;border:1px dashed var(--line2);color:var(--muted);transition:color .2s,border-color .2s}
+.pillar:hover .padd{color:var(--ink);border-color:var(--ink)}
 
 /* hero swarm */
 .hx{position:relative;height:100vh;height:100svh;min-height:640px;background:#05050a;color:#f4f4f5;overflow:hidden;isolation:isolate}
@@ -1002,7 +1008,9 @@ function renderFooterProjects(){
 function renderPillars(){
   document.querySelectorAll("[data-chips]").forEach(el => {
     const k = el.dataset.chips, list = PROJECTS.filter(p => (p.kinds || []).includes(k));
-    el.innerHTML = list.map(p => `<span><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</span>`).join("") + `<span class="you">${T("+ yours", "+ dự án của bạn")}</span>`;
+    el.innerHTML = `<span class="pstack">${list.map(p => `<img src="/logos/${esc(p.logo)}" alt="${esc(p.name)}" title="${esc(p.name)}">`).join("")}</span>`
+      + `<span class="pcount"><b>${list.length}</b> ${list.length === 1 ? T("project", "dự án") : T("projects", "dự án")}</span>`
+      + `<span class="padd">${T("+ Add yours", "+ Thêm của bạn")}</span>`;
   });
 }
 document.querySelectorAll(".pillar").forEach(a => a.addEventListener("click", () => { FILTER = a.dataset.kind; applyFilter(); }));
