@@ -1,0 +1,32 @@
+name: Join the team
+description: Help build OpenYard projects.
+title: "[Join] "
+labels: ["join-team"]
+body:
+  - type: markdown
+    attributes:
+      value: Happy to have you. Tell us a bit about yourself and we'll reach out.
+  - type: dropdown
+    id: role
+    attributes:
+      label: How would you like to help?
+      multiple: true
+      options:
+        - Development
+        - Design
+        - Translation
+        - Testing
+        - Ideas and user research
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: about
+    attributes:
+      label: A few lines about you and what you'd like to work on
+    validations:
+      required: true
+  - type: input
+    id: contact
+    attributes:
+      label: Discord username or another way to reach you (optional)

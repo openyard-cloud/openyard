@@ -1,0 +1,22 @@
+{
+  "slug": "farmmind",
+  "name": "FarmMind",
+  "type": "app",
+  "status": "live",
+  "tagline": { "en": "AI assistant for Vietnamese farmers", "vi": "Trợ lý AI cho nhà nông Việt Nam" },
+  "description": {
+    "en": "For livestock and aquaculture farmers: farm records, weather, an AI assistant that answers in plain words, and IoT sensors.",
+    "vi": "Cho chủ trại chăn nuôi và thủy sản: sổ trại, thời tiết, trợ lý AI trả lời dễ hiểu, và cảm biến IoT."
+  },
+  "url": "https://farmmind.openyard.cloud",
+  "logo": "farmmind.svg",
+  "logoStyle": "tile",
+  "color": "#1d6b4f",
+  "maintainers": ["thihodev"],
+  "tags": ["agriculture", "ai", "iot"],
+  "team": true,
+  "featured": true,
+  "scene": "farm",
+  "swarm": { "src": "farmmind-mark-dark.svg" },
+  "added": "2026-11-04"
+}

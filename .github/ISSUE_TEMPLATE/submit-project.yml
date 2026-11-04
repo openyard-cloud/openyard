@@ -1,0 +1,80 @@
+name: Submit a project
+description: Put your free app or open-source project in the yard.
+title: "[Project] "
+labels: ["project-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for bringing your project! We list projects that are **free to use** or **open source**, that work today (or are close), and that someone maintains.
+        Prefer a pull request? Add `projects/<slug>.json` and a logo yourself, see CONTRIBUTING.md.
+  - type: input
+    id: name
+    attributes:
+      label: Project name
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Link people should open
+      description: Website, app store page or repository (https://)
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: What kind of project is it?
+      options:
+        - Free app (free to use, may be closed source)
+        - Open source (public code with a license)
+    validations:
+      required: true
+  - type: input
+    id: repo
+    attributes:
+      label: Repository and license (open source only)
+      placeholder: https://github.com/you/project · MIT
+  - type: input
+    id: tagline
+    attributes:
+      label: One-line tagline (at most 80 characters)
+      placeholder: AI assistant for small farms
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Who is it for, and what does it do? (at most 300 characters)
+    validations:
+      required: true
+  - type: textarea
+    id: logo
+    attributes:
+      label: Logo
+      description: Drag in a square SVG or PNG (at most 150 KB).
+    validations:
+      required: true
+  - type: input
+    id: maintainers
+    attributes:
+      label: GitHub usernames of the maintainers
+      placeholder: you, a-friend
+    validations:
+      required: true
+  - type: input
+    id: subdomain
+    attributes:
+      label: Want a subdomain? (optional)
+      description: For example yourproject.openyard.cloud pointing at your site.
+  - type: checkboxes
+    id: rules
+    attributes:
+      label: Checklist
+      options:
+        - label: The project is free to use (no paywall on its core features) or open source.
+          required: true
+        - label: I maintain this project or have the maintainers' permission to list it.
+          required: true
+        - label: It does not sell user data or show tracking ads.
+          required: true
