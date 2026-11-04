@@ -44,7 +44,7 @@ npm run check    # validate projects/*.json
 npm run dev      # build data and serve on http://localhost:8765
 ```
 
-The site is a single static page (`public/index.html`) served by Cloudflare Workers. `scripts/build.mjs` validates the registry and writes `public/projects.json` plus the logos. Pushes to `main` deploy automatically when the `CLOUDFLARE_API_TOKEN` secret is set.
+The site is a single static page (`public/index.html`) served by Cloudflare Workers. `scripts/build.mjs` validates the registry and writes `public/projects.json` plus the logos. Every push to `main` deploys automatically through Cloudflare Workers Builds.
 
 ## Tiếng Việt
 
