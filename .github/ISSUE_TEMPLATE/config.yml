@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Say hi or ask a question
+    url: https://github.com/thihodev/openyard/discussions
+    about: Chat with the team and the community.
