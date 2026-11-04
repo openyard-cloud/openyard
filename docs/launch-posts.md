@@ -26,15 +26,15 @@ Trang còn mới tinh, mọi người cứ góp ý thẳng tay nhé.
 
 AI made it cheap to build things nobody would fund: an app for a few hundred farmers, a strange experiment, the tool you needed yourself. But most of us build alone, and there is no obvious place to show a free project, get feedback or ask for help.
 
-OpenYard (https://openyard.cloud) is that place. You keep building on your own GitHub or site; here you get a page for your project, people who try it and a Discord to ask questions. Open source is welcome but not required. Listing takes five minutes through a form or a pull request (one JSON file): https://github.com/openyard-cloud/openyard
+OpenYard (https://openyard.cloud) is that place. You keep building on your own GitHub or site; here you get a page for your project, people who try it and a Discord to ask questions. Open source is welcome but not required. Listing takes five minutes, no account: https://openyard.cloud/submit
 
 Would love feedback, and free projects to list. Discord: https://discord.gg/TFKsfh6tMk
 
 ## Reddit r/opensource
 
-**Title:** OpenYard: a community directory of free projects where every listing is a JSON file in the repo
+**Title:** OpenYard: a community list of free projects, ranked by what is happening in their repos
 
-Every project on https://openyard.cloud lives as `projects/<slug>.json` plus a logo in https://github.com/openyard-cloud/openyard. CI validates submissions, merges deploy automatically, and each listing gets its own page with a share card. Non-developers can use an issue form instead.
+Add your project at https://openyard.cloud/submit (no account, paste your GitHub link). Each listing gets a page with its stars, recent pull requests, issues and discussions, and Trending ranks projects by activity this week. The site itself is open source: https://github.com/openyard-cloud/openyard
 
 The only rule is that the project is free to use. Open source is welcome, not required; the code stays in your own repository. There is a Discord for feedback and help.
 
@@ -42,7 +42,7 @@ The only rule is that the project is free to use. Open source is welcome, not re
 
 **Title:** Show HN: OpenYard – a community for people who build free software
 
-Text: AI agents made it cheap to build software for audiences nobody would fund. Most people doing this build alone. OpenYard is a place to show those projects, get feedback and help each other. The only rule is that it is free. Projects stay in their own repos; the listing is a JSON file you add by pull request, and the site is static on Cloudflare Workers. https://openyard.cloud
+Text: AI agents made it cheap to build software for audiences nobody would fund. Most people doing this build alone. OpenYard is a place to show those projects, get feedback and help each other. The only rule is that it is free. Projects stay in their own repos; you list one with a short form, and Trending ranks them by this week's stars, pull requests and issues. It runs on a single Cloudflare Worker with D1. https://openyard.cloud
 
 ## X / Threads
 

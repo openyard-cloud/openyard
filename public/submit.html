@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Share your project · OpenYard</title>
+<meta name="description" content="Put your free project in the yard. No account, one short form, live right away.">
+<link rel="canonical" href="https://openyard.cloud/submit">
+<meta property="og:title" content="Share your project · OpenYard">
+<meta property="og:description" content="Put your free project in the yard. No account, one short form, live right away.">
+<meta property="og:image" content="https://openyard.cloud/og.png?v=2">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--bg2:#f6f6f7;--solid:#fff;--ink:#0d0d0f;--muted:#6b6b73;--line:rgba(13,13,15,.08);--line2:rgba(13,13,15,.14);--shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px -12px rgba(0,0,0,.12);--ease:cubic-bezier(.16,1,.3,1);--bad:#e03131;--ok:#10b981}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--bad:#ff6b6b}}
+:root[data-theme="dark"]{--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--bad:#ff6b6b}
+*{box-sizing:border-box}html{overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01";overflow-x:clip}
+a{color:inherit;text-decoration:none}h1,h2,h3{margin:0;font-weight:600;letter-spacing:-.035em;line-height:1.05}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}@media (max-width:520px){.wrap{padding:0 16px}}
+nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.02em}.brand img{width:24px;height:24px}
+.brand em{font-style:normal;background:linear-gradient(100deg,#7c9cff 0%,#b67cff 35%,#ff7eb0 70%,#ffc56b 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.back{font-size:14px;color:var(--muted)}.back:hover{color:var(--ink)}
+.right{margin-left:auto;display:flex;gap:8px}
+.chip{border:1px solid var(--line2);background:transparent;color:var(--ink);border-radius:999px;height:34px;padding:0 14px;font:500 13px Inter,sans-serif;cursor:pointer}.chip:hover{background:var(--bg2)}
+.hero{position:relative;padding:56px 0 28px}
+.hero::before{content:"";position:absolute;inset:-40px 0 auto;height:380px;z-index:-1;background:radial-gradient(560px 240px at 15% 30%,rgba(124,156,255,.22),transparent 70%),radial-gradient(520px 240px at 85% 10%,rgba(255,126,176,.16),transparent 70%);pointer-events:none}
+.eyebrow{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:12px}
+h1{font-size:clamp(36px,5vw,56px)}
+.lead{color:var(--muted);font-size:17px;max-width:36em;margin:14px 0 0}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:40px;align-items:start;padding-bottom:80px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}.side{order:-1}}
+form{display:flex;flex-direction:column;gap:22px}
+.box{padding:22px;border-radius:22px;background:var(--bg2);border:1px solid var(--line)}
+.box h2{font-size:18px;letter-spacing:-.02em;margin-bottom:4px}.box > p{margin:0 0 16px;color:var(--muted);font-size:14px}
+.f{display:flex;flex-direction:column;gap:6px;margin-top:14px}.f:first-of-type{margin-top:0}
+label,.lbl{font-size:14px;font-weight:500}
+.lbl small,label small{font-weight:400;color:var(--muted);margin-left:4px}
+input[type=text],input[type=url],textarea,select{width:100%;font:15px Inter,system-ui,sans-serif;color:var(--ink);background:var(--solid);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+textarea{resize:vertical;min-height:96px;line-height:1.5}
+input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4px rgba(139,124,255,.18)}
+.count{font-size:12px;color:var(--muted);text-align:right;margin-top:-2px}.count.over{color:var(--bad)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.row2 .f{margin-top:0}@media (max-width:560px){.row2{grid-template-columns:1fr}}
+.repo{display:flex;gap:8px}.repo input{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;font:500 15px Inter,sans-serif;white-space:nowrap;border:0;cursor:pointer;transition:transform .5s var(--ease),background .2s,opacity .2s}
+.btn:active{transform:scale(.97)}.btn.dark{background:var(--ink);color:var(--bg)}.btn.dark:hover{opacity:.88}.btn.line{background:transparent;color:var(--ink);border:1px solid var(--line2)}.btn.line:hover{background:var(--solid)}
+.btn.sm{height:44px;padding:0 16px;font-size:14px}.btn:disabled{opacity:.5;cursor:default}
+.note{font-size:13px;color:var(--muted);margin-top:6px;min-height:1.2em}.note.ok{color:var(--ok)}.note.bad{color:var(--bad)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pills label{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:var(--solid);cursor:pointer;font-weight:500;font-size:14px;transition:all .25s var(--ease)}
+.pills input{position:absolute;opacity:0;pointer-events:none}
+.pills label:has(input:checked){background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pills label:has(input:focus-visible){outline:2px solid #8b7cff;outline-offset:2px}
+.seg{align-self:flex-start;display:inline-flex;padding:4px;border-radius:999px;border:1px solid var(--line2);background:var(--solid);gap:2px}
+.seg label{height:30px;padding:0 12px;display:inline-flex;align-items:center;border-radius:999px;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg input{position:absolute;opacity:0;pointer-events:none}.seg label:has(input:checked){background:var(--bg2);color:var(--ink);box-shadow:var(--shadow)}
+.drop{display:flex;align-items:center;gap:14px;padding:14px;border-radius:14px;border:1.5px dashed var(--line2);background:var(--solid);cursor:pointer;transition:border-color .2s}
+.drop:hover,.drop.over{border-color:#8b7cff}.drop input{display:none}
+.drop .th{width:56px;height:56px;border-radius:14px;background:var(--bg2);display:grid;place-items:center;overflow:hidden;flex:none;color:var(--muted)}
+.drop .th img{width:100%;height:100%;object-fit:cover}.drop .th.wide{width:96px}
+.drop b{display:block;font-weight:500;font-size:14px}.drop span{font-size:13px;color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;font-size:15px;cursor:pointer}
+.check input{width:20px;height:20px;margin-top:2px;accent-color:#7c6cff;flex:none}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.err{color:var(--bad);font-size:14.5px;font-weight:500}
+.side{position:sticky;top:88px}
+.side .lbl{display:block;margin-bottom:10px;color:var(--muted);font-weight:500;font-size:13px}
+.card{border-radius:22px;border:1px solid var(--line2);background:var(--solid);overflow:hidden;box-shadow:var(--shadow)}
+.vis{aspect-ratio:2/1;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--c) 70%,#fff),var(--c));display:grid;place-items:center;overflow:hidden}
+.vis img.shot{width:100%;height:100%;object-fit:cover}
+.lg{width:40px;height:40px;border-radius:11px;object-fit:cover;background:#fff;flex:none;display:grid;place-items:center;font-weight:700;color:#fff;font-size:15px}
+.vis .lg{width:84px;height:84px;border-radius:22px;font-size:30px}
+.cb{padding:18px}.ct{display:flex;align-items:center;gap:12px}.ct h3{font-size:18px;letter-spacing:-.02em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{font-size:12px;font-weight:500;border:1px solid var(--line2);border-radius:999px;padding:3px 10px;color:var(--muted);white-space:nowrap}
+.cb p{margin:12px 0 0;color:var(--muted);font-size:14.5px;min-height:2.8em;line-height:1.45}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.tags span{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--line)}
+.hint{margin-top:16px;font-size:13.5px;color:var(--muted);line-height:1.5}
+.done{display:none;text-align:left}
+.done.on{display:block}
+.done h2{font-size:clamp(28px,4vw,40px);margin-bottom:10px}
+.done .box{margin-top:22px}
+.link{display:flex;gap:8px;margin-top:10px}.link input{flex:1;font-size:13.5px}
+.warn{display:flex;gap:10px;padding:12px 14px;border-radius:12px;background:rgba(245,159,0,.12);color:#b8700a;font-size:14px;margin-top:12px}
+@media (prefers-color-scheme: dark){.warn{color:#ffc56b}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
+  <a class="back" href="/#projects">← <span data-vi="Tất cả dự án">All projects</span></a>
+  <div class="right"><button class="chip" id="lang" type="button" aria-label="Switch language">VI</button></div>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow" id="eye" data-vi="Gửi dự án">Share your project</div>
+  <h1 id="title" data-vi="Đưa dự án của bạn lên sân.">Put your project in the yard.</h1>
+  <p class="lead" id="lead" data-vi="Không cần tài khoản. Điền form, bấm gửi là dự án có trang riêng và hiện trong danh sách ngay. Luật chỉ có một: phải miễn phí.">No account needed. Fill in the form, send it, and your project gets its own page and shows up in the list right away. One rule: it has to be free.</p>
+</div></header>
+
+<main class="wrap">
+<div class="grid" id="formgrid">
+<form id="form" novalidate>
+  <div class="box" id="repo">
+    <h2 data-vi="Có repo GitHub?">Got a GitHub repo?</h2>
+    <p data-vi="Dán link, mình điền sẵn tên, mô tả, giấy phép và logo. Không có thì bỏ qua.">Paste the link and we fill in the name, description, license and logo. No repo? Skip this.</p>
+    <div class="repo"><input type="url" name="repo" id="f-repo" placeholder="https://github.com/you/project" autocomplete="off"><button class="btn line sm" type="button" id="fill" data-vi="Điền giúp">Fill in</button></div>
+    <div class="note" id="repo-note"></div>
+  </div>
+
+  <div class="box">
+    <h2 data-vi="Dự án">The project</h2>
+    <p data-vi="Phần này hiện trên thẻ và trang dự án.">This shows on your card and your project page.</p>
+    <div class="f"><label for="f-name"><span data-vi="Tên">Name</span></label><input type="text" name="name" id="f-name" maxlength="40" required placeholder="Rice Diary"></div>
+    <div class="f"><label for="f-url"><span data-vi="Đường dẫn để mở">Link people should open</span></label><input type="url" name="url" id="f-url" required placeholder="https://"></div>
+    <div class="f"><span class="lbl"><span data-vi="Viết bằng">Written in</span></span>
+      <div class="seg"><label><input type="radio" name="lang" value="en" checked>English</label><label><input type="radio" name="lang" value="vi">Tiếng Việt</label></div></div>
+    <div class="f"><label for="f-tagline"><span data-vi="Một dòng giới thiệu">One-line tagline</span></label><input type="text" name="tagline" id="f-tagline" maxlength="80" required><div class="count" data-for="f-tagline"></div></div>
+    <div class="f"><label for="f-desc"><span data-vi="Mô tả">Description</span><small data-vi="ai dùng, dùng để làm gì">who it is for and what it does</small></label><textarea name="description" id="f-desc" maxlength="300" required></textarea><div class="count" data-for="f-desc"></div></div>
+    <div class="f"><span class="lbl" data-vi="Thuộc loại">Kind</span>
+      <div class="pills"><label><input type="checkbox" name="kinds" value="people"><span data-vi="Cho mọi người">For people</span></label><label><input type="checkbox" name="kinds" value="wild"><span data-vi="Ý tưởng điên rồ">Wild idea</span></label><label><input type="checkbox" name="kinds" value="dev"><span data-vi="Công cụ cho dev">Dev tool</span></label></div></div>
+    <div class="row2">
+      <div class="f"><label for="f-status" data-vi="Giai đoạn">Stage</label><select name="status" id="f-status"><option value="live" data-vi="Đang chạy">Live</option><option value="beta" data-vi="Thử nghiệm">Beta</option><option value="soon" data-vi="Sắp ra mắt">Coming soon</option></select></div>
+      <div class="f"><label for="f-tags"><span data-vi="Thẻ">Tags</span><small data-vi="tối đa 5">up to 5</small></label><input type="text" name="tags" id="f-tags" placeholder="farming, ai"></div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2 data-vi="Hình ảnh">Pictures</h2>
+    <p data-vi="Không bắt buộc, nhưng thẻ có ảnh chụp thì được bấm vào nhiều hơn hẳn. Có repo GitHub mà không tải logo thì dùng avatar của bạn.">Optional, but cards with a screenshot get far more clicks. With a GitHub repo and no logo, we use your avatar.</p>
+    <label class="drop" id="d-logo"><span class="th" id="t-logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></span><span><b data-vi="Logo">Logo</b><span data-vi="Ảnh vuông, PNG, JPG hoặc WebP">Square, PNG, JPG or WebP</span></span><input type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/svg+xml"></label>
+    <label class="drop" id="d-image" style="margin-top:10px"><span class="th wide" id="t-image"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="m22 15-5-5L6 19"/></svg></span><span><b data-vi="Ảnh chụp màn hình">Screenshot</b><span data-vi="Ảnh ngang, khoảng 1200×600">Landscape, about 1200×600</span></span><input type="file" name="image" accept="image/png,image/jpeg,image/webp"></label>
+  </div>
+
+  <div class="box">
+    <h2 data-vi="Về bạn">About you</h2>
+    <p data-vi="Không bắt buộc.">Optional.</p>
+    <div class="f"><label for="f-maint"><span data-vi="Tên GitHub của bạn">Your GitHub username</span><small data-vi="để hiện avatar">shows your avatar</small></label><input type="text" name="maintainer" id="f-maint" placeholder="@you"></div>
+  </div>
+
+  <label class="check"><input type="checkbox" name="free" value="yes" id="f-free"><span data-vi="Ai cũng dùng được dự án này mà không phải trả tiền.">People can use this project without paying.</span></label>
+  <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+  <div id="ts"></div>
+  <div class="err" id="err" role="alert"></div>
+  <div class="actions">
+    <button class="btn dark" type="submit" id="send" data-vi="Đưa lên sân">Put it in the yard</button>
+    <button class="btn line" type="button" id="remove" hidden data-vi="Gỡ dự án">Remove listing</button>
+  </div>
+</form>
+
+<aside class="side">
+  <span class="lbl" data-vi="Xem trước">Preview</span>
+  <div class="card" id="pv">
+    <div class="vis" id="pv-vis" style="--c:#6d5bd0"></div>
+    <div class="cb">
+      <div class="ct"><span class="lg" id="pv-logo" style="background:#6d5bd0">?</span><h3 id="pv-name">Your project</h3><span class="tag" id="pv-tag">Free app</span></div>
+      <p id="pv-desc"></p>
+      <div class="tags" id="pv-tags"></div>
+    </div>
+  </div>
+  <p class="hint" data-vi="Sau khi gửi, bạn nhận một link riêng để sửa hay gỡ dự án. Nhớ lưu lại nhé.">After sending you get a private link to edit or remove your listing. Keep it somewhere safe.</p>
+</aside>
+</div>
+
+<section class="done" id="done">
+  <h2 data-vi="Đã lên sân! 🎉">You're in the yard! 🎉</h2>
+  <p class="lead" data-vi="Trang dự án đã có. Khoe trong kênh #showcase trên Discord để mọi người ghé thử nhé.">Your page is live. Share it in #showcase on Discord so people come and try it.</p>
+  <div class="actions" style="margin-top:22px"><a class="btn dark" id="done-page" href="/" data-vi="Xem trang dự án">See your page</a><a class="btn line" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener" data-vi="Khoe trên Discord">Share on Discord</a></div>
+  <div class="box">
+    <h2 data-vi="Link sửa riêng của bạn">Your private edit link</h2>
+    <p data-vi="Ai có link này đều sửa hay gỡ được dự án. Mình không gửi lại được, nên hãy lưu ngay.">Anyone with this link can change or remove the listing. We cannot send it again, so save it now.</p>
+    <div class="link"><input type="text" id="edit-link" readonly><button class="btn line sm" type="button" id="copy" data-vi="Chép">Copy</button></div>
+  </div>
+</section>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id), form = $("form");
+  let LANG = "en";
+  const T = (en, vi) => LANG === "vi" ? vi : en;
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  /* language, same storage key as the rest of the site */
+  const els = [...document.querySelectorAll("[data-vi]")];
+  els.forEach(e => e.dataset.en = e.textContent);
+  const setLang = l => {
+    LANG = l; els.forEach(e => e.textContent = l === "vi" ? e.dataset.vi : e.dataset.en);
+    document.documentElement.lang = l; $("lang").textContent = l === "vi" ? "EN" : "VI";
+    try { localStorage.setItem("oy-lang", l); } catch (e) {}
+    preview(); counts();
+  };
+  $("lang").addEventListener("click", () => setLang(LANG === "vi" ? "en" : "vi"));
+
+  /* images: shrink in the browser so uploads stay small */
+  const files = { logo: null, image: null };
+  async function shrink(file, max, square) {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+    let w = img.naturalWidth || 512, h = img.naturalHeight || 512;
+    const side = square ? Math.max(w, h) : null, scale = Math.min(1, max / (square ? side : Math.max(w, h)));
+    const c = document.createElement("canvas");
+    c.width = Math.round((square ? side : w) * scale); c.height = Math.round((square ? side : h) * scale);
+    const g = c.getContext("2d");
+    if (square) g.drawImage(img, (side - w) / 2 * scale, (side - h) / 2 * scale, w * scale, h * scale);
+    else g.drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/webp", .85));
+    return blob && blob.type === "image/webp" ? blob : new Promise(r => c.toBlob(r, "image/png"));
+  }
+  function setupDrop(key, max, square) {
+    const drop = $("d-" + key), input = drop.querySelector("input"), th = $("t-" + key);
+    const take = async file => {
+      if (!file || !/^image\//.test(file.type)) return;
+      try { files[key] = await shrink(file, max, square); th.innerHTML = `<img src="${URL.createObjectURL(files[key])}" alt="">`; preview(); }
+      catch (e) { $("err").textContent = T("That image could not be read.", "Không đọc được ảnh này."); }
+    };
+    input.addEventListener("change", () => take(input.files[0]));
+    drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+    drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); take(e.dataTransfer.files[0]); });
+  }
+  setupDrop("logo", 256, true); setupDrop("image", 1200, false);
+
+  /* GitHub autofill */
+  let gh = null;
+  async function fill() {
+    const repo = $("f-repo").value.trim(), note = $("repo-note");
+    if (!repo) return;
+    note.className = "note"; note.textContent = T("Reading the repository…", "Đang đọc repo…");
+    try {
+      const r = await fetch("/api/github?repo=" + encodeURIComponent(repo)), d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      gh = d;
+      const set = (id, v) => { if (v && !$(id).value) $(id).value = v; };
+      set("f-name", d.name.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase()).slice(0, 40));
+      set("f-url", d.homepage && /^https:/.test(d.homepage) ? d.homepage : d.url);
+      const first = (d.description || "").split(/(?<=[.!?])\s|:\s/)[0];
+      set("f-tagline", first.length <= 80 ? first : first.slice(0, 79).replace(/\s+\S*$/, "") + "…"); set("f-desc", (d.description || "").slice(0, 300));
+      set("f-maint", d.owner); set("f-tags", (d.topics || []).slice(0, 5).join(", "));
+      note.className = "note ok";
+      note.textContent = T(`Filled in from GitHub · ★ ${d.stars}${d.license ? " · " + d.license : ""}`, `Đã điền từ GitHub · ★ ${d.stars}${d.license ? " · " + d.license : ""}`);
+      preview(); counts();
+    } catch (e) { note.className = "note bad"; note.textContent = e.message || T("Could not read that repository.", "Không đọc được repo này."); }
+  }
+  $("fill").addEventListener("click", fill);
+  $("f-repo").addEventListener("change", fill);
+
+  /* live preview */
+  const KIND = { people: ["For people", "Cho mọi người"], wild: ["Wild idea", "Ý tưởng điên rồ"], dev: ["Dev tool", "Công cụ cho dev"] };
+  function preview() {
+    const name = $("f-name").value.trim() || T("Your project", "Dự án của bạn");
+    const color = "#6d5bd0", ini = esc(name.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase());
+    const logo = files.logo ? URL.createObjectURL(files.logo) : gh?.avatar || null;
+    const shot = files.image ? URL.createObjectURL(files.image) : null;
+    $("pv-name").textContent = name;
+    $("pv-logo").outerHTML = logo ? `<img class="lg" id="pv-logo" src="${esc(logo)}" alt="">` : `<span class="lg" id="pv-logo" style="background:${color}">${ini}</span>`;
+    $("pv-vis").innerHTML = shot ? `<img class="shot" src="${esc(shot)}" alt="">` : logo ? `<img class="lg" src="${esc(logo)}" alt="">` : `<span class="lg" style="background:#fff;color:${color}">${ini}</span>`;
+    $("pv-desc").textContent = $("f-desc").value.trim() || $("f-tagline").value.trim() || T("Your description shows here.", "Phần mô tả hiện ở đây.");
+    const st = $("f-status").value;
+    $("pv-tag").textContent = st === "soon" ? T("Coming soon", "Sắp ra mắt") : gh?.license ? T("Open source", "Mã nguồn mở") : T("Free app", "App miễn phí");
+    const kinds = [...form.querySelectorAll("[name=kinds]:checked")].map(k => T(...KIND[k.value]));
+    const tags = $("f-tags").value.split(/[,\s]+/).filter(Boolean).slice(0, 5);
+    $("pv-tags").innerHTML = [...kinds, ...tags].map(t => `<span>${esc(t)}</span>`).join("");
+  }
+  function counts() {
+    document.querySelectorAll(".count").forEach(c => {
+      const f = $(c.dataset.for), n = f.value.length, max = +f.maxLength;
+      c.textContent = `${n}/${max}`; c.classList.toggle("over", n > max);
+    });
+  }
+  form.addEventListener("input", () => { preview(); counts(); });
+
+  /* Turnstile, when the site has a key */
+  let tsKey = null;
+  fetch("/api/projects").then(r => r.json()).then(d => {
+    tsKey = d.site?.turnstile;
+    if (!tsKey) return;
+    window.onTs = () => turnstile.render("#ts", { sitekey: tsKey, theme: "auto" });
+    const s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTs&render=explicit"; s.async = true; document.head.appendChild(s);
+  }).catch(() => {});
+
+  /* edit mode: /submit?edit=<slug>#<token> */
+  const editSlug = new URLSearchParams(location.search).get("edit"), editToken = location.hash.slice(1);
+  if (editSlug && editToken) {
+    fetch(`/api/edit/${encodeURIComponent(editSlug)}`, { headers: { "X-Edit-Token": editToken } }).then(async r => {
+      const p = await r.json();
+      if (!r.ok) { $("err").textContent = p.error; return; }
+      $("eye").dataset.en = "Edit your listing"; $("eye").dataset.vi = "Sửa dự án";
+      $("title").dataset.en = p.name; $("title").dataset.vi = p.name;
+      $("lead").dataset.en = "Change anything and save. Leave the pictures empty to keep the current ones."; $("lead").dataset.vi = "Sửa gì cũng được rồi lưu lại. Để trống phần hình ảnh thì giữ hình cũ.";
+      $("send").dataset.en = "Save changes"; $("send").dataset.vi = "Lưu thay đổi";
+      $("remove").hidden = false;
+      const lang = p.tagline[LANG] ? LANG : p.tagline.en ? "en" : "vi";
+      form.querySelector(`[name=lang][value=${lang}]`).checked = true;
+      $("f-repo").value = p.repo || ""; $("f-name").value = p.name; $("f-url").value = p.url;
+      $("f-tagline").value = p.tagline[lang] || ""; $("f-desc").value = p.description[lang] || "";
+      $("f-status").value = p.status; $("f-tags").value = (p.tags || []).join(", "); $("f-maint").value = p.maintainers[0] || "";
+      form.querySelectorAll("[name=kinds]").forEach(k => k.checked = p.kinds.includes(k.value));
+      $("f-free").checked = true;
+      if (p.logo) $("t-logo").innerHTML = `<img src="${esc(p.logo)}" alt="">`;
+      if (p.image) $("t-image").innerHTML = `<img src="${esc(p.image)}" alt="">`;
+      setLang(LANG);
+    });
+  }
+
+  async function send(extra = {}) {
+    $("err").textContent = "";
+    const fd = new FormData(form);
+    fd.delete("logo"); fd.delete("image");
+    if (files.logo) fd.append("logo", files.logo, "logo." + files.logo.type.split("/")[1]);
+    if (files.image) fd.append("image", files.image, "image." + files.image.type.split("/")[1]);
+    for (const [k, v] of Object.entries(extra)) fd.append(k, v);
+    const editing = editSlug && editToken;
+    if (editing) fd.append("token", editToken);
+    $("send").disabled = true;
+    try {
+      const r = await fetch(editing ? `/api/edit/${encodeURIComponent(editSlug)}` : "/api/submit", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      if (d.removed) { location.href = "/#projects"; return; }
+      if (editing) { location.href = d.page; return; }
+      $("formgrid").hidden = true; document.querySelector(".hero").hidden = true;
+      $("done-page").href = d.page;
+      $("edit-link").value = location.origin + d.edit;
+      $("done").classList.add("on"); scrollTo(0, 0);
+    } catch (e) {
+      $("err").textContent = e.message || T("Something went wrong. Try again.", "Có lỗi xảy ra. Thử lại nhé.");
+      if (window.turnstile && tsKey) turnstile.reset();
+    } finally { $("send").disabled = false; }
+  }
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const need = [["f-name", T("Add a name.", "Thêm tên dự án.")], ["f-url", T("Add the link people should open.", "Thêm đường dẫn để mở dự án.")], ["f-tagline", T("Add a one-line tagline.", "Thêm một dòng giới thiệu.")], ["f-desc", T("Add a description.", "Thêm phần mô tả.")]];
+    for (const [id, msg] of need) if (!$(id).value.trim()) { $("err").textContent = msg; $(id).focus(); return; }
+    if (!/^https:\/\//.test($("f-url").value.trim())) { $("err").textContent = T("The link must start with https://", "Đường dẫn phải bắt đầu bằng https://"); return; }
+    if (!form.querySelector("[name=kinds]:checked")) { $("err").textContent = T("Pick at least one kind.", "Chọn ít nhất một loại."); return; }
+    if (!$("f-free").checked) { $("err").textContent = T("OpenYard lists free projects only.", "OpenYard chỉ nhận dự án miễn phí."); return; }
+    send();
+  });
+  $("remove").addEventListener("click", () => {
+    if ($("remove").dataset.sure) send({ remove: "yes" });
+    else { $("remove").dataset.sure = "1"; $("remove").textContent = T("Click again to remove", "Bấm lần nữa để gỡ"); }
+  });
+  $("copy").addEventListener("click", () => { $("edit-link").select(); navigator.clipboard?.writeText($("edit-link").value); $("copy").textContent = T("Copied", "Đã chép"); });
+
+  if (location.hash === "#repo") $("f-repo").focus();
+  let saved = null; try { saved = localStorage.getItem("oy-lang"); } catch (e) {}
+  setLang(saved || ((navigator.language || "").toLowerCase().startsWith("vi") ? "vi" : "en"));
+})();
+</script>
+</body>
+</html>

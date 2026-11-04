@@ -2,7 +2,18 @@
   "name": "openyard-site",
   "account_id": "7281c7193a9e8bcd8e0d8ffe1bd17b0a",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./public" },
+  "main": "src/worker.js",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json"]
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "openyard", "database_id": "90c96a85-e184-41fb-b6de-324f0a4bed51" }
+  ],
+  // GitHub stats for the trending list, a few repositories per run
+  "triggers": { "crons": ["17 * * * *"] },
+  "vars": { "TURNSTILE_SITE_KEY": "0x4AAAAAAFzE7AU_0L_sZhiu" },
   "routes": [
     { "pattern": "openyard.cloud", "custom_domain": true },
     { "pattern": "www.openyard.cloud", "custom_domain": true }
