@@ -341,10 +341,14 @@ nav .links a:hover{color:var(--ink)}
 .hx::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(5,5,10,.55) 0%,transparent 22%,transparent 50%,rgba(5,5,10,.88) 100%)}
 .hx-in{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding-top:92px;padding-bottom:44px;pointer-events:none}
 .hx-in a,.hx-in button{pointer-events:auto}
-.hx .badge{align-self:flex-start;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#c9c9d1}
+.hx .badge{align-self:flex-start;max-width:calc(100% - 80px);background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#c9c9d1}
 .hx-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:32px}
 .hx-l{max-width:640px}
 .hx h1 .grad{white-space:nowrap}
+.hx-pause{position:absolute;top:100px;right:20px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#f4f4f5;display:grid;place-items:center;cursor:pointer;transition:background .2s}
+.hx-pause:hover{background:rgba(255,255,255,.16)}
+.hx-pause svg{width:14px;height:14px}
+.hx-pause:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .hx h1{font-size:clamp(38px,5.4vw,78px);margin:0 0 18px;color:#fff;text-shadow:0 2px 30px rgba(0,0,0,.5)}
 .hx .sub{color:rgba(255,255,255,.72);font-size:clamp(16px,1.4vw,19px);margin:0 0 26px;max-width:32em}
 .hx .cta{display:flex;gap:10px;flex-wrap:wrap}
@@ -536,6 +540,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
       </div>
     </div>
   </div>
+  <button class="hx-pause" id="swarmpause" type="button" aria-label="Freeze hero animation" aria-pressed="false"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="swarmpi" d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg></button>
 </header>
 
 <section id="demo" class="demo-sec">
@@ -1231,6 +1236,15 @@ addEventListener("oy-lang", () => { if (PROJECTS.length) { renderPillars(); rend
   const DUR = { cloud: 1.1, in: 2.6, hold: 4.2, out: 1.7 };
   let vis = true; new IntersectionObserver(e => vis = e[0].isIntersecting).observe(cv);
   let last = performance.now(), time = 0, busy = false;
+  const pauseBtn = document.getElementById("swarmpause"), pauseIcon = document.getElementById("swarmpi");
+  let paused = false;
+  const setPaused = p => {
+    paused = p;
+    pauseBtn.setAttribute("aria-pressed", p);
+    pauseIcon.setAttribute("d", p ? "m7 4 13 8-13 8z" : "M6 5h4v14H6zM14 5h4v14h-4z");
+  };
+  setPaused(reduce);
+  pauseBtn.addEventListener("click", () => setPaused(!paused));
   async function advance(){
     if (phase === "cloud") {
       busy = true; const d = await next; busy = false;
@@ -1244,7 +1258,7 @@ addEventListener("oy-lang", () => { if (PROJECTS.length) { renderPillars(); rend
   (function frame(now){
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     if (vis && !document.hidden) {
-      const sp = reduce ? .3 : 1; time += dt * sp;
+      const sp = paused ? 0 : reduce ? .3 : 1; time += dt * sp;
       if (!busy) { pt += dt * sp; if (pt >= DUR[phase]) advance(); }
       const p = Math.min(1, pt / DUR[phase]);
       m = phase === "in" ? p : phase === "hold" ? 1 : phase === "out" ? 1 - p : 0;
