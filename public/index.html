@@ -15,7 +15,9 @@
 <meta property="og:image:alt" content="OpenYard: free apps, wild ideas, open tools">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://openyard.cloud/og.png">
+<link rel="canonical" href="https://openyard.cloud/">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Organization","name":"OpenYard","url":"https://openyard.cloud","logo":"https://openyard.cloud/favicon.svg","sameAs":["https://github.com/openyard-cloud","https://discord.gg/TFKsfh6tMk"]},{"@context":"https://schema.org","@type":"WebSite","name":"OpenYard","url":"https://openyard.cloud","inLanguage":["en","vi"]}]</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1124,7 +1126,7 @@ DATA.then(d => {
 }).catch(() => {});
 
 function renderFooterProjects(){
-  document.getElementById("fprojects").innerHTML = PROJECTS.map(p => `<a href="${esc(p.url)}" target="_blank" rel="noopener"><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</a>`).join("") + `<a href="#submit" style="color:#b67cff">${T("+ Add yours", "+ Thêm dự án của bạn")}</a>`;
+  document.getElementById("fprojects").innerHTML = PROJECTS.map(p => `<a href="/p/${esc(p.slug)}"><img src="/logos/${esc(p.logo)}" alt="">${esc(p.name)}</a>`).join("") + `<a href="#submit" style="color:#b67cff">${T("+ Add yours", "+ Thêm dự án của bạn")}</a>`;
 }
 function renderPillars(){
   document.querySelectorAll("[data-chips]").forEach(el => {

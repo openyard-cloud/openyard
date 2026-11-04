@@ -1,13 +1,17 @@
 // Validates every project in projects/*.json and writes the site's data:
-// public/projects.json plus the logos in public/logos/.
+// public/projects.json, the logos, screenshots and share images, a page per
+// project at public/p/<slug>.html and public/sitemap.xml.
 // Usage: node scripts/build.mjs [--check]   (--check validates without writing)
 import { readdirSync, readFileSync, statSync, mkdirSync, copyFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join, extname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { projectPage, sitemap } from "./pages.mjs";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const DIR = join(ROOT, "projects");
 const LOGOS = join(DIR, "logos");
 const IMAGES = join(DIR, "images");
+const OGS = join(DIR, "og");
 const MAX_IMAGE = 400 * 1024;
 const OUT = join(ROOT, "public");
 const checkOnly = process.argv.includes("--check");
@@ -99,4 +103,15 @@ mkdirSync(outImages, { recursive: true });
 for (const f of images) copyFileSync(join(IMAGES, f), join(outImages, f));
 const site = JSON.parse(readFileSync(join(ROOT, "site.config.json"), "utf8"));
 writeFileSync(join(OUT, "projects.json"), JSON.stringify({ site, projects }, null, 2) + "\n");
-console.log(`Wrote public/projects.json, ${logos.size} logo(s) and ${images.size} screenshot(s).`);
+
+// Share images are optional: made by `npm run og`, otherwise pages fall back to the screenshot.
+const outOg = join(OUT, "og"), outPages = join(OUT, "p");
+for (const d of [outOg, outPages]) { rmSync(d, { recursive: true, force: true }); mkdirSync(d, { recursive: true }); }
+let ogs = 0;
+for (const p of projects) {
+  const og = join(OGS, `${p.slug}.png`), hasOg = existsSync(og);
+  if (hasOg) { copyFileSync(og, join(outOg, `${p.slug}.png`)); ogs++; }
+  writeFileSync(join(outPages, `${p.slug}.html`), projectPage(p, projects, site, hasOg));
+}
+writeFileSync(join(OUT, "sitemap.xml"), sitemap(projects, new Date().toISOString().slice(0, 10)));
+console.log(`Wrote public/projects.json, ${logos.size} logo(s), ${images.size} screenshot(s), ${ogs} share image(s), ${projects.length} project page(s) and sitemap.xml.`);

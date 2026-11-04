@@ -28,7 +28,9 @@
 ```
 
 4. Run `npm run check` (Node 20+). Fix anything it reports.
-5. Open a pull request. A maintainer reviews it; it appears on openyard.cloud after merge.
+5. Open a pull request. A maintainer reviews it; after merge it appears on openyard.cloud and gets its own page at `openyard.cloud/p/my-app`.
+
+Your page shares your screenshot when someone posts the link. Maintainers can also render a share card for it with `npm run og my-app` (needs a local Chrome, Brave or Chromium), which writes `projects/og/my-app.png`.
 
 ### Fields
 
@@ -54,8 +56,19 @@
 
 ## Work on the site
 
-The site is `public/index.html` (plain HTML, CSS and JavaScript, no build step besides `scripts/build.mjs`). Run `npm run dev`, check light and dark mode, English and Vietnamese, and a narrow window before opening a pull request.
+The home page is `public/index.html` (plain HTML, CSS and JavaScript). `scripts/build.mjs` writes the project data, a page per project in `public/p/` (template in `scripts/pages.mjs`) and `sitemap.xml`. Run `npm run dev`, check light and dark mode, English and Vietnamese, and a narrow window before opening a pull request.
+
+## Pull requests made with AI
+
+AI agents are welcome here; OpenYard is built with them. A person still answers for every pull request:
+
+- Open it from an account a person reads, and reply to review comments yourself.
+- Say in the description which tool you used and what you checked by hand. For changes you can see, add a screenshot (narrow and wide, light and dark).
+- Keep it to the issue. Do not add test harnesses, dependencies or workflow changes that the issue did not ask for.
+- One open pull request per issue. If someone is already on it, help there instead.
+
+Maintainers may close pull requests that look generated in bulk without this, however correct the code is.
 
 ## Be kind
 
-Be respectful, assume good intent, and help newcomers. Maintainers may remove listings or comments that break this.
+Read the [Code of Conduct](CODE_OF_CONDUCT.md). To report a security problem, see [SECURITY.md](SECURITY.md).

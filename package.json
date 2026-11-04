@@ -5,6 +5,7 @@
   "scripts": {
     "check": "node scripts/build.mjs --check",
     "build": "node scripts/build.mjs",
+    "og": "node scripts/og.mjs",
     "dev": "node scripts/build.mjs && python3 -m http.server 8765 -d public",
     "deploy": "node scripts/build.mjs && npx -y wrangler@4 deploy"
   }
