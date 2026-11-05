@@ -19,7 +19,13 @@ const headers = env => ({
 });
 
 async function gh(env, path) {
-  const r = await fetch(API + path, { headers: headers(env) });
+  let r = await fetch(API + path, { headers: headers(env) });
+  // A wrong or expired GITHUB_TOKEN fails every call; fall back to anonymous so stats and
+  // the submit form keep working, and say so in the Worker logs.
+  if (r.status === 401 && env.GITHUB_TOKEN) {
+    console.error("GITHUB_TOKEN was rejected by GitHub (401); using anonymous requests");
+    r = await fetch(API + path, { headers: headers({}) });
+  }
   if (r.status === 429 || (r.status === 403 && r.headers.get("x-ratelimit-remaining") === "0")) throw new RateLimited(path);
   if (!r.ok) return null;
   return r.json();
