@@ -57,11 +57,13 @@ export async function repoActivity(env, ref, now = Date.now()) {
   const since = new Date(now - 7 * DAY).toISOString();
   const repo = await gh(env, base);
   if (!repo || repo.private) return null;
-  const [pulls, issues, commits, disc] = await Promise.all([
+  const [pulls, issues, commits, disc, langs, people] = await Promise.all([
     gh(env, `${base}/pulls?state=all&sort=updated&direction=desc&per_page=30`),
     gh(env, `${base}/issues?state=all&sort=updated&direction=desc&per_page=30&since=${since}`),
     gh(env, `${base}/commits?since=${since}&per_page=100`),
     discussions(env, ref),
+    gh(env, `${base}/languages`),
+    gh(env, `${base}/contributors?per_page=20`),
   ]);
   const recent = iso => iso && iso >= since;
   const prs = (pulls || []).map(p => ({ ...item(p, p.merged_at ? "merged" : p.state), _new: recent(p.created_at) || recent(p.merged_at) }));
@@ -74,6 +76,11 @@ export async function repoActivity(env, ref, now = Date.now()) {
     issues_7d: iss.filter(i => i._new).length,
     commits_7d: Array.isArray(commits) ? commits.length : 0,
     discussions_7d: ds ? ds.filter(d => d._new).length : 0,
-    activity: { prs: strip(prs), issues: strip(iss), ...(ds ? { discussions: strip(ds) } : {}) },
+    activity: {
+      prs: strip(prs), issues: strip(iss), ...(ds ? { discussions: strip(ds) } : {}),
+      // Bytes per language, and the people (not bots) with the most commits.
+      ...(langs && typeof langs === "object" ? { languages: langs } : {}),
+      ...(Array.isArray(people) ? { contributors: people.filter(c => c.type === "User" && !/\[bot\]$/.test(c.login)).slice(0, 12).map(c => ({ login: c.login, avatar: c.avatar_url, n: c.contributions })) } : {}),
+    },
   };
 }

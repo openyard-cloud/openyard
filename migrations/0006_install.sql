@@ -1,0 +1,9 @@
+-- Optional install commands shown in a terminal card on a project page (JSON array):
+-- [{ label: {en, vi} | string, cmd, note?: {en, vi} }]
+ALTER TABLE projects ADD COLUMN install TEXT;
+
+UPDATE projects SET
+ install = '[{"label":{"en":"Any agent","vi":"Mọi agent"},"cmd":"npx skills add openyard-cloud/vetcode","note":{"en":"Claude Code, Codex, Gemini CLI, Copilot, Cursor and every agent that loads Agent Skills.","vi":"Claude Code, Codex, Gemini CLI, Copilot, Cursor và mọi agent đọc được Agent Skills."}},{"label":"Claude Code","cmd":"claude plugin marketplace add openyard-cloud/vetcode && claude plugin install vetcode@openyard","note":{"en":"Installs it as a plugin. Then ask: \"check this repo for malware before I run it\".","vi":"Cài dưới dạng plugin. Sau đó hỏi: \"kiểm tra mã độc repo này trước khi chạy\"."}},{"label":"GitHub PR","cmd":"- uses: openyard-cloud/vetcode@main","note":{"en":"Add to a pull_request workflow: inline review comments on the lines a pull request changes.","vi":"Thêm vào workflow pull_request: bình luận ngay trên các dòng mà PR thay đổi."}},{"label":"CLI","cmd":"npx -y -p github:openyard-cloud/vetcode vetcode .","note":{"en":"The scanner alone, no agent. Node.js 18+, nothing else to install.","vi":"Chỉ bộ quét, không cần agent. Cần Node.js 18+, không cài gì thêm."}}]',
+ description = '{"en":"An AI skill that checks code for malware, supply-chain attacks, leaked secrets and vulnerabilities, then reads the code to confirm each finding. On the same malicious packages it beats GuardDog with a fraction of the false alarms. Free, open source, runs on your machine.","vi":"Skill AI kiểm tra code để tìm mã độc, tấn công chuỗi cung ứng, secret bị lộ và lỗ hổng, rồi đọc code để xác nhận từng phát hiện. Trên cùng bộ package độc, vetcode vượt GuardDog với ít báo nhầm hơn nhiều. Miễn phí, mã nguồn mở, chạy trên máy bạn."}',
+ updated_at = 1793955600000
+WHERE slug = 'vetcode';
