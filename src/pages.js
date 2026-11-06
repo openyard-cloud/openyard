@@ -331,13 +331,13 @@ const FX_JS = `<script>
   // Type the first command once, after the hero has risen in; the full text is in the HTML.
   const code = !still && document.querySelector(".panel:not([hidden]) code");
   if (code) {
-    const full = code.textContent, html = code.innerHTML, foot = code.closest(".panel").querySelector(".foot");
+    const full = code.textContent, words = [...code.childNodes], foot = code.closest(".panel").querySelector(".foot");
     code.textContent = ""; foot.style.opacity = 0;
     let i = 0;
     setTimeout(function type() {
       code.textContent = full.slice(0, ++i);
       if (i < full.length) setTimeout(type, 22 + Math.random() * 38);
-      else { code.innerHTML = html; foot.style.transition = "opacity .6s"; foot.style.opacity = 1; }
+      else { code.replaceChildren(...words); foot.style.transition = "opacity .6s"; foot.style.opacity = 1; }
     }, 900);
   }
   document.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
