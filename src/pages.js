@@ -145,6 +145,12 @@ section.more{padding:80px 0 24px}
 .num b{display:block;font-size:32px;font-weight:600;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
 .num>span{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}
 .num em{font-style:normal;font-size:13px;font-weight:500;letter-spacing:0;color:#10b981;margin-left:6px;vertical-align:middle}
+.hl{margin-top:56px}
+.hls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:860px){.hls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.hls{grid-template-columns:1fr}}
+.hls .num b{color:var(--c)}
+.hls .num small{display:block;font-size:12.5px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;align-items:start}
 .list{border-radius:18px;border:1px solid var(--line2);background:var(--solid);overflow:hidden}
 .list h3{font-size:14px;letter-spacing:0;font-weight:600;padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
@@ -333,6 +339,14 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
   const empty = kind => { const [icon, msg, cta, path] = EMPTY[kind]; return `<div class="empty">${ic(icon)}<div>${t(...msg)}</div><a href="${esc(repoUrl + path)}" target="_blank" rel="noopener">${t(...cta)} →</a></div>`; };
   const list = (title, items, more, kind, d) => `<div class="list reveal" style="--d:${d}"><h3>${t(...title)}<a href="${esc(more)}" target="_blank" rel="noopener">${t("All", "Tất cả")} →</a></h3>${(items || []).length ? items.slice(0, 5).map(x => row(x, kind)).join("") : empty(kind)}</div>`;
   const num = (icon, n, label, d, extra = "") => `<div class="num reveal" style="--d:${d}">${ic(icon)}<b><span class="cnt" data-n="${+n || 0}">${+n || 0}</span>${extra}</b><span>${t(...label)}</span></div>`;
+  // Measured results the maker wants to show, each next to what it was compared with.
+  const H = p.highlights;
+  const highlights = H?.items?.length ? `<section class="hl">
+    <div class="hd2 reveal"><div><h2>${t(en(H.title), vi(H.title))}</h2>
+      ${H.note ? `<p class="sub">${t(en(H.note), vi(H.note))}</p>` : ""}</div>
+      ${H.link ? `<a class="sync" href="${esc(H.link)}" target="_blank" rel="noopener">${t("How it was measured", "Cách đo")} →</a>` : ""}</div>
+    <div class="hls">${H.items.map((x, i) => `<div class="num reveal" style="--d:${i}"><b>${esc(x.value)}</b><span>${t(en(x.label), vi(x.label))}</span>${x.vs ? `<small>${t(en(x.vs), vi(x.vs))}</small>` : ""}</div>`).join("")}</div>
+  </section>` : "";
   const activity = st ? `<section class="act">
     <div class="hd2 reveal"><div><h2>${t("Activity", "Hoạt động")}</h2>
       <p class="sub">${t("From the GitHub repository, refreshed every hour.", "Lấy từ repo GitHub, cập nhật mỗi giờ.")}</p></div>
@@ -377,6 +391,7 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
 <div class="wrap">
   ${visual}
   <dl class="specs reveal" style="--n:${facts.length}">${facts.map(([[e, v], html]) => `<div><dt>${t(e, v)}</dt><dd>${html}</dd></div>`).join("")}</dl>
+  ${highlights}
   ${activity}
   <section class="talk" id="comments">
     <div class="reveal"><h2>${t("Comments", "Bình luận")}</h2>
