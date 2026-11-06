@@ -40,7 +40,7 @@ function toApi(row, now) {
     ...(row.repo ? { repo: row.repo } : {}), ...(row.license ? { license: row.license } : {}),
     logo: row.logo, ...(row.logo_style ? { logoStyle: row.logo_style } : {}), ...(row.image ? { image: row.image } : {}), ...(row.og ? { og: row.og } : {}),
     ...(row.color ? { color: row.color } : {}), maintainers: JSON.parse(row.maintainers), tags: JSON.parse(row.tags),
-    team: !!row.team, featured: !!row.featured, ...(row.swarm ? { swarm: JSON.parse(row.swarm) } : {}), ...(row.highlights ? { highlights: JSON.parse(row.highlights) } : {}), added: row.added,
+    team: !!row.team, featured: !!row.featured, ...(row.swarm ? { swarm: JSON.parse(row.swarm) } : {}), ...(row.highlights ? { highlights: JSON.parse(row.highlights) } : {}), ...(row.install ? { install: JSON.parse(row.install) } : {}), added: row.added,
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   return { ...p, ...(s ? { stats: s } : {}), comments: row.comments || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now) };

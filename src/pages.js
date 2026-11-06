@@ -30,6 +30,8 @@ const I = {
   share: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
   lock: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
   expand: '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const since = (ms, now) => {
   const m = Math.max(0, Math.round((now - ms) / 60000)), h = Math.round(m / 60), d = Math.round(m / 1440);
@@ -88,11 +90,51 @@ nav.pinned .np{opacity:1;transform:none;pointer-events:auto}
 .pill.on{color:var(--ink)}.dot{width:6px;height:6px;border-radius:50%;background:#34d399;flex:none;animation:ping 2.4s infinite}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(52,211,153,.55)}70%{box-shadow:0 0 0 7px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
 h1{font-size:clamp(44px,7vw,80px);letter-spacing:-.045em;padding-bottom:.06em;background:linear-gradient(180deg,var(--ink) 45%,color-mix(in srgb,var(--ink) 55%,var(--c)));-webkit-background-clip:text;background-clip:text;color:transparent}
-.tl{font-size:clamp(19px,2.2vw,24px);color:var(--ink);margin:14px 0 10px;letter-spacing:-.02em;font-weight:500}
-.desc{color:var(--muted);font-size:17px;max-width:40em;margin:0 0 30px}
+.tl{font-size:clamp(19px,2.2vw,24px);color:var(--ink);margin:14px 0 10px;letter-spacing:-.02em;font-weight:500;text-wrap:balance}
+.desc{color:var(--muted);font-size:17px;max-width:40em;margin:0 0 30px;text-wrap:pretty}
 .cta{display:flex;gap:10px;flex-wrap:wrap}
 .hero .btn.dark{box-shadow:0 10px 34px -12px color-mix(in srgb,var(--c) 85%,transparent)}
 .stage{perspective:1600px;margin:12px 0 0}
+.hero.two .cols{display:grid;grid-template-columns:minmax(0,1.04fr) minmax(0,.96fr);gap:56px;align-items:center}
+.hero.two .desc{font-size:16.5px}
+@media (max-width:980px){.hero.two .cols{grid-template-columns:1fr;gap:36px}}
+.mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+.term{position:relative;border-radius:18px;border:1px solid rgba(255,255,255,.1);background:#0b0d10;color:#e6edf3;box-shadow:var(--shadow),0 40px 110px -40px color-mix(in srgb,var(--c) 80%,transparent);overflow:hidden;min-width:0}
+.term::before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(520px 220px at 85% -10%,color-mix(in srgb,var(--c) 22%,transparent),transparent 70%)}
+.tbar{position:relative;display:flex;align-items:center;gap:12px;height:46px;padding:0 8px 0 16px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
+.tbar .lights{display:flex;gap:7px;flex:none}.tbar .lights i{width:11px;height:11px;border-radius:50%}
+.tbar .lights i:nth-child(1){background:#ff5f57}.tbar .lights i:nth-child(2){background:#febc2e}.tbar .lights i:nth-child(3){background:#28c840}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0}.tabs::-webkit-scrollbar{display:none}
+.tab{font:500 13px Inter,system-ui,sans-serif;color:#9aa4b2;background:none;border:0;padding:0 12px;height:32px;border-radius:8px;cursor:pointer;white-space:nowrap;transition:color .2s,background .2s}
+.tab:hover{color:#e6edf3}.tab[aria-selected="true"]{color:#fff;background:rgba(255,255,255,.09)}
+.tab:focus-visible,.copy:focus-visible,.avs a:focus-visible{outline:2px solid color-mix(in srgb,var(--c) 70%,#fff);outline-offset:2px}
+.panel{position:relative;padding:22px 20px 20px}.panel[hidden]{display:none}
+.panel pre{margin:0;white-space:pre-wrap;overflow-wrap:break-word;font:500 14.5px/1.75 "JetBrains Mono",ui-monospace,Menlo,monospace}
+.panel .w{white-space:nowrap}
+.panel .ps{color:color-mix(in srgb,var(--c) 65%,#fff);user-select:none;margin-right:10px}
+.cur{display:inline-block;width:.55em;height:1.15em;margin-left:4px;vertical-align:-.2em;background:color-mix(in srgb,var(--c) 70%,#fff);animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.panel .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;margin:16px 0 0}
+.panel .note{margin:0;color:#8f9aa8;font-size:13.5px;line-height:1.55}
+.copy{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;height:36px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#c9d1d9;font:500 12.5px Inter,sans-serif;cursor:pointer;transition:background .2s,color .2s,border-color .2s}
+.copy:hover{background:rgba(255,255,255,.09);color:#fff}.copy .ic{width:15px;height:15px}.copy.ok{color:#34d399;border-color:#34d399}
+.sc{display:inline-flex;align-items:center;gap:4px;margin-left:2px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--bg) 22%,transparent);font:600 12.5px "JetBrains Mono",ui-monospace,monospace}.sc .ic{width:13px;height:13px}
+.meta{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;margin-bottom:14px}
+@media (max-width:760px){.meta{grid-template-columns:1fr}}
+.meta>div{padding:18px 20px;border-radius:18px;background:var(--bg2);border:1px solid var(--line)}
+.meta h3{font-size:13px;letter-spacing:0;font-weight:600;color:var(--muted);margin:0 0 12px}
+.lbar{display:flex;height:10px;border-radius:999px;overflow:hidden;gap:2px;background:var(--line)}
+.lbar i{display:block;height:100%;min-width:3px;transform-origin:0 50%}
+.reveal.in .lbar i{animation:grow 1s var(--ease) both;animation-delay:calc(var(--k) * 70ms)}
+@keyframes grow{from{transform:scaleX(0)}}
+.lleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 0 0;padding:0;list-style:none;font-size:13px}
+.lleg li{display:inline-flex;align-items:center;gap:6px}.lleg b{font-weight:600}.lleg span{color:var(--muted);font:12.5px "JetBrains Mono",ui-monospace,monospace}
+.lleg i{width:9px;height:9px;border-radius:50%}
+.avs{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.avs a{display:block;border-radius:50%;transition:transform .4s var(--ease)}.avs a:hover{transform:translateY(-3px) scale(1.06)}
+.avs img{display:block;width:36px;height:36px;border-radius:50%;background:var(--bg);border:2px solid var(--bg2)}
+.avs .more{font-size:13px;color:var(--muted);margin-left:4px}
+@media (prefers-reduced-motion: reduce){.cur{animation:none}.reveal.in .lbar i{animation:none}}
 .frame{--p:1;position:relative;margin:0;border-radius:22px;overflow:hidden;border:1px solid var(--line2);background:var(--solid);box-shadow:var(--shadow),0 50px 120px -50px color-mix(in srgb,var(--c) 70%,transparent);transform-origin:50% 0;transform:rotateX(calc((1 - var(--p)) * 16deg)) scale(calc(.93 + var(--p) * .07));opacity:calc(.55 + var(--p) * .45)}
 .frame .bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:40px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
 .frame .lights{display:flex;gap:7px}.frame .lights i{width:11px;height:11px;border-radius:50%;background:var(--line2)}
@@ -214,7 +256,7 @@ const head = ({ title, desc, url, image, jsonld }) => `<!doctype html>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script type="application/ld+json">${JSON.stringify(jsonld).replace(/</g, "\\u003c")}</script>
 <style>${CSS}</style>
 <script>document.documentElement.classList.add("js")</script>
@@ -277,6 +319,33 @@ const FX_JS = `<script>
     zoom.addEventListener("click", () => lb.showModal());
     lb.addEventListener("click", () => lb.close());
   }
+  const tabs = [...document.querySelectorAll(".tab")];
+  const pick = (tab, focus) => {
+    tabs.forEach(x => { const on = x === tab; x.setAttribute("aria-selected", on); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute("aria-controls")).hidden = !on; });
+    if (focus) tab.focus();
+  };
+  tabs.forEach((x, i) => {
+    x.addEventListener("click", () => pick(x));
+    x.addEventListener("keydown", e => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); pick(tabs[(i + d + tabs.length) % tabs.length], true); } });
+  });
+  // Type the first command once, after the hero has risen in; the full text is in the HTML.
+  const code = !still && document.querySelector(".panel:not([hidden]) code");
+  if (code) {
+    const full = code.textContent, html = code.innerHTML, foot = code.closest(".panel").querySelector(".foot");
+    code.textContent = ""; foot.style.opacity = 0;
+    let i = 0;
+    setTimeout(function type() {
+      code.textContent = full.slice(0, ++i);
+      if (i < full.length) setTimeout(type, 22 + Math.random() * 38);
+      else { code.innerHTML = html; foot.style.transition = "opacity .6s"; foot.style.opacity = 1; }
+    }, 900);
+  }
+  document.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(b.dataset.cmd); } catch (x) { return; }
+    const label = b.querySelector("[data-vi]"), was = label.textContent;
+    label.textContent = window.OY_LANG === "vi" ? "Đã copy" : "Copied"; b.classList.add("ok");
+    setTimeout(() => { label.textContent = was; b.classList.remove("ok"); }, 1600);
+  }));
   document.getElementById("share").addEventListener("click", async e => {
     const b = e.currentTarget, label = b.querySelector("[data-vi]");
     if (navigator.share && matchMedia("(pointer: coarse)").matches) { try { await navigator.share({ title: document.title, url: location.href }); } catch (x) {} return; }
@@ -347,6 +416,30 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
       ${H.link ? `<a class="sync" href="${esc(H.link)}" target="_blank" rel="noopener">${t("How it was measured", "Cách đo")} →</a>` : ""}</div>
     <div class="hls">${H.items.map((x, i) => `<div class="num reveal" style="--d:${i}"><b>${esc(x.value)}</b><span>${t(en(x.label), vi(x.label))}</span>${x.vs ? `<small>${t(en(x.vs), vi(x.vs))}</small>` : ""}</div>`).join("")}</div>
   </section>` : "";
+  // Install commands in a terminal: the first thing an open-source landing needs.
+  const inst = Array.isArray(p.install) ? p.install.filter(x => x && x.cmd) : [];
+  const L = v => typeof v === "string" ? t(v, v) : t(en(v), vi(v));
+  const term = inst.length ? `<div class="term up" style="--d:4" role="region" aria-label="Install">
+    <div class="tbar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+      <div class="tabs" role="tablist" aria-label="Install with">${inst.map((x, i) => `<button class="tab" type="button" role="tab" id="tab-${i}" aria-controls="pan-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${L(x.label)}</button>`).join("")}</div></div>
+    ${inst.map((x, i) => `<div class="panel" role="tabpanel" id="pan-${i}" aria-labelledby="tab-${i}"${i ? " hidden" : ""}>
+      <pre><span class="ps" aria-hidden="true">$</span><code>${x.cmd.split(/( +)/).map(w => w.trim() ? `<span class="w">${esc(w)}</span>` : w).join("")}</code><span class="cur" aria-hidden="true"></span></pre>
+      <div class="foot">${x.note ? `<p class="note">${L(x.note)}</p>` : "<span></span>"}
+      <button class="copy" type="button" data-cmd="${esc(x.cmd)}" aria-label="Copy command">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
+    </div>`).join("")}
+  </div>` : "";
+  // Which languages the code is in and who writes it, from the GitHub sync.
+  const LANG_COLOR = { JavaScript: "#f1e05a", TypeScript: "#3178c6", Python: "#3572A5", Go: "#00ADD8", Rust: "#dea584", Java: "#b07219", Kotlin: "#A97BFF", "C#": "#178600", Ruby: "#701516", PHP: "#4F5D95", HTML: "#e34c26", CSS: "#663399", SCSS: "#c6538c", Shell: "#89e051", C: "#555555", "C++": "#f34b7d", Swift: "#F05138", Dart: "#00B4AB", Vue: "#41b883", Svelte: "#ff3e00", Astro: "#ff5a03", Dockerfile: "#384d54", Lua: "#000080", PowerShell: "#012456", MDX: "#fcb32c", PLpgSQL: "#336790", Elixir: "#6e4a7e", Zig: "#ec915c" };
+  const langs = Object.entries(act.languages || {}).filter(([, b]) => b > 0).sort((a, b) => b[1] - a[1]);
+  const total = langs.reduce((n, [, b]) => n + b, 0);
+  const shown = langs.slice(0, 6), rest = langs.slice(6).reduce((n, [, b]) => n + b, 0);
+  const parts = [...shown, ...(rest ? [["Other", rest]] : [])].map(([name, b]) => ({ name, pct: 100 * b / total, color: LANG_COLOR[name] || "#8b949e" }));
+  const crew = Array.isArray(act.contributors) ? act.contributors : [];
+  const meta = st && (parts.length || crew.length) ? `<div class="meta">
+      ${parts.length ? `<div class="reveal"><h3>${t("Languages", "Ngôn ngữ")}</h3><div class="lbar" role="img" aria-label="${esc(parts.map(x => `${x.name} ${x.pct.toFixed(1)}%`).join(", "))}">${parts.map((x, k) => `<i style="width:${x.pct.toFixed(2)}%;background:${x.color};--k:${k}"></i>`).join("")}</div>
+        <ul class="lleg">${parts.map(x => `<li><i style="background:${x.color}"></i><b>${esc(x.name)}</b><span>${x.pct < 0.1 ? "<0.1" : x.pct.toFixed(1)}%</span></li>`).join("")}</ul></div>` : ""}
+      ${crew.length ? `<div class="reveal" style="--d:1"><h3>${t("Contributors", "Người đóng góp")}</h3><div class="avs">${crew.map(c => `<a href="https://github.com/${esc(c.login)}" target="_blank" rel="noopener" title="@${esc(c.login)} · ${+c.n || 0} commits"><img src="${esc(c.avatar)}&s=72" alt="@${esc(c.login)}" width="36" height="36" loading="lazy"></a>`).join("")}${repoUrl ? `<a class="more" href="${esc(repoUrl)}/graphs/contributors" target="_blank" rel="noopener">${t("All contributors", "Tất cả")} →</a>` : ""}</div></div>` : ""}
+    </div>` : "";
   const activity = st ? `<section class="act">
     <div class="hd2 reveal"><div><h2>${t("Activity", "Hoạt động")}</h2>
       <p class="sub">${t("From the GitHub repository, refreshed every hour.", "Lấy từ repo GitHub, cập nhật mỗi giờ.")}</p></div>
@@ -358,6 +451,7 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
       ${num(I.commit, st.commits_7d, ["commits this week", "commit tuần này"], 3)}
       ${num(I.fork, st.forks, ["forks", "fork"], 4)}
     </div>
+    ${meta}
     <div class="lists">
       ${list(["Pull requests", "Pull request"], act.prs, repoUrl + "/pulls", "pr", 0)}
       ${list(["Issues", "Issue"], act.issues, repoUrl + "/issues", "issue", 1)}
@@ -376,18 +470,18 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
   </div>
 </div></nav>
 <main>
-<header class="hero"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
+<header class="hero${term ? " two" : ""}"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">${term ? `<div class="cols"><div>` : ""}
   <div class="id">${logo(p, "logo", 72)}
     <div class="tags up" style="--d:1"><span class="pill on">${t(...type)}</span>${p.team ? `<span class="pill">OpenYard team</span>` : `<span class="pill">${t("Community", "Cộng đồng")}</span>`}</div></div>
   <h1 class="up" style="--d:2">${esc(p.name)}</h1>
   <p class="tl up" style="--d:3">${t(en(p.tagline), vi(p.tagline))}</p>
   <p class="desc up" style="--d:4">${t(en(p.description), vi(p.description))}</p>
   <div class="cta up" style="--d:5">
-    <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}</a>
+    <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${/^https:\/\/github\.com\//.test(p.url) ? `${svg(GITHUB)}${t("View on GitHub", "Xem trên GitHub")}${st && st.stars >= 10 ? `<span class="sc">${ic(I.star)}${+st.stars}</span>` : ""}` : `${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}`}</a>
     ${p.repo && p.repo !== p.url ? `<a class="btn line" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Source code", "Mã nguồn")}</a>` : ""}
     <button class="btn line" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button>
   </div>
-</div></header>
+${term ? `</div>${term}</div>` : ""}</div></header>
 <div class="wrap">
   ${visual}
   <dl class="specs reveal" style="--n:${facts.length}">${facts.map(([[e, v], html]) => `<div><dt>${t(e, v)}</dt><dd>${html}</dd></div>`).join("")}</dl>
