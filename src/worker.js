@@ -8,16 +8,19 @@
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 //   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
 //   GET  /badge/<slug>.svg     README badge with the latest code check
+//   GET  /check, /check/<owner>/<repo>   check any public GitHub repository (POST /api/check, GET /api/check/status)
+//   GET  /api/check/queue, POST /api/check/result   the same, for the scanner workflow (VET_TOKEN)
+//   GET  /badge/gh/<owner>/<repo>.svg              badge for any checked repository
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { projectPage, sitemap, badge } from "./pages.js";
+import { projectPage, sitemap, badge, checkPage } from "./pages.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
 const DAY = 86400000;
 const TYPES = ["app", "open-source"], STATUSES = ["live", "beta", "soon"], KINDS = ["people", "wild", "dev"];
 const IMAGE_TYPES = { "image/png": [0x89, 0x50], "image/jpeg": [0xff, 0xd8], "image/webp": [0x52, 0x49] };
-const MAX_LOGO = 200 * 1024, MAX_IMAGE = 700 * 1024, SUBMITS_PER_DAY = 5;
+const MAX_LOGO = 200 * 1024, MAX_IMAGE = 700 * 1024, SUBMITS_PER_DAY = 5, CHECKS_PER_DAY = 20;
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...extra } });
 const fail = (error, status = 400) => json({ error }, status);
@@ -251,28 +254,99 @@ async function vetQueue(env) {
   return json({ projects: results }, 200, { "Cache-Control": "no-store" });
 }
 
-async function vetSave(req, env, slug) {
-  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
-  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first())) return fail("No such project.", 404);
-  if (!/^[0-9a-f]{40}$/.test(b.commit || "") || !VERDICTS.includes(b.verdict)) return fail("Bad summary.");
+// Checks the scanner's summary and clips every field; null when it is malformed.
+function readSummary(b) {
+  if (!/^[0-9a-f]{40}$/.test(b.commit || "") || !VERDICTS.includes(b.verdict)) return null;
   const label = (Array.isArray(b.label) ? b.label : []).slice(0, 12).map(x => ({ cap: clip(x.cap, 60), files: +x.files || 0 })).filter(x => x.cap);
   const notes = (Array.isArray(b.notes) ? b.notes : []).slice(0, 8).filter(x => SEVERITIES.includes(x.severity))
     .map(x => ({ severity: x.severity, rule: clip(x.rule, 60), title: clip(x.title, 120), file: clip(x.file, 200), line: +x.line || 0 }));
   const sk = b.skipped || {}, skipped = { patterns: (Array.isArray(sk.patterns) ? sk.patterns : []).slice(0, 20).map(x => clip(x, 100)), lines: +sk.lines || 0 };
-  const now = Date.now(), old = await env.DB.prepare("SELECT commit_sha, label, changed, changed_at, changed_from FROM vets WHERE slug = ?1").bind(slug).first();
-  // Abilities the code did not have at the previously checked commit: how a hijacked update shows up.
-  let changed = old ? JSON.parse(old.changed) : [], changedAt = old?.changed_at ?? null, changedFrom = old?.changed_from ?? null;
-  if (old && old.commit_sha !== b.commit) {
-    const before = new Set(JSON.parse(old.label).map(x => x.cap)), added = label.map(x => x.cap).filter(c => !before.has(c));
+  return { commit: b.commit, verdict: b.verdict, version: clip(b.version, 20), files: +b.files || 0, label, notes, skipped };
+}
+
+// Abilities the code did not have at the previously checked commit: how a hijacked update shows up.
+function newAbilities(old, sum, now) {
+  let changed = old?.changed ? JSON.parse(old.changed) : [], changedAt = old?.changed_at ?? null, changedFrom = old?.changed_from ?? null;
+  if (old?.commit_sha && old.commit_sha !== sum.commit) {
+    const before = new Set(JSON.parse(old.label).map(x => x.cap)), added = sum.label.map(x => x.cap).filter(c => !before.has(c));
     if (added.length) { changed = added; changedAt = now; changedFrom = old.commit_sha; }
   }
+  return { changed, changedAt, changedFrom };
+}
+
+async function vetSave(req, env, slug) {
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first())) return fail("No such project.", 404);
+  const sum = readSummary(b);
+  if (!sum) return fail("Bad summary.");
+  const { label, notes, skipped } = sum;
+  const now = Date.now(), old = await env.DB.prepare("SELECT commit_sha, label, changed, changed_at, changed_from FROM vets WHERE slug = ?1").bind(slug).first();
+  const { changed, changedAt, changedFrom } = newAbilities(old, sum, now);
   await env.DB.prepare(`INSERT INTO vets (slug, commit_sha, version, scanned_at, verdict, files, label, notes, changed, changed_at, changed_from, skipped)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
       ON CONFLICT (slug) DO UPDATE SET commit_sha = excluded.commit_sha, version = excluded.version, scanned_at = excluded.scanned_at, verdict = excluded.verdict,
         files = excluded.files, label = excluded.label, notes = excluded.notes, changed = excluded.changed, changed_at = excluded.changed_at, changed_from = excluded.changed_from, skipped = excluded.skipped`)
-    .bind(slug, b.commit, clip(b.version, 20), now, b.verdict, +b.files || 0, JSON.stringify(label), JSON.stringify(notes), JSON.stringify(changed), changedAt, changedFrom, JSON.stringify(skipped)).run();
-  return json({ slug, verdict: b.verdict, changed });
+    .bind(slug, sum.commit, sum.version, now, sum.verdict, sum.files, JSON.stringify(label), JSON.stringify(notes), JSON.stringify(changed), changedAt, changedFrom, JSON.stringify(skipped)).run();
+  return json({ slug, verdict: sum.verdict, changed });
 }
+
+// Any public repository. A visitor asks on /check; the worker queues it and wakes the scanner
+// workflow with a repository_dispatch (DISPATCH_TOKEN); the six-hourly run picks up anything left.
+const repoRef = v => { const r = parseRepo(String(v || "").replace(/[#?].*$/, "")); return r && { ...r, key: `${r.owner}/${r.name}`.toLowerCase(), full: `${r.owner}/${r.name}` }; };
+
+async function wakeScanner(env, repo) {
+  if (!env.DISPATCH_TOKEN) return;
+  const r = await fetch("https://api.github.com/repos/openyard-cloud/openyard/dispatches", {
+    method: "POST", headers: { Authorization: `Bearer ${env.DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "openyard.cloud" },
+    body: JSON.stringify({ event_type: "check", client_payload: { repo } }),
+  });
+  if (!r.ok) console.error("dispatch", r.status, await r.text());
+}
+
+async function checkRequest(req, env, ctx) {
+  const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
+  if (req.headers.get("Origin") !== new URL(req.url).origin) return fail("Bad origin.", 403);
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const ref = repoRef(b.repo);
+  if (!ref) return fail("Paste a link like https://github.com/owner/repo");
+  const form = new FormData(); form.append("cf-turnstile-response", String(b.ts || ""));
+  if (!(await checkHuman(env, form, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
+  const row = await env.DB.prepare("SELECT repo, status, requested_at, scanned_at FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+  // A check that is under way, or finished in the last hour, is simply shown again.
+  if (row && ((row.status === "queued" || row.status === "running") && now - row.requested_at < 20 * 60000 || row.status === "done" && now - (row.scanned_at || 0) < 3600000))
+    return json({ repo: row.repo, status: row.status });
+  const ipHash = await sha256(ip + "|check|" + today(now));
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
+  if (n >= CHECKS_PER_DAY) return fail("That is a lot of checks from this connection today. Try again tomorrow.", 429);
+  await env.DB.batch([
+    env.DB.prepare(`INSERT INTO repo_checks (repo_key, repo, status, requested_at) VALUES (?1, ?2, 'queued', ?3)
+      ON CONFLICT (repo_key) DO UPDATE SET status = 'queued', requested_at = excluded.requested_at, error = NULL`).bind(ref.key, ref.full, now),
+    env.DB.prepare("INSERT INTO check_hits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
+  ]);
+  ctx.waitUntil(wakeScanner(env, ref.full).catch(e => console.error(e)));
+  return json({ repo: row?.repo || ref.full, status: "queued" }, 202);
+}
+
+async function checkResult(req, env) {
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const ref = repoRef(`https://github.com/${b.repo || ""}`);
+  if (!ref) return fail("Bad repository.");
+  const old = await env.DB.prepare("SELECT * FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+  if (!old) return fail("Nobody asked for this repository.", 404);
+  const now = Date.now();
+  if (b.running) { await env.DB.prepare("UPDATE repo_checks SET status = 'running' WHERE repo_key = ?1").bind(ref.key).run(); return json({ ok: true }); }
+  if (b.error) { await env.DB.prepare("UPDATE repo_checks SET status = 'failed', error = ?2 WHERE repo_key = ?1").bind(ref.key, clip(b.error, 200)).run(); return json({ ok: true }); }
+  const sum = readSummary(b);
+  if (!sum) return fail("Bad summary.");
+  const { changed, changedAt, changedFrom } = newAbilities(old, sum, now);
+  await env.DB.prepare(`UPDATE repo_checks SET status = 'done', error = NULL, repo = ?2, commit_sha = ?3, version = ?4, scanned_at = ?5, verdict = ?6, files = ?7,
+      label = ?8, notes = ?9, skipped = ?10, changed = ?11, changed_at = ?12, changed_from = ?13 WHERE repo_key = ?1`)
+    .bind(ref.key, clip(b.name || old.repo, 140), sum.commit, sum.version, now, sum.verdict, sum.files, JSON.stringify(sum.label), JSON.stringify(sum.notes),
+      JSON.stringify(sum.skipped), JSON.stringify(changed), changedAt, changedFrom).run();
+  return json({ repo: old.repo, verdict: sum.verdict });
+}
+
+const recentChecks = env => env.DB.prepare("SELECT repo, verdict, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 13").all().then(r => r.results);
 
 async function page(env, slug) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
@@ -326,7 +400,36 @@ export default {
         const v = await env.DB.prepare("SELECT v.verdict FROM vets v JOIN projects p ON p.slug = v.slug WHERE v.slug = ?1 AND p.hidden = 0").bind(m[1]).first();
         return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
       }
-      if (path === "/sitemap.xml") return new Response(sitemap(await listProjects(env, now), today(now)), { headers: { "Content-Type": "application/xml" } });
+      if (path === "/api/check" && req.method === "POST") return checkRequest(req, env, ctx);
+      if (path === "/api/check/status" && req.method === "GET") {
+        const ref = repoRef(`https://github.com/${url.searchParams.get("repo") || ""}`);
+        const row = ref && await env.DB.prepare("SELECT status, error FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+        return json(row || { status: "none" }, 200, { "Cache-Control": "no-store" });
+      }
+      if (path === "/api/check/queue" && req.method === "GET") {
+        if (!scanner(req, env)) return fail("Not allowed.", 403);
+        const { results } = await env.DB.prepare(`SELECT repo FROM repo_checks WHERE (status = 'queued' AND requested_at < ?1) OR (status = 'running' AND requested_at < ?2) ORDER BY requested_at LIMIT 50`)
+          .bind(now - 2 * 60000, now - 30 * 60000).all();
+        return json({ repos: results.map(r => r.repo) }, 200, { "Cache-Control": "no-store" });
+      }
+      if (path === "/api/check/result" && req.method === "POST") return scanner(req, env) ? checkResult(req, env) : fail("Not allowed.", 403);
+      if (path === "/check" || path === "/check/") {
+        const ref = repoRef(url.searchParams.get("repo"));
+        if (ref) return Response.redirect(`${url.origin}/check/${ref.full}`, 302);
+        return new Response(checkPage({ recent: await recentChecks(env), site: SITE, turnstile: env.TURNSTILE_SITE_KEY, now }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
+      }
+      if ((m = /^\/check\/([\w.-]+)\/([\w.-]+?)\/?$/.exec(path))) {
+        const ref = repoRef(`https://github.com/${m[1]}/${m[2]}`);
+        const row = ref && await env.DB.prepare("SELECT * FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+        const shown = row ? { owner: row.repo.split("/")[0], name: row.repo.split("/")[1] } : ref;
+        return new Response(checkPage({ ref: shown, row, recent: await recentChecks(env), site: SITE, turnstile: env.TURNSTILE_SITE_KEY, now }),
+          { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+      }
+      if ((m = /^\/badge\/gh\/([\w.-]+)\/([\w.-]+?)\.svg$/.exec(path))) {
+        const v = await env.DB.prepare("SELECT verdict FROM repo_checks WHERE repo_key = ?1 AND status = 'done'").bind(`${m[1]}/${m[2]}`.toLowerCase()).first();
+        return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
+      }
+      if (path === "/sitemap.xml") return new Response(sitemap(await listProjects(env, now), today(now), (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results), { headers: { "Content-Type": "application/xml" } });
     } catch (e) {
       console.error(e);
       return fail("Something went wrong on our side.", 500);

@@ -4,7 +4,7 @@
 // with vetcode (nothing is installed, built or run), and send a short public summary to
 // POST /api/vet/<slug>. Projects whose commit has not changed are read again once a week.
 //
-//   SITE=https://openyard.cloud VET_TOKEN=… GITHUB_TOKEN=… node scripts/vet.mjs [--only slug] [--dry]
+//   SITE=https://openyard.cloud VET_TOKEN=… GITHUB_TOKEN=… node scripts/vet.mjs [--only slug | --repo owner/name] [--dry]
 //
 // What is published: what the code can do (network, secrets, other programs…), and malware or
 // supply-chain findings with file and line. Vulnerability candidates and leaked-secret
@@ -77,13 +77,32 @@ async function download(owner, name, sha, into) {
   return top.length === 1 && fs.statSync(path.join(dir, top[0])).isDirectory() ? path.join(dir, top[0]) : dir;
 }
 
+// VETCODE_BIN (a checkout of the vetcode repository, as in the workflow) avoids depending on npm.
 function scan(dir, out) {
-  const r = spawnSync("npx", ["-y", VETCODE, dir, "--json", out, "--no-tools", "--quiet"], { stdio: ["ignore", "ignore", "inherit"], timeout: 10 * 60 * 1000 });
+  const args = [dir, "--json", out, "--no-tools", "--quiet"];
+  const [cmd, pre] = process.env.VETCODE_BIN ? [process.execPath, [process.env.VETCODE_BIN]] : ["npx", ["-y", VETCODE]];
+  const r = spawnSync(cmd, [...pre, ...args], { stdio: ["ignore", "ignore", "inherit"], timeout: 10 * 60 * 1000 });
   if (!fs.existsSync(out)) throw new Error(`vetcode did not finish (${r.signal || r.status})`);
   return JSON.parse(fs.readFileSync(out, "utf8"));
 }
 
-async function main() {
+// Downloads one repository at a commit and reads it; returns the summary to publish.
+async function readRepo(owner, name, sha) {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "oy-vet-"));
+  try {
+    const dir = await download(owner, name, sha, tmp);
+    let ignored = [];
+    try { ignored = fs.readFileSync(path.join(dir, ".vetcodeignore"), "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => l.slice(0, 100)); } catch {}
+    return { commit: sha, ...summarize(scan(dir, path.join(tmp, "report.json")), ignored) };
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
+const post = (url, body) => fetch(`${SITE}${url}`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+// Listed projects: read again when the commit changed, or once a week.
+async function projects() {
   const q = await fetch(`${SITE}/api/vet/queue`, { headers: auth });
   if (!q.ok) throw new Error(`queue ${q.status}: ${await q.text()}`);
   const now = Date.now();
@@ -93,26 +112,57 @@ async function main() {
     if (runs >= MAX_RUNS) break;
     const m = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(p.repo || "");
     if (!m) continue;
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "oy-vet-"));
     try {
       const sha = await headCommit(m[1], m[2]);
       if (!ONLY && sha === p.commit && now - (p.scanned_at || 0) < WEEK) continue;
       runs++;
-      const dir = await download(m[1], m[2], sha, tmp);
-      let ignored = [];
-      try { ignored = fs.readFileSync(path.join(dir, ".vetcodeignore"), "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => l.slice(0, 100)); } catch {}
-      const summary = { commit: sha, ...summarize(scan(dir, path.join(tmp, "report.json")), ignored) };
+      const summary = await readRepo(m[1], m[2], sha);
       console.log(`${p.slug} @ ${sha.slice(0, 7)}: ${summary.verdict}, ${summary.label.length} abilities, ${summary.notes.length} notes`);
       if (DRY) { console.log(JSON.stringify(summary, null, 1)); continue; }
-      const r = await fetch(`${SITE}/api/vet/${p.slug}`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify(summary) });
+      const r = await post(`/api/vet/${p.slug}`, summary);
       if (!r.ok) { failed++; console.error(`${p.slug}: ${r.status} ${await r.text()}`); }
     } catch (e) {
       failed++;
       console.error(`${p.slug}: ${e.message}`);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
     }
   }
+  return failed;
+}
+
+// Repositories visitors asked about on /check. A repository that is missing, private or too
+// large is reported back as failed with a reason the visitor can read; that is not a failed run.
+async function asked(repos) {
+  for (const repo of repos) {
+    const m = /^([\w.-]+)\/([\w.-]+)$/.exec(repo);
+    if (!m) continue;
+    let res;
+    try {
+      await post("/api/check/result", { repo, running: true });
+      const r = await fetch(`https://api.github.com/repos/${m[1]}/${m[2]}`, { headers: { Accept: "application/vnd.github+json", ...gh } });
+      if (r.status === 404) throw new Error("Repository not found, or it is private.");
+      if (!r.ok) throw new Error(`GitHub answered ${r.status}. Try again in a while.`);
+      const info = await r.json();
+      if (info.private) throw new Error("Only public repositories can be checked.");
+      if (info.size > MAX_BYTES / 1024) throw new Error("The repository is larger than 200 MB.");
+      const sha = await headCommit(m[1], m[2]);
+      res = { repo, name: info.full_name, ...(await readRepo(m[1], m[2], sha)) };
+      console.log(`${repo} @ ${sha.slice(0, 7)}: ${res.verdict}, ${res.label.length} abilities, ${res.notes.length} notes`);
+    } catch (e) {
+      console.error(`${repo}: ${e.message}`);
+      res = { repo, error: e.message.slice(0, 200) };
+    }
+    if (DRY) { console.log(JSON.stringify(res, null, 1)); continue; }
+    const r = await post("/api/check/result", res);
+    if (!r.ok) console.error(`${repo}: ${r.status} ${await r.text()}`);
+  }
+}
+
+async function main() {
+  const one = arg("--repo");
+  if (one) return asked([one]);
+  let failed = await projects();
+  const q = await fetch(`${SITE}/api/check/queue`, { headers: auth });
+  if (q.ok) await asked((await q.json()).repos); else { failed++; console.error(`check queue ${q.status}`); }
   // A run where checks failed should show as failed in Actions, not as a quiet success.
   if (failed) throw new Error(`${failed} check${failed === 1 ? "" : "s"} failed`);
 }
