@@ -1,9 +1,12 @@
 name: Code checks
-# Reads every listed repository with vetcode (nothing is installed or run) and posts the
-# result to openyard.cloud. Changed repositories are read again within six hours.
+# Reads repositories with vetcode (nothing is installed or run) and posts the result to
+# openyard.cloud: every listed project every six hours, and any public repository a visitor
+# asks about on openyard.cloud/check (the site sends a repository_dispatch).
 on:
   schedule:
     - cron: "41 */6 * * *"
+  repository_dispatch:
+    types: [check]
   workflow_dispatch:
     inputs:
       only:
@@ -12,7 +15,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: vet
+  # One run per asked repository; listed-project runs queue behind each other.
+  group: ${{ github.event_name == 'repository_dispatch' && format('check-{0}', github.event.client_payload.repo) || 'vet' }}
   cancel-in-progress: false
 jobs:
   vet:
@@ -22,12 +26,28 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      # vetcode itself, from its protected main branch (not npm, so a registry hold cannot stop the checks)
+      - uses: actions/checkout@v4
+        with:
+          repository: openyard-cloud/vetcode
+          path: .vetcode
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Check the projects
+      - name: Check the repository a visitor asked about
+        if: github.event_name == 'repository_dispatch'
         env:
           VET_TOKEN: ${{ secrets.VET_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
+          VETCODE_BIN: .vetcode/skills/vetcode/scripts/vet.mjs
+          REPO: ${{ github.event.client_payload.repo }}
+        run: node scripts/vet.mjs --repo "$REPO"
+      - name: Check the projects
+        if: github.event_name != 'repository_dispatch'
+        env:
+          VET_TOKEN: ${{ secrets.VET_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          VETCODE_BIN: .vetcode/skills/vetcode/scripts/vet.mjs
           ONLY: ${{ inputs.only }}
         run: node scripts/vet.mjs ${ONLY:+--only "$ONLY"}

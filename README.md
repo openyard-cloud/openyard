@@ -32,6 +32,8 @@ Projects with a GitHub repository are read by [vetcode](https://github.com/openy
 - **Malware and supply-chain findings**, with links to the exact lines. Vulnerability candidates and leaked-secret locations are never published, so nobody is pointed at an unfixed problem.
 - **What the project asks vetcode to skip**, so nothing can be hidden quietly.
 
+Anyone can do the same for **any public GitHub repository** at [openyard.cloud/check](https://openyard.cloud/check): paste a link and the result appears in a minute or two, at a page that stays, such as `openyard.cloud/check/expressjs/express`, with its own badge at `/badge/gh/<owner>/<repo>.svg`. The site asks the scanner workflow through a `repository_dispatch` (the `DISPATCH_TOKEN` Worker secret, a fine-grained token with Contents read and write on this repository); without it, waiting checks are picked up by the six-hourly run.
+
 Makers can add the result to their README:
 
 ```markdown

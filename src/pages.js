@@ -248,6 +248,30 @@ section.more{padding:80px 0 24px}
 .vfoot code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
 .copy.lt{border-color:var(--line2);background:var(--solid);color:var(--ink)}.copy.lt:hover{background:var(--bg);color:var(--ink)}
 .fine{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.hero.ck h1{font-size:clamp(34px,5.4vw,60px);overflow-wrap:anywhere}.hero.ck h1 a{color:inherit}
+.hero.ck .pill .ic{width:14px;height:14px;margin-right:6px;vertical-align:-2px}
+.hero.ck .cta{flex-direction:column;align-items:stretch;max-width:640px}
+.ckf{display:flex;gap:8px;padding:6px;border-radius:999px;border:1px solid var(--line2);background:var(--solid);box-shadow:var(--shadow)}
+.ckf input{flex:1;min-width:0;border:0;background:none;padding:0 16px;font:15px ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--ink);outline:none}
+.ckf .btn{height:44px}.ckf .btn .ic{width:16px;height:16px}
+@media (max-width:520px){.ckf{flex-direction:column;border-radius:18px}.ckf input{height:44px}}
+.hero.ck #share{align-self:flex-start}
+.ckmsg{font-size:13.5px;color:#b91c1c}
+.wait{display:flex;gap:14px;align-items:center;margin-top:8px;padding:20px 22px;border-radius:18px;border:1px solid var(--line2);background:var(--solid)}
+.wait b{display:block;font-weight:600}.wait span{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}.wait .el{display:inline;color:var(--ink);font-variant-numeric:tabular-nums}
+.wait.bad .ic{width:28px;height:28px;color:#ef4444;flex:none}
+.spin{flex:none;width:28px;height:28px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--c);animation:spin .9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.how{list-style:none;padding:0;margin:40px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.how{grid-template-columns:1fr}}
+.how li{display:flex;gap:12px;align-items:center;padding:18px;border-radius:18px;border:1px solid var(--line2);background:var(--solid);font-size:14.5px}
+.how .ic{width:22px;height:22px;color:var(--c);flex:none}
+.recent{margin-top:56px}.recent h2{margin-bottom:16px}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.rc{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;border:1px solid var(--line2);background:var(--solid);min-width:0}
+.rc b{font-weight:500;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rc small{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.vd .ic{width:18px;height:18px;color:#10b981}.vd.review .ic{color:#f59e0b}.vd.warning .ic{color:#ef4444}
 .fine.skip .ic{width:14px;height:14px;vertical-align:-2px;margin-right:6px}.fine code{font-size:12px;padding:1px 5px;border-radius:5px;background:var(--bg2)}
 .hls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 @media (max-width:860px){.hls{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -419,6 +443,33 @@ const FX_JS = `<script>
 
 const logoClass = p => p.logoStyle === "tile" ? "full" : "";
 
+/** The code-check block shared by project pages and /check pages. V is a row of vets or repo_checks. */
+function checkSection(V, { repoUrl, badgeMd, badgeSrc, now, sub = "" }) {
+  const vlabel = V ? JSON.parse(V.label || "[]") : [], vnotes = V ? JSON.parse(V.notes || "[]") : [], vskip = V ? JSON.parse(V.skipped || "{}") : {};
+  const vnew = V && V.changed_at && now - V.changed_at < 30 * 86400000 ? new Set(JSON.parse(V.changed || "[]")) : new Set();
+  const at = sha => repoUrl ? `${repoUrl}/blob/${esc(sha)}` : null;
+  return `<section class="chk" id="check">
+    <div class="hd2 reveal"><div><h2>${t("Code check", "Kiểm tra mã nguồn")}</h2>
+      <p class="sub">${sub || t("Read by vetcode without running anything. Checked again whenever the code changes.", "vetcode đọc mã nguồn mà không chạy gì. Kiểm tra lại mỗi khi code thay đổi.")}</p></div>
+      <span class="sync"><i class="dot"></i>${t(`Checked ${since(V.scanned_at, now)[0]}`, `Kiểm tra ${since(V.scanned_at, now)[1]}`)} · ${repoUrl ? `<a href="${esc(repoUrl)}/commit/${esc(V.commit_sha)}" target="_blank" rel="noopener"><code>${esc(V.commit_sha.slice(0, 7))}</code></a>` : `<code>${esc(V.commit_sha.slice(0, 7))}</code>`}</span></div>
+    <div class="vgrid">
+      <div class="verdict ${esc(V.verdict)} reveal">${ic(V.verdict === "clear" ? I.shield : I.alert)}<div><b>${t(VERDICT[V.verdict][0], VERDICT[V.verdict][1])}</b>
+        <span>${t(`${+V.files || 0} files read · vetcode ${V.version}`, `Đã đọc ${+V.files || 0} file · vetcode ${V.version}`)}</span>
+        <ul>${[["Malware and stealers", "Mã độc và mã đánh cắp"], ["Install scripts and hooks", "Script cài đặt và hook"], ["Hidden or encoded code", "Code bị giấu hoặc mã hoá"], ["CI and AI agent setup", "Cấu hình CI và AI agent"]].map(x => `<li>${ic(I.check)}${t(...x)}</li>`).join("")}</ul></div></div>
+      <div class="vlabel reveal" style="--d:1"><h3>${t("What the code can do", "Code này làm được gì")}</h3>
+        ${vlabel.length ? `<ul>${vlabel.map(x => { const [icon, name] = CAP[x.cap] || [I.code, [x.cap, x.cap]]; return `<li>${ic(icon)}<span>${t(...name)}</span>${vnew.has(x.cap) ? `<em title="${esc(V.changed_from || "")}">${t("New", "Mới")}</em>` : ""}<small>${t(`${x.files} file${x.files === 1 ? "" : "s"}`, `${x.files} file`)}</small></li>`; }).join("")}</ul>`
+          : `<p class="none">${t("None of the sensitive abilities we look for: no secrets, network, other programs or hidden code in its packages.", "Không có khả năng nhạy cảm nào trong danh sách: không đọc secret, không dùng mạng, không chạy chương trình khác, không giấu code.")}</p>`}
+        ${vnew.size ? `<p class="chg">${ic(I.alert)}${t("New since the previous check. Updates that suddenly gain abilities are how hijacked packages show up, so it is worth a look.", "Mới xuất hiện so với lần kiểm tra trước. Bản cập nhật bỗng có thêm khả năng là dấu hiệu thường gặp của package bị chiếm quyền, nên đáng xem lại.")}</p>` : ""}
+      </div>
+    </div>
+    ${vnotes.length ? `<div class="list reveal"><h3>${t("Findings to look at", "Phát hiện nên xem")}<span class="n">${vnotes.length}</span></h3>${vnotes.map(n => `<a class="it" href="${esc(at(V.commit_sha) ? `${at(V.commit_sha)}/${n.file}#L${n.line}` : "#")}" target="_blank" rel="noopener"><span class="sev ${esc(n.severity)}">${esc(n.severity)}</span><div>${esc(n.title)}<small>${esc(n.file)}${n.line ? `:${n.line}` : ""} · ${esc(n.rule)}</small></div>${ARROW.replace('class="ar"', 'class="go"')}</a>`).join("")}</div>` : ""}
+    ${vskip.patterns?.length || vskip.lines ? `<p class="fine skip">${ic(I.eye)}${t("The project asks vetcode to skip", "Dự án yêu cầu vetcode bỏ qua")}: ${(vskip.patterns || []).map(x => `<code>${esc(x)}</code>`).join(" ")}${vskip.lines ? ` ${t(`and ${vskip.lines} marked line${vskip.lines === 1 ? "" : "s"}`, `và ${vskip.lines} dòng được đánh dấu`)}` : ""}. ${t("Shown so nothing can be hidden quietly.", "Hiện ra đây để không gì bị giấu im lặng.")}</p>` : ""}
+    <div class="vfoot reveal"><img src="${esc(badgeSrc)}" alt="OpenYard code check badge" height="20"><code>${esc(badgeMd)}</code>
+      <button class="copy lt" type="button" data-cmd="${esc(badgeMd)}" aria-label="Copy badge Markdown">${ic(I.copy)}<span>${t("Copy badge", "Copy huy hiệu")}</span></button></div>
+    <p class="fine">${t("Patterns, not proof: a finding is a reason to read the code, not a verdict on the maker. Vulnerability candidates and leaked-secret locations are not published here.", "Đây là dấu hiệu, không phải bằng chứng: một phát hiện là lý do để đọc code, không phải kết luận về người làm. Các lỗ hổng tiềm năng và vị trí secret bị lộ không được công khai ở đây.")}</p>
+  </section>`;
+}
+
 export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   const url = `${ORIGIN}/p/${p.slug}`;
   const type = TYPE(p);
@@ -502,30 +553,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
       ${crew.length ? `<div class="reveal" style="--d:1"><h3>${t("Contributors", "Người đóng góp")}</h3><div class="avs">${crew.map(c => `<a href="https://github.com/${esc(c.login)}" target="_blank" rel="noopener" title="@${esc(c.login)} · ${+c.n || 0} commits"><img src="${esc(c.avatar)}&s=72" alt="@${esc(c.login)}" width="36" height="36" loading="lazy"></a>`).join("")}${repoUrl ? `<a class="more" href="${esc(repoUrl)}/graphs/contributors" target="_blank" rel="noopener">${t("All contributors", "Tất cả")} →</a>` : ""}</div></div>` : ""}
     </div>` : "";
   const V = vet && VERDICT[vet.verdict] ? vet : null;
-  const vlabel = V ? JSON.parse(V.label || "[]") : [], vnotes = V ? JSON.parse(V.notes || "[]") : [], vskip = V ? JSON.parse(V.skipped || "{}") : {};
-  const vnew = V && V.changed_at && now - V.changed_at < 30 * 86400000 ? new Set(JSON.parse(V.changed || "[]")) : new Set();
-  const at = sha => repoUrl ? `${repoUrl}/blob/${esc(sha)}` : null;
-  const badgeMd = `[![OpenYard code check](${ORIGIN}/badge/${p.slug}.svg)](${url}#check)`;
-  const check = V ? `<section class="chk" id="check">
-    <div class="hd2 reveal"><div><h2>${t("Code check", "Kiểm tra mã nguồn")}</h2>
-      <p class="sub">${t("Read by vetcode without running anything. Checked again whenever the code changes.", "vetcode đọc mã nguồn mà không chạy gì. Kiểm tra lại mỗi khi code thay đổi.")}</p></div>
-      <span class="sync"><i class="dot"></i>${t(`Checked ${since(V.scanned_at, now)[0]}`, `Kiểm tra ${since(V.scanned_at, now)[1]}`)} · ${repoUrl ? `<a href="${esc(repoUrl)}/commit/${esc(V.commit_sha)}" target="_blank" rel="noopener"><code>${esc(V.commit_sha.slice(0, 7))}</code></a>` : `<code>${esc(V.commit_sha.slice(0, 7))}</code>`}</span></div>
-    <div class="vgrid">
-      <div class="verdict ${esc(V.verdict)} reveal">${ic(V.verdict === "clear" ? I.shield : I.alert)}<div><b>${t(VERDICT[V.verdict][0], VERDICT[V.verdict][1])}</b>
-        <span>${t(`${+V.files || 0} files read · vetcode ${V.version}`, `Đã đọc ${+V.files || 0} file · vetcode ${V.version}`)}</span>
-        <ul>${[["Malware and stealers", "Mã độc và mã đánh cắp"], ["Install scripts and hooks", "Script cài đặt và hook"], ["Hidden or encoded code", "Code bị giấu hoặc mã hoá"], ["CI and AI agent setup", "Cấu hình CI và AI agent"]].map(x => `<li>${ic(I.check)}${t(...x)}</li>`).join("")}</ul></div></div>
-      <div class="vlabel reveal" style="--d:1"><h3>${t("What the code can do", "Code này làm được gì")}</h3>
-        ${vlabel.length ? `<ul>${vlabel.map(x => { const [icon, name] = CAP[x.cap] || [I.code, [x.cap, x.cap]]; return `<li>${ic(icon)}<span>${t(...name)}</span>${vnew.has(x.cap) ? `<em title="${esc(V.changed_from || "")}">${t("New", "Mới")}</em>` : ""}<small>${t(`${x.files} file${x.files === 1 ? "" : "s"}`, `${x.files} file`)}</small></li>`; }).join("")}</ul>`
-          : `<p class="none">${t("None of the sensitive abilities we look for: no secrets, network, other programs or hidden code in its packages.", "Không có khả năng nhạy cảm nào trong danh sách: không đọc secret, không dùng mạng, không chạy chương trình khác, không giấu code.")}</p>`}
-        ${vnew.size ? `<p class="chg">${ic(I.alert)}${t("New since the previous check. Updates that suddenly gain abilities are how hijacked packages show up, so it is worth a look.", "Mới xuất hiện so với lần kiểm tra trước. Bản cập nhật bỗng có thêm khả năng là dấu hiệu thường gặp của package bị chiếm quyền, nên đáng xem lại.")}</p>` : ""}
-      </div>
-    </div>
-    ${vnotes.length ? `<div class="list reveal"><h3>${t("Findings to look at", "Phát hiện nên xem")}<span class="n">${vnotes.length}</span></h3>${vnotes.map(n => `<a class="it" href="${esc(at(V.commit_sha) ? `${at(V.commit_sha)}/${n.file}#L${n.line}` : "#")}" target="_blank" rel="noopener"><span class="sev ${esc(n.severity)}">${esc(n.severity)}</span><div>${esc(n.title)}<small>${esc(n.file)}${n.line ? `:${n.line}` : ""} · ${esc(n.rule)}</small></div>${ARROW.replace('class="ar"', 'class="go"')}</a>`).join("")}</div>` : ""}
-    ${vskip.patterns?.length || vskip.lines ? `<p class="fine skip">${ic(I.eye)}${t("The project asks vetcode to skip", "Dự án yêu cầu vetcode bỏ qua")}: ${(vskip.patterns || []).map(x => `<code>${esc(x)}</code>`).join(" ")}${vskip.lines ? ` ${t(`and ${vskip.lines} marked line${vskip.lines === 1 ? "" : "s"}`, `và ${vskip.lines} dòng được đánh dấu`)}` : ""}. ${t("Shown so nothing can be hidden quietly.", "Hiện ra đây để không gì bị giấu im lặng.")}</p>` : ""}
-    <div class="vfoot reveal"><img src="/badge/${esc(p.slug)}.svg" alt="OpenYard code check badge" height="20"><code>${esc(badgeMd)}</code>
-      <button class="copy lt" type="button" data-cmd="${esc(badgeMd)}" aria-label="Copy badge Markdown">${ic(I.copy)}<span>${t("Copy badge", "Copy huy hiệu")}</span></button></div>
-    <p class="fine">${t("Patterns, not proof: a finding is a reason to read the code, not a verdict on the maker. Vulnerability candidates and leaked-secret locations are not published here.", "Đây là dấu hiệu, không phải bằng chứng: một phát hiện là lý do để đọc code, không phải kết luận về người làm. Các lỗ hổng tiềm năng và vị trí secret bị lộ không được công khai ở đây.")}</p>
-  </section>` : "";
+  const check = V ? checkSection(V, { repoUrl, now, badgeSrc: `/badge/${p.slug}.svg`, badgeMd: `[![OpenYard code check](${ORIGIN}/badge/${p.slug}.svg)](${url}#check)` }) : "";
   const activity = st ? `<section class="act">
     <div class="hd2 reveal"><div><h2>${t("Activity", "Hoạt động")}</h2>
       <p class="sub">${t("From the GitHub repository, refreshed every hour.", "Lấy từ repo GitHub, cập nhật mỗi giờ.")}</p></div>
@@ -655,8 +683,100 @@ ${FX_JS}
 `;
 }
 
-export function sitemap(projects, today) {
-  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.added }))];
+// /check and /check/<owner>/<repo>: check any public GitHub repository before installing it.
+// The form asks the worker for a check; GitHub Actions reads the code with vetcode and the page
+// waits for the result, which then stays at a shareable address.
+const CHECK_JS = `<script>
+(() => {
+  const f = document.getElementById("ck"), msg = document.getElementById("ckmsg"), key = f.dataset.ts;
+  const say = (en, vi) => { msg.textContent = window.OY_LANG === "vi" ? vi : en; msg.hidden = false; };
+  if (key) {
+    window.onTs = () => turnstile.render("#ts", { sitekey: key, theme: "auto", appearance: "interaction-only" });
+    const s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTs&render=explicit"; s.async = true; document.head.appendChild(s);
+  }
+  f.addEventListener("submit", async e => {
+    e.preventDefault();
+    // Accepts https://github.com/owner/repo, github.com/owner/repo, owner/repo, with or without a path after it.
+    const parts = f.repo.value.trim().replace(/^https?:\\/\\//, "").replace(/^(?:www\\.)?github\\.com\\//, "").replace(/[#?].*$/, "").split("/").slice(0, 2);
+    const v = "https://github.com/" + parts.join("/").replace(/\\.git$/, "");
+    if (parts.length < 2 || !/^https:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+$/.test(v)) return say("Paste a link like https://github.com/owner/repo", "Dán link dạng https://github.com/owner/repo");
+    const b = f.querySelector("button"); b.disabled = true;
+    try {
+      const r = await fetch("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo: v, ts: key && window.turnstile ? turnstile.getResponse() : "" }) });
+      const d = await r.json();
+      if (!r.ok) { b.disabled = false; if (key && window.turnstile) turnstile.reset(); return say(d.error, d.error); }
+      location.href = "/check/" + d.repo;
+    } catch (x) { b.disabled = false; say("Could not reach OpenYard. Try again.", "Không kết nối được OpenYard. Thử lại nhé."); }
+  });
+  const w = document.getElementById("wait");
+  if (w) {
+    const t0 = Date.now(), el = w.querySelector(".el");
+    setInterval(() => { const s = Math.round((Date.now() - t0) / 1000); el.textContent = s + "s"; }, 1000);
+    const poll = async () => {
+      try { const d = await (await fetch("/api/check/status?repo=" + encodeURIComponent(w.dataset.repo), { cache: "no-store" })).json(); if (d.status === "done" || d.status === "failed") return location.reload(); } catch (x) {}
+      setTimeout(poll, 4000);
+    };
+    setTimeout(poll, 4000);
+  }
+})();
+</script>`;
+
+export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.now() }) {
+  const full = ref ? `${ref.owner}/${ref.name}` : "";
+  const url = ref ? `${ORIGIN}/check/${full}` : `${ORIGIN}/check`;
+  const repoUrl = ref ? `https://github.com/${full}` : null;
+  const title = ref ? `Is ${full} safe? What its code can do · OpenYard` : "Check any GitHub repository before you install it · OpenYard";
+  const desc = ref ? `A free check of ${full}: malware signs, install scripts, and a label of what the code can do (secrets, network, other programs), read without running it.`
+    : "Paste a GitHub link and get a label of what the code can do, malware and supply-chain findings, and a badge. Free, nothing is run.";
+  const done = row && row.status === "done" && VERDICT[row.verdict];
+  const busy = row && (row.status === "queued" || row.status === "running");
+  const jsonld = [{ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url }];
+  const form = `<form class="ckf" id="ck" data-ts="${esc(turnstile || "")}" novalidate>
+      <label class="sr" for="repo">GitHub repository</label>
+      <input id="repo" name="repo" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repo" value="${esc(repoUrl || "")}" required>
+      <button class="btn dark" type="submit">${ic(I.shield)}${t(done ? "Check again" : "Check", done ? "Kiểm tra lại" : "Kiểm tra")}</button>
+    </form><div id="ts"></div><p class="ckmsg" id="ckmsg" role="alert" hidden></p>`;
+  const state = busy ? `<div class="wait reveal" id="wait" data-repo="${esc(full)}"><span class="spin" aria-hidden="true"></span><div><b>${t("Reading the code…", "Đang đọc code…")}</b>
+      <span>${t("Downloading the repository and reading it with vetcode. Usually under two minutes; this page updates by itself.", "Đang tải repo và đọc bằng vetcode. Thường dưới hai phút, trang sẽ tự cập nhật.")} <b class="el">0s</b></span></div></div>`
+    : row && row.status === "failed" ? `<div class="wait bad reveal">${ic(I.alert)}<div><b>${t("The check did not finish", "Chưa kiểm tra được")}</b><span>${esc(row.error || "")}</span></div></div>` : "";
+  const result = done ? checkSection(row, { repoUrl, now, badgeSrc: `/badge/gh/${full}.svg`, badgeMd: `[![OpenYard code check](${ORIGIN}/badge/gh/${full}.svg)](${url})`,
+    sub: t("Read by vetcode without running anything, at the commit below. Check again any time.", "vetcode đọc mã nguồn tại commit bên dưới mà không chạy gì. Có thể kiểm tra lại bất cứ lúc nào.") }) : "";
+  const none = ref && !row ? `<p class="fine">${t("Not checked yet. Press Check and the result appears here in a minute or two.", "Chưa được kiểm tra. Bấm Kiểm tra, kết quả hiện ở đây sau một hai phút.")}</p>` : "";
+  const list = recent.filter(r => r.repo.toLowerCase() !== full.toLowerCase()).slice(0, 12);
+  const how = [[I.globe, ["Paste a public GitHub link", "Dán link repo GitHub công khai"]], [I.eye, ["vetcode reads the code. Nothing is installed, built or run", "vetcode đọc code. Không cài, không build, không chạy gì"]], [I.shield, ["Get a label of what it can do, findings, and a badge", "Nhận nhãn khả năng, các phát hiện và một huy hiệu"]]];
+  return `${head({ title, desc, url, image: { url: `${ORIGIN}/og.png?v=2`, w: 1200, h: 630 }, jsonld })}
+<body style="--c:#14665f">
+<nav><div class="wrap">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
+  <a class="back" href="/#projects">← ${t("All projects", "Tất cả dự án")}</a>
+  <div class="right">
+    <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
+    <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}${t("Join Discord", "Vào Discord")}</a>
+  </div>
+</div></nav>
+<main>
+<header class="hero ck"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
+  <div class="tags up" style="--d:1"><span class="pill on">${ic(I.shield)}${t("Free code check", "Kiểm tra code miễn phí")}</span></div>
+  <h1 class="up" style="--d:2">${ref ? `<a href="${esc(repoUrl)}" target="_blank" rel="noopener">${esc(full)}</a>` : t("Check any GitHub repository before you install it", "Kiểm tra bất kỳ repo GitHub nào trước khi cài")}</h1>
+  <p class="tl up" style="--d:3">${t("What the code can do, signs of malware, and tricks in install scripts. Read, never run.", "Code làm được gì, dấu hiệu mã độc và thủ đoạn trong script cài đặt. Chỉ đọc, không bao giờ chạy.")}</p>
+  <div class="cta up" style="--d:4">${form}<button class="btn line" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button></div>
+</div></header>
+<div class="wrap">
+  ${state}${none}${result}
+  ${ref ? "" : `<ol class="how">${how.map(([icon, x], i) => `<li class="reveal" style="--d:${i}">${ic(icon)}<span>${t(...x)}</span></li>`).join("")}</ol>`}
+  ${list.length ? `<section class="recent"><h2 class="reveal">${t("Recently checked", "Mới được kiểm tra")}</h2><div class="rgrid">${list.map((r, i) => `<a class="rc reveal" style="--d:${i % 6}" href="/check/${esc(r.repo)}"><span class="vd ${esc(r.verdict)}">${ic(r.verdict === "clear" ? I.shield : I.alert)}</span><b>${esc(r.repo)}</b><small>${t(...since(r.scanned_at, now))}</small></a>`).join("")}</div></section>` : ""}
+</div>
+</main>
+<footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Patterns, not proof. Read the code before you trust it.", "Dấu hiệu, không phải bằng chứng. Hãy đọc code trước khi tin.")}</span><a href="https://github.com/openyard-cloud/vetcode" target="_blank" rel="noopener">${t("Powered by vetcode", "Chạy bằng vetcode")}</a></div></footer>
+${LANG_JS}
+${FX_JS}
+${CHECK_JS}
+</body></html>`;
+}
+
+export function sitemap(projects, today, checks = []) {
+  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check`, lastmod: today }, ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.added })),
+    ...checks.map(c => ({ loc: `${ORIGIN}/check/${c.repo}`, lastmod: new Date(c.scanned_at).toISOString().slice(0, 10) }))];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}
