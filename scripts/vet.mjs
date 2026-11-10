@@ -15,7 +15,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const SITE = process.env.SITE || "https://openyard.cloud";
-const VETCODE = process.env.VETCODE || "@openyard/vetcode@0.3.0";
+// Latest 0.3.x: vetcode publishes patch releases from its own CI.
+const VETCODE = process.env.VETCODE || "@openyard/vetcode@0.3";
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const ONLY = arg("--only"), DRY = process.argv.includes("--dry");
 const WEEK = 7 * 86400000, MAX_BYTES = 200 * 1024 * 1024, MAX_RUNS = +(process.env.MAX_RUNS || 25);
@@ -86,7 +87,7 @@ async function main() {
   const q = await fetch(`${SITE}/api/vet/queue`, { headers: auth });
   if (!q.ok) throw new Error(`queue ${q.status}: ${await q.text()}`);
   const now = Date.now();
-  let runs = 0;
+  let runs = 0, failed = 0;
   for (const p of (await q.json()).projects) {
     if (ONLY && p.slug !== ONLY) continue;
     if (runs >= MAX_RUNS) break;
@@ -104,13 +105,16 @@ async function main() {
       console.log(`${p.slug} @ ${sha.slice(0, 7)}: ${summary.verdict}, ${summary.label.length} abilities, ${summary.notes.length} notes`);
       if (DRY) { console.log(JSON.stringify(summary, null, 1)); continue; }
       const r = await fetch(`${SITE}/api/vet/${p.slug}`, { method: "POST", headers: { ...auth, "Content-Type": "application/json" }, body: JSON.stringify(summary) });
-      if (!r.ok) console.error(`${p.slug}: ${r.status} ${await r.text()}`);
+      if (!r.ok) { failed++; console.error(`${p.slug}: ${r.status} ${await r.text()}`); }
     } catch (e) {
+      failed++;
       console.error(`${p.slug}: ${e.message}`);
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   }
+  // A run where checks failed should show as failed in Actions, not as a quiet success.
+  if (failed) throw new Error(`${failed} check${failed === 1 ? "" : "s"} failed`);
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) main().catch(e => { console.error(e); process.exit(1); });
