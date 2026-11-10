@@ -6,9 +6,11 @@
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
+//   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
+//   GET  /badge/<slug>.svg     README badge with the latest code check
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { projectPage, sitemap } from "./pages.js";
+import { projectPage, sitemap, badge } from "./pages.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
@@ -43,17 +45,18 @@ function toApi(row, now) {
     team: !!row.team, featured: !!row.featured, ...(row.swarm ? { swarm: JSON.parse(row.swarm) } : {}), ...(row.highlights ? { highlights: JSON.parse(row.highlights) } : {}), ...(row.install ? { install: JSON.parse(row.install) } : {}), added: row.added,
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
-  return { ...p, ...(s ? { stats: s } : {}), comments: row.comments || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now) };
+  const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now) };
 }
 
 const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
 async function listProjects(env, now = Date.now()) {
   const since = today(now - 7 * DAY);
-  const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated,
+  const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated, v.verdict AS v_verdict, v.scanned_at AS v_scanned,
       (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks,
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
       (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk
-    FROM projects p LEFT JOIN stats s ON s.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
+    FROM projects p LEFT JOIN stats s ON s.slug = p.slug LEFT JOIN vets v ON v.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
   return results.map(r => toApi(r, now)).sort((a, b) => {
     const ra = rank(a), rb = rank(b);
     for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
@@ -236,12 +239,48 @@ async function comments(req, env, url, id) {
   return json({ id: r.id, parent, at: now, body, deleted: false, mine: true, user: { login: user.login, name: user.name, avatar: user.avatar } }, 201);
 }
 
+// Code checks. The scanner (scripts/vet.mjs in GitHub Actions) asks which repositories to read,
+// reads them with vetcode and posts a summary. Only it holds VET_TOKEN.
+const VERDICTS = ["clear", "review", "warning"], SEVERITIES = ["critical", "high", "medium"];
+const scanner = (req, env) => !!env.VET_TOKEN && req.headers.get("Authorization") === `Bearer ${env.VET_TOKEN}`;
+const clip = (v, n) => String(v ?? "").slice(0, n);
+
+async function vetQueue(env) {
+  const { results } = await env.DB.prepare(`SELECT p.slug, p.repo, v.commit_sha AS "commit", v.scanned_at FROM projects p LEFT JOIN vets v ON v.slug = p.slug
+    WHERE p.hidden = 0 AND p.repo LIKE 'https://github.com/%' ORDER BY COALESCE(v.scanned_at, 0)`).all();
+  return json({ projects: results }, 200, { "Cache-Control": "no-store" });
+}
+
+async function vetSave(req, env, slug) {
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first())) return fail("No such project.", 404);
+  if (!/^[0-9a-f]{40}$/.test(b.commit || "") || !VERDICTS.includes(b.verdict)) return fail("Bad summary.");
+  const label = (Array.isArray(b.label) ? b.label : []).slice(0, 12).map(x => ({ cap: clip(x.cap, 60), files: +x.files || 0 })).filter(x => x.cap);
+  const notes = (Array.isArray(b.notes) ? b.notes : []).slice(0, 8).filter(x => SEVERITIES.includes(x.severity))
+    .map(x => ({ severity: x.severity, rule: clip(x.rule, 60), title: clip(x.title, 120), file: clip(x.file, 200), line: +x.line || 0 }));
+  const sk = b.skipped || {}, skipped = { patterns: (Array.isArray(sk.patterns) ? sk.patterns : []).slice(0, 20).map(x => clip(x, 100)), lines: +sk.lines || 0 };
+  const now = Date.now(), old = await env.DB.prepare("SELECT commit_sha, label, changed, changed_at, changed_from FROM vets WHERE slug = ?1").bind(slug).first();
+  // Abilities the code did not have at the previously checked commit: how a hijacked update shows up.
+  let changed = old ? JSON.parse(old.changed) : [], changedAt = old?.changed_at ?? null, changedFrom = old?.changed_from ?? null;
+  if (old && old.commit_sha !== b.commit) {
+    const before = new Set(JSON.parse(old.label).map(x => x.cap)), added = label.map(x => x.cap).filter(c => !before.has(c));
+    if (added.length) { changed = added; changedAt = now; changedFrom = old.commit_sha; }
+  }
+  await env.DB.prepare(`INSERT INTO vets (slug, commit_sha, version, scanned_at, verdict, files, label, notes, changed, changed_at, changed_from, skipped)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+      ON CONFLICT (slug) DO UPDATE SET commit_sha = excluded.commit_sha, version = excluded.version, scanned_at = excluded.scanned_at, verdict = excluded.verdict,
+        files = excluded.files, label = excluded.label, notes = excluded.notes, changed = excluded.changed, changed_at = excluded.changed_at, changed_from = excluded.changed_from, skipped = excluded.skipped`)
+    .bind(slug, b.commit, clip(b.version, 20), now, b.verdict, +b.files || 0, JSON.stringify(label), JSON.stringify(notes), JSON.stringify(changed), changedAt, changedFrom, JSON.stringify(skipped)).run();
+  return json({ slug, verdict: b.verdict, changed });
+}
+
 async function page(env, slug) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
   const now = Date.now(), all = await listProjects(env, now);
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
-  return projectPage(toApi(row, now), all, SITE, stats, now);
+  const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
+  return projectPage(toApi(row, now), all, SITE, stats, now, vet);
 }
 
 export default {
@@ -280,6 +319,12 @@ export default {
         const html = await page(env, m[1]);
         if (!html) return Response.redirect(url.origin + "/#projects", 302);
         return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=120" } });
+      }
+      if (path === "/api/vet/queue" && req.method === "GET") return scanner(req, env) ? vetQueue(env) : fail("Not allowed.", 403);
+      if ((m = /^\/api\/vet\/([a-z0-9-]+)$/.exec(path)) && req.method === "POST") return scanner(req, env) ? vetSave(req, env, m[1]) : fail("Not allowed.", 403);
+      if ((m = /^\/badge\/([a-z0-9-]+)\.svg$/.exec(path))) {
+        const v = await env.DB.prepare("SELECT v.verdict FROM vets v JOIN projects p ON p.slug = v.slug WHERE v.slug = ?1 AND p.hidden = 0").bind(m[1]).first();
+        return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
       }
       if (path === "/sitemap.xml") return new Response(sitemap(await listProjects(env, now), today(now)), { headers: { "Content-Type": "application/xml" } });
     } catch (e) {
