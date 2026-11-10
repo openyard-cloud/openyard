@@ -19,7 +19,10 @@ const SITE = process.env.SITE || "https://openyard.cloud";
 const VETCODE = process.env.VETCODE || "@openyard/vetcode@0.3";
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const ONLY = arg("--only"), DRY = process.argv.includes("--dry");
-const WEEK = 7 * 86400000, MAX_BYTES = 200 * 1024 * 1024, MAX_RUNS = +(process.env.MAX_RUNS || 25);
+// MAX_BYTES caps the download of the code at one commit. GitHub's repository size counts the
+// whole history, which is often far larger than the code itself, so it only rules out the
+// repositories whose download would be hopeless anyway (MAX_HISTORY_KB).
+const WEEK = 7 * 86400000, MAX_BYTES = 200 * 1024 * 1024, MAX_HISTORY_KB = 5 * 1024 * 1024, MAX_RUNS = +(process.env.MAX_RUNS || 25);
 const auth = { Authorization: `Bearer ${process.env.VET_TOKEN || ""}` };
 const gh = process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {};
 
@@ -61,7 +64,7 @@ async function download(owner, name, sha, into) {
   let n = 0;
   for await (const chunk of r.body) {
     n += chunk.length;
-    if (n > MAX_BYTES) { out.destroy(); throw new Error("repository is larger than 200 MB"); }
+    if (n > MAX_BYTES) { out.destroy(); throw new Error("The code at the latest commit is larger than 200 MB."); }
     out.write(chunk);
   }
   await new Promise(res => out.end(res));
@@ -143,7 +146,7 @@ async function asked(repos) {
       if (!r.ok) throw new Error(`GitHub answered ${r.status}. Try again in a while.`);
       const info = await r.json();
       if (info.private) throw new Error("Only public repositories can be checked.");
-      if (info.size > MAX_BYTES / 1024) throw new Error("The repository is larger than 200 MB.");
+      if (info.size > MAX_HISTORY_KB) throw new Error("The repository is larger than 5 GB.");
       const sha = await headCommit(m[1], m[2]);
       res = { repo, name: info.full_name, ...(await readRepo(m[1], m[2], sha)) };
       console.log(`${repo} @ ${sha.slice(0, 7)}: ${res.verdict}, ${res.label.length} abilities, ${res.notes.length} notes`);
