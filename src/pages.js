@@ -701,8 +701,12 @@ const CHECK_JS = `<script>
     const v = "https://github.com/" + parts.join("/").replace(/\\.git$/, "");
     if (parts.length < 2 || !/^https:\\/\\/github\\.com\\/[\\w.-]+\\/[\\w.-]+$/.test(v)) return say("Paste a link like https://github.com/owner/repo", "Dán link dạng https://github.com/owner/repo");
     const b = f.querySelector("button"); b.disabled = true;
+    // Turnstile answers a few seconds after the page loads; a quick visitor waits for it here
+    // instead of being told they could not be verified.
+    let ts = "";
+    for (let i = 0; key && i < 40 && !(ts = window.turnstile ? turnstile.getResponse() || "" : ""); i++) await new Promise(r => setTimeout(r, 250));
     try {
-      const r = await fetch("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo: v, ts: key && window.turnstile ? turnstile.getResponse() : "" }) });
+      const r = await fetch("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo: v, ts }) });
       const d = await r.json();
       if (!r.ok) { b.disabled = false; if (key && window.turnstile) turnstile.reset(); return say(d.error, d.error); }
       location.href = "/check/" + d.repo;
