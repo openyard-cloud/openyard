@@ -32,7 +32,41 @@ const I = {
   expand: '<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  key: '<circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  term: '<path d="m4 17 6-6-6-6M12 19h8"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/>',
+  folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>',
+  code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
 };
+
+// Code checks: what vetcode found when it read the repository (never ran it).
+const CAP = {
+  "reads environment or credential files": [I.key, ["Reads secrets or environment variables", "Đọc secret hoặc biến môi trường"]],
+  "uses the network": [I.globe, ["Connects to the internet", "Kết nối internet"]],
+  "runs other programs": [I.term, ["Starts other programs", "Chạy chương trình khác"]],
+  "collects user and host details": [I.user, ["Reads user and machine details", "Đọc thông tin người dùng và máy"]],
+  "writes into home or startup folders": [I.folder, ["Writes to home or startup folders", "Ghi vào thư mục home hoặc khởi động"]],
+  "decodes or builds code at runtime": [I.code, ["Builds or decodes code while running", "Tạo hoặc giải mã code khi chạy"]],
+};
+const VERDICT = {
+  clear: ["No signs of malware or supply-chain tricks", "Không thấy dấu hiệu mã độc hay thủ đoạn chuỗi cung ứng", "vetted", "#10b981"],
+  review: ["Some things are worth a look", "Có vài chỗ nên xem lại", "review", "#f59e0b"],
+  warning: ["Signs of malicious code", "Có dấu hiệu mã độc", "warning", "#ef4444"],
+};
+/** README badge: shields-style SVG with the latest verdict. */
+export function badge(verdict) {
+  const [, , word, color] = VERDICT[verdict] || [0, 0, "not checked", "#8b949e"];
+  const left = "openyard", lw = 64, rw = 10 + word.length * 7, w = lw + rw;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="20" role="img" aria-label="${left}: ${word}"><title>${left}: ${word}</title>
+<linearGradient id="s" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient>
+<clipPath id="r"><rect width="${w}" height="20" rx="3" fill="#fff"/></clipPath>
+<g clip-path="url(#r)"><rect width="${lw}" height="20" fill="#14141a"/><rect x="${lw}" width="${rw}" height="20" fill="${color}"/><rect width="${w}" height="20" fill="url(#s)"/></g>
+<g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="${lw / 2}" y="14">${left}</text><text x="${lw + rw / 2}" y="14">${word}</text></g></svg>`;
+}
 const since = (ms, now) => {
   const m = Math.max(0, Math.round((now - ms) / 60000)), h = Math.round(m / 60), d = Math.round(m / 1440);
   return m < 1 ? ["just now", "vừa xong"] : m < 60 ? [`${m} min ago`, `${m} phút trước`] : m < 1440 ? [`${h} h ago`, `${h} giờ trước`] : [`${d} d ago`, `${d} ngày trước`];
@@ -188,6 +222,33 @@ section.more{padding:80px 0 24px}
 .num>span{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.35}
 .num em{font-style:normal;font-size:13px;font-weight:500;letter-spacing:0;color:#10b981;margin-left:6px;vertical-align:middle}
 .hl{margin-top:56px}
+.chk{margin-top:56px}.chk .sync a{color:inherit}.chk code{font:12.5px ui-monospace,SFMono-Regular,Menlo,monospace}
+.vgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:12px;margin-bottom:12px}
+@media (max-width:760px){.vgrid{grid-template-columns:1fr}}
+.verdict{display:flex;gap:14px;align-items:flex-start;padding:22px;border-radius:18px;border:1px solid var(--line2);background:var(--solid)}
+.verdict .ic{flex:none;width:34px;height:34px;padding:7px;border-radius:12px;color:#fff;background:#10b981}
+.verdict.review .ic{background:#f59e0b}.verdict.warning .ic{background:#ef4444}
+.verdict b{display:block;font-size:17px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+.verdict span{display:block;font-size:13px;color:var(--muted);margin-top:6px}
+.verdict ul{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:6px;font-size:13px;color:var(--muted)}
+.verdict li{display:flex;gap:7px;align-items:center}.verdict li .ic{width:14px;height:14px;padding:0;border-radius:0;background:none;color:#10b981}
+.vlabel{padding:18px 20px;border-radius:18px;border:1px solid var(--line2);background:var(--solid)}
+.vlabel h3{font-size:14px;font-weight:600;margin-bottom:10px}
+.vlabel ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.vlabel li{display:flex;align-items:center;gap:10px;font-size:14px}
+.vlabel li .ic{width:18px;height:18px;color:var(--c);flex:none}
+.vlabel li small{margin-left:auto;color:var(--muted);font-size:12.5px}
+.vlabel li em{font-style:normal;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:#fef3c7;color:#b45309}
+.vlabel .none{font-size:14px;color:var(--muted);line-height:1.5}
+.vlabel .chg{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;color:#b45309;line-height:1.45}
+.vlabel .chg .ic{width:16px;height:16px;flex:none;margin-top:2px}
+.sev{flex:none;font:600 11px Inter,sans-serif;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:var(--bg2);color:var(--muted)}
+.sev.critical{background:#fee2e2;color:#b91c1c}.sev.high{background:#ffedd5;color:#c2410c}.sev.medium{background:#fef9c3;color:#a16207}
+.vfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--bg2)}
+.vfoot code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.copy.lt{border-color:var(--line2);background:var(--solid);color:var(--ink)}.copy.lt:hover{background:var(--bg);color:var(--ink)}
+.fine{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.5}
+.fine.skip .ic{width:14px;height:14px;vertical-align:-2px;margin-right:6px}.fine code{font-size:12px;padding:1px 5px;border-radius:5px;background:var(--bg2)}
 .hls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 @media (max-width:860px){.hls{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:420px){.hls{grid-template-columns:1fr}}
@@ -358,7 +419,7 @@ const FX_JS = `<script>
 
 const logoClass = p => p.logoStyle === "tile" ? "full" : "";
 
-export function projectPage(p, all, site, stats, now = Date.now()) {
+export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   const url = `${ORIGIN}/p/${p.slug}`;
   const type = TYPE(p);
   const image = p.og ? { url: abs(p.og), w: 1200, h: 630 } : p.image ? { url: abs(p.image) } : { url: `${ORIGIN}/og.png?v=2`, w: 1200, h: 630 };
@@ -440,6 +501,31 @@ export function projectPage(p, all, site, stats, now = Date.now()) {
         <ul class="lleg">${parts.map(x => `<li><i style="background:${x.color}"></i><b>${esc(x.name)}</b><span>${x.pct < 0.1 ? "<0.1" : x.pct.toFixed(1)}%</span></li>`).join("")}</ul></div>` : ""}
       ${crew.length ? `<div class="reveal" style="--d:1"><h3>${t("Contributors", "Người đóng góp")}</h3><div class="avs">${crew.map(c => `<a href="https://github.com/${esc(c.login)}" target="_blank" rel="noopener" title="@${esc(c.login)} · ${+c.n || 0} commits"><img src="${esc(c.avatar)}&s=72" alt="@${esc(c.login)}" width="36" height="36" loading="lazy"></a>`).join("")}${repoUrl ? `<a class="more" href="${esc(repoUrl)}/graphs/contributors" target="_blank" rel="noopener">${t("All contributors", "Tất cả")} →</a>` : ""}</div></div>` : ""}
     </div>` : "";
+  const V = vet && VERDICT[vet.verdict] ? vet : null;
+  const vlabel = V ? JSON.parse(V.label || "[]") : [], vnotes = V ? JSON.parse(V.notes || "[]") : [], vskip = V ? JSON.parse(V.skipped || "{}") : {};
+  const vnew = V && V.changed_at && now - V.changed_at < 30 * 86400000 ? new Set(JSON.parse(V.changed || "[]")) : new Set();
+  const at = sha => repoUrl ? `${repoUrl}/blob/${esc(sha)}` : null;
+  const badgeMd = `[![OpenYard code check](${ORIGIN}/badge/${p.slug}.svg)](${url}#check)`;
+  const check = V ? `<section class="chk" id="check">
+    <div class="hd2 reveal"><div><h2>${t("Code check", "Kiểm tra mã nguồn")}</h2>
+      <p class="sub">${t("Read by vetcode without running anything. Checked again whenever the code changes.", "vetcode đọc mã nguồn mà không chạy gì. Kiểm tra lại mỗi khi code thay đổi.")}</p></div>
+      <span class="sync"><i class="dot"></i>${t(`Checked ${since(V.scanned_at, now)[0]}`, `Kiểm tra ${since(V.scanned_at, now)[1]}`)} · ${repoUrl ? `<a href="${esc(repoUrl)}/commit/${esc(V.commit_sha)}" target="_blank" rel="noopener"><code>${esc(V.commit_sha.slice(0, 7))}</code></a>` : `<code>${esc(V.commit_sha.slice(0, 7))}</code>`}</span></div>
+    <div class="vgrid">
+      <div class="verdict ${esc(V.verdict)} reveal">${ic(V.verdict === "clear" ? I.shield : I.alert)}<div><b>${t(VERDICT[V.verdict][0], VERDICT[V.verdict][1])}</b>
+        <span>${t(`${+V.files || 0} files read · vetcode ${V.version}`, `Đã đọc ${+V.files || 0} file · vetcode ${V.version}`)}</span>
+        <ul>${[["Malware and stealers", "Mã độc và mã đánh cắp"], ["Install scripts and hooks", "Script cài đặt và hook"], ["Hidden or encoded code", "Code bị giấu hoặc mã hoá"], ["CI and AI agent setup", "Cấu hình CI và AI agent"]].map(x => `<li>${ic(I.check)}${t(...x)}</li>`).join("")}</ul></div></div>
+      <div class="vlabel reveal" style="--d:1"><h3>${t("What the code can do", "Code này làm được gì")}</h3>
+        ${vlabel.length ? `<ul>${vlabel.map(x => { const [icon, name] = CAP[x.cap] || [I.code, [x.cap, x.cap]]; return `<li>${ic(icon)}<span>${t(...name)}</span>${vnew.has(x.cap) ? `<em title="${esc(V.changed_from || "")}">${t("New", "Mới")}</em>` : ""}<small>${t(`${x.files} file${x.files === 1 ? "" : "s"}`, `${x.files} file`)}</small></li>`; }).join("")}</ul>`
+          : `<p class="none">${t("None of the sensitive abilities we look for: no secrets, network, other programs or hidden code in its packages.", "Không có khả năng nhạy cảm nào trong danh sách: không đọc secret, không dùng mạng, không chạy chương trình khác, không giấu code.")}</p>`}
+        ${vnew.size ? `<p class="chg">${ic(I.alert)}${t("New since the previous check. Updates that suddenly gain abilities are how hijacked packages show up, so it is worth a look.", "Mới xuất hiện so với lần kiểm tra trước. Bản cập nhật bỗng có thêm khả năng là dấu hiệu thường gặp của package bị chiếm quyền, nên đáng xem lại.")}</p>` : ""}
+      </div>
+    </div>
+    ${vnotes.length ? `<div class="list reveal"><h3>${t("Findings to look at", "Phát hiện nên xem")}<span class="n">${vnotes.length}</span></h3>${vnotes.map(n => `<a class="it" href="${esc(at(V.commit_sha) ? `${at(V.commit_sha)}/${n.file}#L${n.line}` : "#")}" target="_blank" rel="noopener"><span class="sev ${esc(n.severity)}">${esc(n.severity)}</span><div>${esc(n.title)}<small>${esc(n.file)}${n.line ? `:${n.line}` : ""} · ${esc(n.rule)}</small></div>${ARROW.replace('class="ar"', 'class="go"')}</a>`).join("")}</div>` : ""}
+    ${vskip.patterns?.length || vskip.lines ? `<p class="fine skip">${ic(I.eye)}${t("The project asks vetcode to skip", "Dự án yêu cầu vetcode bỏ qua")}: ${(vskip.patterns || []).map(x => `<code>${esc(x)}</code>`).join(" ")}${vskip.lines ? ` ${t(`and ${vskip.lines} marked line${vskip.lines === 1 ? "" : "s"}`, `và ${vskip.lines} dòng được đánh dấu`)}` : ""}. ${t("Shown so nothing can be hidden quietly.", "Hiện ra đây để không gì bị giấu im lặng.")}</p>` : ""}
+    <div class="vfoot reveal"><img src="/badge/${esc(p.slug)}.svg" alt="OpenYard code check badge" height="20"><code>${esc(badgeMd)}</code>
+      <button class="copy lt" type="button" data-cmd="${esc(badgeMd)}" aria-label="Copy badge Markdown">${ic(I.copy)}<span>${t("Copy badge", "Copy huy hiệu")}</span></button></div>
+    <p class="fine">${t("Patterns, not proof: a finding is a reason to read the code, not a verdict on the maker. Vulnerability candidates and leaked-secret locations are not published here.", "Đây là dấu hiệu, không phải bằng chứng: một phát hiện là lý do để đọc code, không phải kết luận về người làm. Các lỗ hổng tiềm năng và vị trí secret bị lộ không được công khai ở đây.")}</p>
+  </section>` : "";
   const activity = st ? `<section class="act">
     <div class="hd2 reveal"><div><h2>${t("Activity", "Hoạt động")}</h2>
       <p class="sub">${t("From the GitHub repository, refreshed every hour.", "Lấy từ repo GitHub, cập nhật mỗi giờ.")}</p></div>
@@ -486,6 +572,7 @@ ${term ? `</div>${term}</div>` : ""}</div></header>
   ${visual}
   <dl class="specs reveal" style="--n:${facts.length}">${facts.map(([[e, v], html]) => `<div><dt>${t(e, v)}</dt><dd>${html}</dd></div>`).join("")}</dl>
   ${highlights}
+  ${check}
   ${activity}
   <section class="talk" id="comments">
     <div class="reveal"><h2>${t("Comments", "Bình luận")}</h2>

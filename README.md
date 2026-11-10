@@ -23,6 +23,23 @@ There is one rule: **it has to be free to use.** Open source is welcome but not 
 
 Want `yourproject.openyard.cloud`? Ask on [Discord](https://discord.gg/TFKsfh6tMk).
 
+## Every repository gets a code check
+
+Projects with a GitHub repository are read by [vetcode](https://github.com/openyard-cloud/vetcode) and checked again whenever their code changes. Nothing is installed or run. The project page then shows:
+
+- **What the code can do.** Whether it reads secrets, connects to the internet, starts other programs, reads user and machine details, writes to startup folders, or builds code while it runs. This is a label read from the code itself, not written by the maker.
+- **Abilities that are new since the previous check.** An update that suddenly gains network access or starts reading secrets is how hijacked packages usually show up.
+- **Malware and supply-chain findings**, with links to the exact lines. Vulnerability candidates and leaked-secret locations are never published, so nobody is pointed at an unfixed problem.
+- **What the project asks vetcode to skip**, so nothing can be hidden quietly.
+
+Makers can add the result to their README:
+
+```markdown
+[![OpenYard code check](https://openyard.cloud/badge/<slug>.svg)](https://openyard.cloud/p/<slug>#check)
+```
+
+The checks run in [`.github/workflows/vet.yml`](.github/workflows/vet.yml) with [`scripts/vet.mjs`](scripts/vet.mjs), which posts each result with the `VET_TOKEN` secret (set the same value in GitHub Actions and with `npx wrangler secret put VET_TOKEN`).
+
 ## Join the community
 
 Share what you are making, ask when you are stuck, help someone else. Developers, designers, translators, testers and people with ideas are all welcome. Come say hi on [Discord](https://discord.gg/TFKsfh6tMk), or [introduce yourself](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
@@ -41,6 +58,8 @@ One Cloudflare Worker serves everything: static files from `public/` (home page,
 OpenYard là cộng đồng của những người làm phần mềm miễn phí. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí. Luật chỉ có một: dự án phải miễn phí.
 
 Bạn có dự án miễn phí? Điền form tại [openyard.cloud/submit](https://openyard.cloud/submit): không cần tài khoản, gửi xong là có mặt trên OpenYard ngay.
+
+Mọi dự án có repo GitHub đều được vetcode đọc (không chạy) và kiểm tra lại mỗi khi code thay đổi. Trang dự án hiện code đó làm được gì (đọc secret, dùng mạng, chạy chương trình khác…), khả năng nào mới xuất hiện so với lần trước, và các dấu hiệu mã độc nếu có.
 
 ## License
 

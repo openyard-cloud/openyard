@@ -1,0 +1,33 @@
+name: Code checks
+# Reads every listed repository with vetcode (nothing is installed or run) and posts the
+# result to openyard.cloud. Changed repositories are read again within six hours.
+on:
+  schedule:
+    - cron: "41 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Check one project now (its slug)
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: vet
+  cancel-in-progress: false
+jobs:
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check the projects
+        env:
+          VET_TOKEN: ${{ secrets.VET_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          ONLY: ${{ inputs.only }}
+        run: node scripts/vet.mjs ${ONLY:+--only "$ONLY"}
