@@ -263,6 +263,11 @@ section.more{padding:80px 0 24px}
 .wait.bad .ic{width:28px;height:28px;color:#ef4444;flex:none}
 .spin{flex:none;width:28px;height:28px;border-radius:50%;border:3px solid var(--line2);border-top-color:var(--c);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.agent{margin-top:56px}
+.agent .step{display:block;font:600 11.5px Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#9aa4b2;margin:0 0 10px}
+.agent .panel .step:not(:first-child){margin-top:22px}
+.agent .ask{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.agent .ask p{flex:1;min-width:0;margin:0;font:14px/1.6 Inter,sans-serif;color:#e6edf3}
 .how{list-style:none;padding:0;margin:40px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 @media (max-width:760px){.how{grid-template-columns:1fr}}
 .how li{display:flex;gap:12px;align-items:center;padding:18px;border-radius:18px;border:1px solid var(--line2);background:var(--solid);font-size:14.5px}
@@ -725,6 +730,36 @@ const CHECK_JS = `<script>
 })();
 </script>`;
 
+// The page's check is the scanner alone. Handing the repository to the visitor's own AI agent
+// adds what rules cannot do: read around each finding, rule out false alarms, and look at
+// logic. One terminal, a tab per agent: install once, then a ready prompt with this repository.
+function agentHandoff(full, verdict) {
+  const ask = `Use the vetcode skill to review https://github.com/${full} before I install it. Download it into a temporary folder and do not run, install or build anything from it. Read the code around every finding to confirm or rule it out, then look for what patterns cannot catch. ${verdict === "warning" || verdict === "review" ? "OpenYard's scanner flagged it: explain each finding and whether it is malicious. " : ""}Finish with a plain answer: safe to install, or not, and why.`;
+  const SKILLS = "npx skills add openyard-cloud/vetcode";
+  const agents = [
+    ["Claude Code", "claude plugin marketplace add openyard-cloud/vetcode && claude plugin install vetcode@openyard", ["Installs vetcode as a plugin, once per machine.", "Cài vetcode dạng plugin, mỗi máy một lần."]],
+    ["Codex", SKILLS, ["Adds the vetcode skill where Codex looks for skills.", "Thêm skill vetcode vào chỗ Codex đọc skill."]],
+    ["Cursor · Gemini · Copilot", SKILLS, ["The skills CLI knows where each agent keeps its skills.", "Công cụ skills tự biết mỗi agent để skill ở đâu."]],
+  ];
+  return `<section class="agent" id="agent">
+    <div class="hd2 reveal"><div><h2>${t("Go deeper with your AI agent", "Đào sâu hơn với AI agent của bạn")}</h2>
+      <p class="sub">${t("The check above is the scanner on its own. Your agent, with the vetcode skill, reads the code around each finding, throws out false alarms and looks for what rules cannot see, such as missing permission checks or broken logic.", "Kết quả ở trên chỉ là bộ quét. Agent của bạn, khi có skill vetcode, sẽ đọc code quanh từng phát hiện, loại báo nhầm và tìm những gì luật không thấy được, như thiếu kiểm tra quyền hay logic sai.")}</p></div></div>
+    <div class="term reveal" role="region" aria-label="AI agent">
+      <div class="tbar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="tabs" role="tablist" aria-label="Agent">${agents.map(([name], i) => `<button class="tab" type="button" role="tab" id="tab-${i}" aria-controls="pan-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${esc(name)}</button>`).join("")}</div></div>
+      ${agents.map(([, cmd, note], i) => `<div class="panel" role="tabpanel" id="pan-${i}" aria-labelledby="tab-${i}"${i ? " hidden" : ""}>
+        <span class="step">1 · ${t("Install once", "Cài một lần")}</span>
+        <pre><span class="ps" aria-hidden="true">$</span><code>${cmd.split(/( +)/).map(w => w.trim() ? `<span class="w">${esc(w)}</span>` : w).join("")}</code></pre>
+        <div class="foot"><p class="note">${t(...note)}</p>
+          <button class="copy" type="button" data-cmd="${esc(cmd)}" aria-label="Copy install command">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
+        <span class="step">2 · ${t("Then ask your agent", "Rồi hỏi agent")}</span>
+        <div class="ask"><p>${esc(ask)}</p>
+          <button class="copy" type="button" data-cmd="${esc(ask)}" aria-label="Copy prompt">${ic(I.copy)}<span>${t("Copy prompt", "Copy câu hỏi")}</span></button></div>
+      </div>`).join("")}
+    </div>
+  </section>`;
+}
+
 export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.now() }) {
   const full = ref ? `${ref.owner}/${ref.name}` : "";
   const url = ref ? `${ORIGIN}/check/${full}` : `${ORIGIN}/check`;
@@ -767,6 +802,7 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
 </div></header>
 <div class="wrap">
   ${state}${none}${result}
+  ${ref && !busy ? agentHandoff(full, done ? row.verdict : "") : ""}
   ${ref ? "" : `<ol class="how">${how.map(([icon, x], i) => `<li class="reveal" style="--d:${i}">${ic(icon)}<span>${t(...x)}</span></li>`).join("")}</ol>`}
   ${list.length ? `<section class="recent"><h2 class="reveal">${t("Recently checked", "Mới được kiểm tra")}</h2><div class="rgrid">${list.map((r, i) => `<a class="rc reveal" style="--d:${i % 6}" href="/check/${esc(r.repo)}"><span class="vd ${esc(r.verdict)}">${ic(r.verdict === "clear" ? I.shield : I.alert)}</span><b>${esc(r.repo)}</b><small>${t(...since(r.scanned_at, now))}</small></a>`).join("")}</div></section>` : ""}
 </div>
