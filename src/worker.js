@@ -324,8 +324,9 @@ async function checkRequest(req, env, ctx) {
   const form = new FormData(); form.append("cf-turnstile-response", String(b.ts || ""));
   if (!(await checkHuman(env, form, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
   const row = await env.DB.prepare("SELECT repo, status, requested_at, scanned_at FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
-  // A check that is under way, or finished in the last hour, is simply shown again.
-  if (row && ((row.status === "queued" || row.status === "running") && now - row.requested_at < 20 * 60000 || row.status === "done" && now - (row.scanned_at || 0) < 3600000))
+  // A check that is under way, or finished in the last five minutes, is simply shown again.
+  // Older results are read again: the repository may have new commits since.
+  if (row && ((row.status === "queued" || row.status === "running") && now - row.requested_at < 20 * 60000 || row.status === "done" && now - (row.scanned_at || 0) < 5 * 60000))
     return json({ repo: row.repo, status: row.status });
   const ipHash = await sha256(ip + "|check|" + today(now));
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
