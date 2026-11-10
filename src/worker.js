@@ -13,7 +13,7 @@
 //   GET  /badge/gh/<owner>/<repo>.svg              badge for any checked repository
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { projectPage, sitemap, badge, checkPage } from "./pages.js";
+import { projectPage, sitemap, badge, checkPage, checkMarkdown, projectMarkdown, llmsTxt } from "./pages.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
@@ -431,6 +431,23 @@ export default {
         const ref = repoRef(url.searchParams.get("repo"));
         if (ref) return Response.redirect(`${url.origin}/check/${ref.full}`, 302);
         return new Response(checkPage({ recent: await recentChecks(env), site: SITE, turnstile: env.TURNSTILE_SITE_KEY, now }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" } });
+      }
+      // Plain-text twins for AI assistants (see llmsTxt in pages.js); kept out of search results.
+      const MD = { "Content-Type": "text/markdown; charset=utf-8", "Cache-Control": "public, max-age=600", "X-Robots-Tag": "noindex" };
+      if ((m = /^\/check\/([\w.-]+)\/([\w.-]+?)\.md$/.exec(path))) {
+        const row = await env.DB.prepare("SELECT * FROM repo_checks WHERE repo_key = ?1 AND status = 'done'").bind(`${m[1]}/${m[2]}`.toLowerCase()).first();
+        return row ? new Response(checkMarkdown(row), { headers: MD }) : new Response("Not checked yet. Ask for a check at https://openyard.cloud/check\n", { status: 404, headers: MD });
+      }
+      if ((m = /^\/p\/([a-z0-9-]+)\.md$/.exec(path))) {
+        const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(m[1]).first();
+        if (!row) return new Response("No such project.\n", { status: 404, headers: MD });
+        const stats = await env.DB.prepare("SELECT stars FROM stats WHERE slug = ?1").bind(m[1]).first();
+        const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(m[1]).first();
+        return new Response(projectMarkdown(toApi(row, now), stats, vet), { headers: MD });
+      }
+      if (path === "/llms.txt") {
+        const checks = (await env.DB.prepare("SELECT repo, verdict FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 50").all()).results;
+        return new Response(llmsTxt(await listProjects(env, now), checks), { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600" } });
       }
       if ((m = /^\/check\/([\w.-]+)\/([\w.-]+?)\/?$/.exec(path))) {
         const ref = repoRef(`https://github.com/${m[1]}/${m[2]}`);

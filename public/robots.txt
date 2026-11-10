@@ -1,4 +1,18 @@
+# Search engines and AI assistants are welcome to read and cite OpenYard.
+# A plain-text summary for language models is at https://openyard.cloud/llms.txt
 User-agent: *
+Allow: /
+
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
 Allow: /
 
 Sitemap: https://openyard.cloud/sitemap.xml

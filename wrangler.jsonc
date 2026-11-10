@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/1f6e54887a1437cf51811144db0cb242.txt"]
+    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/llms.txt", "/1f6e54887a1437cf51811144db0cb242.txt"]
   },
   "d1_databases": [
     { "binding": "DB", "database_name": "openyard", "database_id": "90c96a85-e184-41fb-b6de-324f0a4bed51" }
