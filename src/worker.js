@@ -144,6 +144,7 @@ async function submit(req, env, ctx) {
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
+  ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}` }, 201);
 }
 
@@ -290,6 +291,17 @@ async function vetSave(req, env, slug) {
   return json({ slug, verdict: sum.verdict, changed });
 }
 
+// IndexNow: new project pages and new check results are announced to the search engines that
+// take part (Bing, Yandex, Seznam, Naver…) instead of waiting for the next crawl. Google reads the sitemap.
+async function announce(env, paths) {
+  if (!env.INDEXNOW_KEY || !paths.length) return;
+  const r = await fetch("https://api.indexnow.org/indexnow", {
+    method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify({ host: "openyard.cloud", key: env.INDEXNOW_KEY, keyLocation: `https://openyard.cloud/${env.INDEXNOW_KEY}.txt`, urlList: paths.map(p => `https://openyard.cloud${p}`) }),
+  });
+  if (!r.ok && r.status !== 202) console.error("indexnow", r.status, await r.text());
+}
+
 // Any public repository. A visitor asks on /check; the worker queues it and wakes the scanner
 // workflow with a repository_dispatch (DISPATCH_TOKEN); the six-hourly run picks up anything left.
 const repoRef = v => { const r = parseRepo(String(v || "").replace(/[#?].*$/, "")); return r && { ...r, key: `${r.owner}/${r.name}`.toLowerCase(), full: `${r.owner}/${r.name}` }; };
@@ -327,7 +339,7 @@ async function checkRequest(req, env, ctx) {
   return json({ repo: row?.repo || ref.full, status: "queued" }, 202);
 }
 
-async function checkResult(req, env) {
+async function checkResult(req, env, ctx) {
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   const ref = repoRef(`https://github.com/${b.repo || ""}`);
   if (!ref) return fail("Bad repository.");
@@ -343,6 +355,8 @@ async function checkResult(req, env) {
       label = ?8, notes = ?9, skipped = ?10, changed = ?11, changed_at = ?12, changed_from = ?13 WHERE repo_key = ?1`)
     .bind(ref.key, clip(b.name || old.repo, 140), sum.commit, sum.version, now, sum.verdict, sum.files, JSON.stringify(sum.label), JSON.stringify(sum.notes),
       JSON.stringify(sum.skipped), JSON.stringify(changed), changedAt, changedFrom).run();
+  // First result for this repository: its page now has something worth indexing.
+  if (!old.scanned_at) ctx.waitUntil(announce(env, [`/check/${clip(b.name || old.repo, 140)}`]).catch(e => console.error(e)));
   return json({ repo: old.repo, verdict: sum.verdict });
 }
 
@@ -412,7 +426,7 @@ export default {
           .bind(now - 2 * 60000, now - 30 * 60000).all();
         return json({ repos: results.map(r => r.repo) }, 200, { "Cache-Control": "no-store" });
       }
-      if (path === "/api/check/result" && req.method === "POST") return scanner(req, env) ? checkResult(req, env) : fail("Not allowed.", 403);
+      if (path === "/api/check/result" && req.method === "POST") return scanner(req, env) ? checkResult(req, env, ctx) : fail("Not allowed.", 403);
       if (path === "/check" || path === "/check/") {
         const ref = repoRef(url.searchParams.get("repo"));
         if (ref) return Response.redirect(`${url.origin}/check/${ref.full}`, 302);
@@ -429,6 +443,7 @@ export default {
         const v = await env.DB.prepare("SELECT verdict FROM repo_checks WHERE repo_key = ?1 AND status = 'done'").bind(`${m[1]}/${m[2]}`.toLowerCase()).first();
         return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
       }
+      if (env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) return new Response(env.INDEXNOW_KEY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
       if (path === "/sitemap.xml") return new Response(sitemap(await listProjects(env, now), today(now), (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results), { headers: { "Content-Type": "application/xml" } });
     } catch (e) {
       console.error(e);

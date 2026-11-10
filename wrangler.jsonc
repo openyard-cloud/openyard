@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*"]
+    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/1f6e54887a1437cf51811144db0cb242.txt"]
   },
   "d1_databases": [
     { "binding": "DB", "database_name": "openyard", "database_id": "90c96a85-e184-41fb-b6de-324f0a4bed51" }
@@ -19,7 +19,9 @@
     // GitHub OAuth App for sign-in; its client secret is the GITHUB_CLIENT_SECRET secret
     "GITHUB_CLIENT_ID": "Ov23lifGhhmjkD6yJzue",
     // GitHub logins that can remove any comment
-    "ADMIN_LOGINS": "thihodev"
+    "ADMIN_LOGINS": "thihodev",
+    // IndexNow key (public by design: served at /<key>.txt); tells Bing, Yandex and others about new pages
+    "INDEXNOW_KEY": "1f6e54887a1437cf51811144db0cb242"
   },
   // Worker Previews: every pull request gets its own preview URL. It uses a separate
   // database (seeded with the same migrations) and no Turnstile or GitHub sign-in,
