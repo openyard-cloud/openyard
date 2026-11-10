@@ -268,6 +268,9 @@ section.more{padding:80px 0 24px}
 .agent .panel .step:not(:first-child){margin-top:22px}
 .agent .ask{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
 .agent .ask p{flex:1;min-width:0;margin:0;font:14px/1.6 Inter,sans-serif;color:#e6edf3}
+.faq{margin-top:56px;max-width:760px}.faq h2{margin-bottom:12px}
+.faq details{border-bottom:1px solid var(--line2);padding:16px 0}.faq summary{cursor:pointer;font-weight:600;font-size:16px;list-style:none}.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";float:right;color:var(--muted);font-weight:400}.faq details[open] summary::after{content:"–"}.faq p{margin-top:10px;color:var(--muted);line-height:1.6;font-size:15px}
 .how{list-style:none;padding:0;margin:40px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 @media (max-width:760px){.how{grid-template-columns:1fr}}
 .how li{display:flex;gap:12px;align-items:center;padding:18px;border-radius:18px;border:1px solid var(--line2);background:var(--solid);font-size:14.5px}
@@ -325,14 +328,15 @@ footer a:hover{color:var(--ink)}
 .js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.frame{transform:none;opacity:1}}`;
 
-const head = ({ title, desc, url, image, jsonld }) => `<!doctype html>
+const head = ({ title, desc, url, image, jsonld, noindex = false }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${esc(url)}">
+<link rel="canonical" href="${esc(url)}">${noindex ? `
+<meta name="robots" content="noindex">` : ""}
 <meta property="og:site_name" content="OpenYard">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -760,6 +764,18 @@ function agentHandoff(full, verdict) {
   </section>`;
 }
 
+// Shown on /check and given to search engines as FAQPage data; keep the two the same.
+const FAQ = [
+  [["Does OpenYard run the code it checks?", "OpenYard có chạy code mà nó kiểm tra không?"],
+   ["No. The repository is downloaded as an archive and read by vetcode. Nothing is installed, built or executed, so checking a malicious repository is safe.", "Không. Repo được tải về dạng file nén và vetcode chỉ đọc nó. Không cài, không build, không chạy gì, nên kiểm tra cả repo độc hại cũng an toàn."]],
+  [["What does the check look for?", "Kiểm tra tìm những gì?"],
+   ["Signs of malware and stealers, tricks in install scripts and build hooks, hidden or encoded code, and risky CI or AI agent setup. It also lists what the code can do: read secrets, connect to the internet, start other programs, read user and machine details.", "Dấu hiệu mã độc và mã đánh cắp, thủ đoạn trong script cài đặt và hook build, code bị giấu hoặc mã hoá, cấu hình CI hay AI agent rủi ro. Nó cũng liệt kê code làm được gì: đọc secret, kết nối internet, chạy chương trình khác, đọc thông tin người dùng và máy."]],
+  [["Does a clean result mean the repository is safe?", "Kết quả sạch có nghĩa là repo an toàn?"],
+   ["It means the scanner found no known malicious patterns. Patterns are not proof either way. For a decision that matters, ask your AI agent to review it with the vetcode skill: it reads the code around each finding and looks for what rules cannot see.", "Nghĩa là bộ quét không thấy mẫu độc hại nào đã biết. Dấu hiệu không phải bằng chứng, theo cả hai chiều. Với quyết định quan trọng, hãy nhờ AI agent của bạn xem lại bằng skill vetcode: nó đọc code quanh từng phát hiện và tìm những gì luật không thấy."]],
+  [["How much does it cost?", "Có mất phí không?"],
+   ["Nothing. OpenYard and vetcode are free and open source.", "Không. OpenYard và vetcode đều miễn phí và mã nguồn mở."]],
+];
+
 export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.now() }) {
   const full = ref ? `${ref.owner}/${ref.name}` : "";
   const url = ref ? `${ORIGIN}/check/${full}` : `${ORIGIN}/check`;
@@ -769,7 +785,17 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
     : "Paste a GitHub link and get a label of what the code can do, malware and supply-chain findings, and a badge. Free, nothing is run.";
   const done = row && row.status === "done" && VERDICT[row.verdict];
   const busy = row && (row.status === "queued" || row.status === "running");
-  const jsonld = [{ "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url }];
+  // A finished check gets a description that says what was found, so search results answer
+  // the question in the title. Pages without a result yet are kept out of the index.
+  const caps = done ? JSON.parse(row.label || "[]").map(x => (CAP[x.cap] || [0, [x.cap]])[1][0].toLowerCase()) : [];
+  const summary = done ? `${full}: ${VERDICT[row.verdict][0].toLowerCase()}. ${caps.length ? `Its code ${caps.slice(0, -1).join(", ")}${caps.length > 1 ? " and " : ""}${caps.at(-1)}.` : "Its code has none of the sensitive abilities checked (secrets, network, other programs, hidden code)."} Read by vetcode on ${new Date(row.scanned_at).toISOString().slice(0, 10)}, without running it.` : desc;
+  const crumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+    { "@type": "ListItem", position: 1, name: "OpenYard", item: ORIGIN }, { "@type": "ListItem", position: 2, name: "Check a repository", item: `${ORIGIN}/check` },
+    ...(ref ? [{ "@type": "ListItem", position: 3, name: full, item: url }] : [])] };
+  const jsonld = ref
+    ? [{ "@context": "https://schema.org", "@type": "SoftwareSourceCode", name: full, codeRepository: repoUrl, url, description: summary }, crumbs]
+    : [{ "@context": "https://schema.org", "@type": "WebApplication", name: "OpenYard code check", url, description: desc, applicationCategory: "SecurityApplication", operatingSystem: "Any", isAccessibleForFree: true, offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
+      { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: FAQ.map(([q, a]) => ({ "@type": "Question", name: q[0], acceptedAnswer: { "@type": "Answer", text: a[0] } })) }, crumbs];
   const form = `<form class="ckf" id="ck" data-ts="${esc(turnstile || "")}" novalidate>
       <label class="sr" for="repo">GitHub repository</label>
       <input id="repo" name="repo" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/owner/repo" value="${esc(repoUrl || "")}" required>
@@ -783,7 +809,7 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
   const none = ref && !row ? `<p class="fine">${t("Not checked yet. Press Check and the result appears here in a minute or two.", "Chưa được kiểm tra. Bấm Kiểm tra, kết quả hiện ở đây sau một hai phút.")}</p>` : "";
   const list = recent.filter(r => r.repo.toLowerCase() !== full.toLowerCase()).slice(0, 12);
   const how = [[I.globe, ["Paste a public GitHub link", "Dán link repo GitHub công khai"]], [I.eye, ["vetcode reads the code. Nothing is installed, built or run", "vetcode đọc code. Không cài, không build, không chạy gì"]], [I.shield, ["Get a label of what it can do, findings, and a badge", "Nhận nhãn khả năng, các phát hiện và một huy hiệu"]]];
-  return `${head({ title, desc, url, image: { url: `${ORIGIN}/og.png?v=2`, w: 1200, h: 630 }, jsonld })}
+  return `${head({ title, desc: summary, url, image: { url: `${ORIGIN}/og/check.png`, w: 1200, h: 630 }, jsonld, noindex: !!ref && !done })}
 <body style="--c:#14665f">
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
@@ -803,7 +829,8 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
 <div class="wrap">
   ${state}${none}${result}
   ${ref && !busy ? agentHandoff(full, done ? row.verdict : "") : ""}
-  ${ref ? "" : `<ol class="how">${how.map(([icon, x], i) => `<li class="reveal" style="--d:${i}">${ic(icon)}<span>${t(...x)}</span></li>`).join("")}</ol>`}
+  ${ref ? "" : `<ol class="how">${how.map(([icon, x], i) => `<li class="reveal" style="--d:${i}">${ic(icon)}<span>${t(...x)}</span></li>`).join("")}</ol>
+  <section class="faq"><h2 class="reveal">${t("Questions", "Câu hỏi thường gặp")}</h2>${FAQ.map(([q, a]) => `<details class="reveal"><summary>${t(...q)}</summary><p>${t(...a)}</p></details>`).join("")}</section>`}
   ${list.length ? `<section class="recent"><h2 class="reveal">${t("Recently checked", "Mới được kiểm tra")}</h2><div class="rgrid">${list.map((r, i) => `<a class="rc reveal" style="--d:${i % 6}" href="/check/${esc(r.repo)}"><span class="vd ${esc(r.verdict)}">${ic(r.verdict === "clear" ? I.shield : I.alert)}</span><b>${esc(r.repo)}</b><small>${t(...since(r.scanned_at, now))}</small></a>`).join("")}</div></section>` : ""}
 </div>
 </main>
