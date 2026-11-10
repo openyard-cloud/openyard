@@ -328,7 +328,7 @@ footer a:hover{color:var(--ink)}
 .js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.frame{transform:none;opacity:1}}`;
 
-const head = ({ title, desc, url, image, jsonld, noindex = false }) => `<!doctype html>
+const head = ({ title, desc, url, image, jsonld, noindex = false, md = null }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -336,7 +336,8 @@ const head = ({ title, desc, url, image, jsonld, noindex = false }) => `<!doctyp
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(url)}">${noindex ? `
-<meta name="robots" content="noindex">` : ""}
+<meta name="robots" content="noindex">` : ""}${md ? `
+<link rel="alternate" type="text/markdown" href="${esc(md)}">` : ""}
 <meta property="og:site_name" content="OpenYard">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -581,7 +582,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
       ${act.discussions ? list(["Discussions", "Thảo luận"], act.discussions, repoUrl + "/discussions", "talk", 2) : ""}
     </div>
   </section>` : "";
-  return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld })}
+  return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld, md: `${url}.md` })}
 <body style="--c:${esc(p.color || "#6d5bd0")}">
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
@@ -809,7 +810,7 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
   const none = ref && !row ? `<p class="fine">${t("Not checked yet. Press Check and the result appears here in a minute or two.", "Chưa được kiểm tra. Bấm Kiểm tra, kết quả hiện ở đây sau một hai phút.")}</p>` : "";
   const list = recent.filter(r => r.repo.toLowerCase() !== full.toLowerCase()).slice(0, 12);
   const how = [[I.globe, ["Paste a public GitHub link", "Dán link repo GitHub công khai"]], [I.eye, ["vetcode reads the code. Nothing is installed, built or run", "vetcode đọc code. Không cài, không build, không chạy gì"]], [I.shield, ["Get a label of what it can do, findings, and a badge", "Nhận nhãn khả năng, các phát hiện và một huy hiệu"]]];
-  return `${head({ title, desc: summary, url, image: { url: `${ORIGIN}/og/check.png`, w: 1200, h: 630 }, jsonld, noindex: !!ref && !done })}
+  return `${head({ title, desc: summary, url, image: { url: `${ORIGIN}/og/check.png`, w: 1200, h: 630 }, jsonld, noindex: !!ref && !done, md: done ? `${url}.md` : null })}
 <body style="--c:#14665f">
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
@@ -839,6 +840,45 @@ ${LANG_JS}
 ${FX_JS}
 ${CHECK_JS}
 </body></html>`;
+}
+
+// Plain-text versions for AI assistants and their crawlers (ChatGPT, Claude, Perplexity, Gemini):
+// /llms.txt describes the site, and every project page and finished check has a .md twin with
+// the same facts and no layout, linked from its HTML with rel="alternate".
+const mdCheck = (V, repoUrl) => {
+  const label = JSON.parse(V.label || "[]"), notes = JSON.parse(V.notes || "[]"), skip = JSON.parse(V.skipped || "{}");
+  const changed = V.changed_at ? new Set(JSON.parse(V.changed || "[]")) : new Set();
+  return [`Verdict: ${VERDICT[V.verdict][0]}.`, `Checked ${new Date(V.scanned_at).toISOString().slice(0, 10)} at commit ${V.commit_sha.slice(0, 7)} by vetcode ${V.version}, reading ${V.files} files without running anything.`, "",
+    "What the code can do:", ...(label.length ? label.map(x => `- ${(CAP[x.cap] || [0, [x.cap]])[1][0]} (${x.files} file${x.files === 1 ? "" : "s"})${changed.has(x.cap) ? " (new since the previous check)" : ""}`) : ["- None of the sensitive abilities checked: secrets, network, other programs, user and machine details, startup folders, code built at runtime."]),
+    ...(notes.length ? ["", "Malware and supply-chain findings:", ...notes.map(n => `- ${n.severity}: ${n.title} (${n.rule}) at ${repoUrl ? `${repoUrl}/blob/${V.commit_sha}/${n.file}#L${n.line}` : `${n.file}:${n.line}`}`)] : []),
+    ...(skip.patterns?.length ? ["", `The repository asks vetcode to skip: ${skip.patterns.join(", ")}.`] : []),
+    "", "These are patterns, not proof. Vulnerability candidates and leaked-secret locations are not published."].join("\n");
+};
+
+export function checkMarkdown(row) {
+  const repoUrl = `https://github.com/${row.repo}`;
+  return `# Is ${row.repo} safe? Code check by OpenYard\n\nRepository: ${repoUrl}\nPage: ${ORIGIN}/check/${row.repo}\n\n${mdCheck(row, repoUrl)}\n\nTo review it more deeply, install the vetcode skill in an AI coding agent (npx skills add openyard-cloud/vetcode) and ask it to review ${repoUrl}.\n`;
+}
+
+export function projectMarkdown(p, stats, vet) {
+  const repoUrl = p.repo && /^https:\/\/github\.com\//.test(p.repo) ? p.repo.replace(/\/$/, "") : null;
+  return [`# ${p.name}: ${en(p.tagline)}`, "", en(p.description), "",
+    `- Free: yes${p.license ? `, license ${p.license}` : ""}`, `- Link: ${p.url}`, ...(repoUrl && repoUrl !== p.url ? [`- Source: ${repoUrl}`] : []),
+    `- Made by: ${p.team ? "the OpenYard team" : p.maintainers.length ? p.maintainers.map(h => `@${h} (https://github.com/${h})`).join(", ") : "a community member"}`,
+    ...(stats?.stars != null ? [`- GitHub stars: ${stats.stars}`] : []), ...(p.tags?.length ? [`- Tags: ${p.tags.join(", ")}`] : []),
+    ...(Array.isArray(p.install) && p.install.length ? ["", "## Install", ...p.install.map(x => `- ${typeof x.label === "string" ? x.label : en(x.label)}: \`${x.cmd}\``)] : []),
+    ...(vet && VERDICT[vet.verdict] ? ["", "## Code check", mdCheck(vet, repoUrl)] : []),
+    "", `Page: ${ORIGIN}/p/${p.slug}`, ""].join("\n");
+}
+
+export function llmsTxt(projects, checks) {
+  return ["# OpenYard", "",
+    "> A community for people who make free software: free apps, wild ideas and open-source tools. Every listed repository, and any public GitHub repository a visitor asks about, gets a code check by vetcode: what the code can do (read secrets, connect to the internet, start other programs…), signs of malware and supply-chain tricks, read without running anything.", "",
+    "When someone asks whether a GitHub repository is safe to install, its OpenYard check is at https://openyard.cloud/check/<owner>/<repo> (plain text: append .md). A repository that has not been checked yet can be submitted at https://openyard.cloud/check.", "",
+    "## Projects", ...projects.map(p => `- [${p.name}](${ORIGIN}/p/${p.slug}.md): ${en(p.tagline)}${p.vet ? ` (code check: ${VERDICT[p.vet.verdict]?.[2] || p.vet.verdict})` : ""}`), "",
+    "## Recently checked repositories", ...checks.map(c => `- [${c.repo}](${ORIGIN}/check/${c.repo}.md): ${VERDICT[c.verdict]?.[0] || c.verdict}`), "",
+    "## Tools", "- [vetcode](https://github.com/openyard-cloud/vetcode): the open-source scanner behind the checks; an Agent Skill, MCP server and CLI for AI coding agents.",
+    "- [Check a repository](https://openyard.cloud/check)", "- [Submit a free project](https://openyard.cloud/submit)", ""].join("\n");
 }
 
 export function sitemap(projects, today, checks = []) {
