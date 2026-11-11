@@ -15,8 +15,8 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 const SITE = process.env.SITE || "https://openyard.cloud";
-// Latest 0.3.x: vetcode publishes patch releases from its own CI.
-const VETCODE = process.env.VETCODE || "@openyard/vetcode@0.3";
+// Outside the workflow (which checks vetcode out and sets VETCODE_BIN): run it straight from its repository.
+const VETCODE = process.env.VETCODE || "github:openyard-cloud/vetcode";
 const arg = k => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : null; };
 const ONLY = arg("--only"), DRY = process.argv.includes("--dry");
 // MAX_BYTES caps the download of the code at one commit. GitHub's repository size counts the
@@ -42,13 +42,21 @@ export function summarize(report, ignored = []) {
   }
   const label = [...caps].map(([cap, files]) => ({ cap, files: files.size }))
     .sort((a, b) => (CAPS.indexOf(a.cap) + 99) % 99 - (CAPS.indexOf(b.cap) + 99) % 99);
-  const notes = (report.findings || []).filter(f => PUBLIC.has(f.category) && RANK[f.severity] <= 2)
-    .sort((a, b) => RANK[a.severity] - RANK[b.severity])
+  // vetcode 0.8 tells a sign from a verdict: a verdict takes a rule with a measured record, two
+  // rules about one file, or a sign in install-time code. "warning" is a verdict; a sign without
+  // one is "review". Older reports have no verdict: there the most severe finding decides.
+  const key = f => `${f.rule}|${rel(f.file)}|${f.line || 0}`;
+  const decided = new Set((report.verdict?.decided || []).map(key));
+  const pub = (report.findings || []).filter(f => PUBLIC.has(f.category) && RANK[f.severity] <= 2 && f.confidence !== "low");
+  const notes = pub.sort((a, b) => decided.has(key(b)) - decided.has(key(a)) || RANK[a.severity] - RANK[b.severity])
     .slice(0, 8).map(f => ({ severity: f.severity, rule: f.rule, title: f.title, file: rel(f.file), line: f.line || 0 }));
   const worst = Math.min(...notes.map(n => RANK[n.severity]), 9);
+  const verdict = report.verdict
+    ? (pub.some(f => decided.has(key(f))) ? "warning" : worst <= 1 ? "review" : "clear")
+    : (worst === 0 ? "warning" : worst === 1 ? "review" : "clear");
   // What the project tells vetcode to skip is published, so nothing can be hidden quietly.
   const skipped = { patterns: (ignored || []).slice(0, 20), lines: report.stats?.suppressedLines || 0 };
-  return { version: report.version, files: report.stats?.files || 0, label, notes, skipped, verdict: worst === 0 ? "warning" : worst === 1 ? "review" : "clear" };
+  return { version: report.version, files: report.stats?.files || 0, label, notes, skipped, verdict };
 }
 
 async function headCommit(owner, name) {
