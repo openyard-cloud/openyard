@@ -8,12 +8,13 @@
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 //   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
 //   GET  /badge/<slug>.svg     README badge with the latest code check
-//   GET  /check, /check/<owner>/<repo>   check any public GitHub repository (POST /api/check, GET /api/check/status)
+//   GET  /check, /check/<owner>/<repo>   check any public GitHub repository (POST /api/check, GET /api/check/status,
+//                                        GET /api/check/report; vetcode.openyard.cloud may call these three too)
 //   GET  /api/check/queue, POST /api/check/result   the same, for the scanner workflow (VET_TOKEN)
 //   GET  /badge/gh/<owner>/<repo>.svg              badge for any checked repository
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { projectPage, sitemap, badge, checkPage, checkMarkdown, projectMarkdown, llmsTxt } from "./pages.js";
+import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
@@ -24,6 +25,10 @@ const MAX_LOGO = 200 * 1024, MAX_IMAGE = 700 * 1024, SUBMITS_PER_DAY = 5, CHECKS
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...extra } });
 const fail = (error, status = 400) => json({ error }, status);
+// Other OpenYard sites that may ask for a check from their own pages (CORS on the three public check endpoints).
+const CHECK_ORIGINS = ["https://vetcode.openyard.cloud"];
+const PUBLIC_CHECK = new Set(["/api/check", "/api/check/status", "/api/check/report"]);
+const corsFor = req => { const o = req.headers.get("Origin"); return CHECK_ORIGINS.includes(o) ? { "Access-Control-Allow-Origin": o, Vary: "Origin" } : null; };
 const today = (now = Date.now()) => new Date(now).toISOString().slice(0, 10);
 const isHttps = v => { try { return new URL(v).protocol === "https:"; } catch { return false; } };
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -317,7 +322,8 @@ async function wakeScanner(env, repo) {
 
 async function checkRequest(req, env, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
-  if (req.headers.get("Origin") !== new URL(req.url).origin) return fail("Bad origin.", 403);
+  const origin = req.headers.get("Origin");
+  if (origin !== new URL(req.url).origin && !CHECK_ORIGINS.includes(origin)) return fail("Bad origin.", 403);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   const ref = repoRef(b.repo);
   if (!ref) return fail("Paste a link like https://github.com/owner/repo");
@@ -338,6 +344,20 @@ async function checkRequest(req, env, ctx) {
   ]);
   ctx.waitUntil(wakeScanner(env, ref.full).catch(e => console.error(e)));
   return json({ repo: row?.repo || ref.full, status: "queued" }, 202);
+}
+
+async function checkApi(req, env, ctx, url, path) {
+  if (path === "/api/check" && req.method === "POST") return checkRequest(req, env, ctx);
+  if (req.method !== "GET") return null;
+  const ref = repoRef(`https://github.com/${url.searchParams.get("repo") || ""}`);
+  if (path === "/api/check/status") {
+    const row = ref && await env.DB.prepare("SELECT status, error FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+    return json(row || { status: "none" }, 200, { "Cache-Control": "no-store" });
+  }
+  const row = ref && await env.DB.prepare("SELECT * FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
+  if (!row) return json({ status: "none" }, 404, { "Cache-Control": "no-store" });
+  if (row.status !== "done" || !row.verdict) return json({ repo: row.repo, status: row.status, error: row.error || null }, 200, { "Cache-Control": "no-store" });
+  return json(checkReport(row), 200, { "Cache-Control": "no-store" });
 }
 
 async function checkResult(req, env, ctx) {
@@ -415,11 +435,12 @@ export default {
         const v = await env.DB.prepare("SELECT v.verdict FROM vets v JOIN projects p ON p.slug = v.slug WHERE v.slug = ?1 AND p.hidden = 0").bind(m[1]).first();
         return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
       }
-      if (path === "/api/check" && req.method === "POST") return checkRequest(req, env, ctx);
-      if (path === "/api/check/status" && req.method === "GET") {
-        const ref = repoRef(`https://github.com/${url.searchParams.get("repo") || ""}`);
-        const row = ref && await env.DB.prepare("SELECT status, error FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
-        return json(row || { status: "none" }, 200, { "Cache-Control": "no-store" });
+      if (PUBLIC_CHECK.has(path)) {
+        const cors = corsFor(req);
+        if (req.method === "OPTIONS") return new Response(null, { status: cors ? 204 : 403, headers: cors ? { ...cors, "Access-Control-Allow-Methods": "GET, POST", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Max-Age": "86400" } : {} });
+        const res = await checkApi(req, env, ctx, url, path);
+        if (res && cors) for (const [k, v] of Object.entries(cors)) res.headers.set(k, v);
+        if (res) return res;
       }
       if (path === "/api/check/queue" && req.method === "GET") {
         if (!scanner(req, env)) return fail("Not allowed.", 403);

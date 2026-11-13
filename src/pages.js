@@ -855,6 +855,19 @@ const mdCheck = (V, repoUrl) => {
     "", "These are patterns, not proof. Vulnerability candidates and leaked-secret locations are not published."].join("\n");
 };
 
+/** A finished check as data, for pages on other OpenYard sites (the same facts as the page and its .md). */
+export function checkReport(row) {
+  const label = JSON.parse(row.label || "[]"), notes = JSON.parse(row.notes || "[]");
+  const repoUrl = `https://github.com/${row.repo}`;
+  return {
+    repo: row.repo, status: row.status, verdict: row.verdict, verdictText: VERDICT[row.verdict]?.[0] || null,
+    scannedAt: row.scanned_at, commit: row.commit_sha, version: row.version, files: row.files,
+    abilities: label.map(x => ({ text: (CAP[x.cap] || [0, [x.cap]])[1][0], files: x.files })),
+    findings: notes.map(n => ({ severity: n.severity, title: n.title, rule: n.rule, file: n.file, line: n.line, url: `${repoUrl}/blob/${row.commit_sha}/${n.file}#L${n.line}` })),
+    page: `${ORIGIN}/check/${row.repo}`,
+  };
+}
+
 export function checkMarkdown(row) {
   const repoUrl = `https://github.com/${row.repo}`;
   return `# Is ${row.repo} safe? Code check by OpenYard\n\nRepository: ${repoUrl}\nPage: ${ORIGIN}/check/${row.repo}\n\n${mdCheck(row, repoUrl)}\n\nTo review it more deeply, install the vetcode skill in an AI coding agent (npx skills add openyard-cloud/vetcode) and ask it to review ${repoUrl}.\n`;
