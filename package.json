@@ -8,6 +8,6 @@
     "dev": "npx -y wrangler@4 d1 migrations apply openyard --local && npx -y wrangler@4 dev",
     "migrate": "npx -y wrangler@4 d1 migrations apply openyard --remote",
     "og": "node scripts/og.mjs",
-    "deploy": "npx -y wrangler@4 deploy"
+    "deploy": "npx -y wrangler@4 d1 migrations apply openyard --remote && npx -y wrangler@4 deploy"
   }
 }

@@ -53,7 +53,7 @@ npm run dev      # local database with the seed projects, on http://localhost:87
 npm run check    # syntax check
 ```
 
-One Cloudflare Worker serves everything: static files from `public/` (home page, submit form), and from `src/worker.js` the API, project pages, sitemap and a cron trigger that refreshes GitHub stats. Projects live in a D1 database (`migrations/`). Every push to `main` deploys through Cloudflare Workers Builds; run `npm run migrate` after adding a migration. An optional `GITHUB_TOKEN` secret raises GitHub's rate limit and adds discussions to project pages.
+One Cloudflare Worker serves everything: static files from `public/` (home page, submit form), and from `src/worker.js` the API, project pages, sitemap and a cron trigger that refreshes GitHub stats. Projects live in a D1 database (`migrations/`). Every push to `main` deploys through Cloudflare Workers Builds, whose deploy command is `npm run deploy`: it applies new migrations to the production database first, then deploys the Worker. An optional `GITHUB_TOKEN` secret raises GitHub's rate limit and adds discussions to project pages.
 
 ## Tiếng Việt
 
