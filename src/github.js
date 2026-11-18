@@ -84,3 +84,23 @@ export async function repoActivity(env, ref, now = Date.now()) {
     },
   };
 }
+
+// The people of a GitHub organization: contributors to its public repositories (bots left
+// out), and its members when the token may list them (otherwise the public ones).
+export async function orgPeople(env, org) {
+  const people = new Map();
+  const add = (u, kind, n = 0) => {
+    if (!u?.login || u.type === "Bot" || /\[bot\]$/i.test(u.login)) return;
+    const p = people.get(u.login.toLowerCase()) || { login: u.login, avatar: u.avatar_url || null, kind, contributions: 0 };
+    if (kind === "member") p.kind = "member";
+    p.contributions += n;
+    people.set(u.login.toLowerCase(), p);
+  };
+  const repos = await gh(env, `/orgs/${org}/repos?per_page=100&type=public`) || [];
+  for (const r of repos) {
+    if (r.fork || r.archived || r.private) continue;
+    for (const c of await gh(env, `/repos/${org}/${r.name}/contributors?per_page=100`) || []) add(c, "contributor", c.contributions || 0);
+  }
+  for (const m of await gh(env, `/orgs/${org}/members?per_page=100`) || await gh(env, `/orgs/${org}/public_members?per_page=100`) || []) add(m, "member");
+  return [...people.values()];
+}

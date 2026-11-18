@@ -210,8 +210,8 @@ function grid(list, now = Date.now()) {
 
 // The yard's pulse at the top of a list: projects, makers, this week's likes and comments, and faces.
 // The people of the yard: anyone with an account, every maker named on a project (GitHub
-// login, signed in or not), and whoever sent a listing without naming themselves (one per
-// listing). They all count as members; the faces show them, people with accounts and makers
+// login, signed in or not), the OpenYard GitHub organization's members and contributors,
+// and whoever sent a listing without naming themselves (one per listing). They all count as members; the faces show them, people with accounts and makers
 // first, then the rest by their project.
 function pulseBar(all, pulse) {
   const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || p.owner?.login?.toLowerCase() || `p:${p.slug}`));
@@ -221,6 +221,7 @@ function pulseBar(all, pulse) {
   const people = new Map();
   for (const [k, v] of [
     ...all.flatMap(p => p.maintainers.map(m => person(m))),
+    ...(pulse?.crew || []).map(c => person(c.login, c.avatar)), // the OpenYard GitHub organization
     ...all.filter(p => p.owner).map(p => person(p.owner.login, p.owner.avatar)),
     ...(pulse?.people || []).map(u => person(u.login, u.avatar)),
     ...(pulse?.recent || []).map(c => person(c.login, c.avatar)),
