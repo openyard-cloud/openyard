@@ -8,6 +8,7 @@
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 //   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
+//   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
 //   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
 //   GET  /badge/<slug>.svg     README badge with the latest code check
@@ -18,6 +19,7 @@
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
+import * as mail from "./email.js";
 import { welcomePage, settingsPage, profilePage, privacyPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
@@ -228,10 +230,10 @@ async function refreshStats(env, now = Date.now()) {
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
 const KIND_LIST = ["people", "wild", "dev"];
-const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
+const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
 // Writes need a JSON body, which another site cannot send with the cookie without a CORS preflight.
-async function me(req, env, path) {
+async function me(req, env, path, ctx) {
   const user = await currentUser(req, env), now = Date.now(), priv = { "Cache-Control": "private, no-store" };
   if (req.method === "GET" && path === "/api/me") return json(meJson(user, env), 200, priv);
   if (req.method !== "POST") return fail("Not allowed.", 405);
@@ -252,13 +254,21 @@ async function me(req, env, path) {
   }
   const interests = Array.isArray(b.interests) ? [...new Set(b.interests.filter(k => KIND_LIST.includes(k)))] : JSON.parse(user.interests || "[]");
   const emailOk = typeof b.emailOk === "boolean" ? (b.emailOk && !!user.email) : !!user.email_ok;
+  const lang = b.lang === "vi" || b.lang === "en" ? b.lang : user.lang || "en";
   await env.DB.prepare(`UPDATE users SET interests = ?2, email_ok = ?3, email_ok_at = CASE WHEN email_ok = ?3 THEN email_ok_at ELSE ?4 END,
-      onboarded_at = COALESCE(onboarded_at, CASE WHEN ?5 THEN ?4 END) WHERE id = ?1`)
-    .bind(user.id, JSON.stringify(interests), emailOk ? 1 : 0, now, b.onboarded ? 1 : 0).run();
+      onboarded_at = COALESCE(onboarded_at, CASE WHEN ?5 THEN ?4 END), lang = ?6 WHERE id = ?1`)
+    .bind(user.id, JSON.stringify(interests), emailOk ? 1 : 0, now, b.onboarded ? 1 : 0, lang).run();
+  // first time email is on: a welcome with a few projects for what they like (sent once per account)
+  if (emailOk) ctx.waitUntil((async () => {
+    const all = await listProjects(env, now);
+    const picks = all.filter(p => !interests.length || p.kinds.some(k => interests.includes(k))).slice(0, 3);
+    await mail.welcome(env, user.id, picks);
+    await mail.drain(env, 3);
+  })().catch(e => console.error("welcome", e)));
   return json(meJson(await currentUser(req, env), env), 200, priv);
 }
 
-async function comments(req, env, url, id) {
+async function comments(req, env, url, id, ctx) {
   const user = await currentUser(req, env), admin = isAdmin(env, user), now = Date.now();
   if (req.method === "GET") {
     const slug = url.searchParams.get("slug") || "";
@@ -289,6 +299,7 @@ async function comments(req, env, url, id) {
   const recent = await env.DB.prepare("SELECT SUM(created_at > ?2) AS minute, COUNT(*) AS day FROM comments WHERE user_id = ?1 AND created_at > ?3").bind(user.id, now - 60000, now - DAY).first();
   if ((recent.minute || 0) >= 3 || (recent.day || 0) >= 60) return fail("Slow down a little, then try again.", 429);
   const r = await env.DB.prepare("INSERT INTO comments (slug, user_id, parent_id, body, created_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id").bind(slug, user.id, parent, body, now).first();
+  ctx.waitUntil(mail.comment(env, { id: r.id, slug, parentId: parent, body, author: user }).then(() => mail.drain(env, 5)).catch(e => console.error("comment mail", e)));
   return json({ id: r.id, parent, at: now, body, deleted: false, mine: true, user: { login: user.login, name: user.name, avatar: user.avatar } }, 201);
 }
 
@@ -324,19 +335,22 @@ function newAbilities(old, sum, now) {
   return { changed, changedAt, changedFrom };
 }
 
-async function vetSave(req, env, slug) {
+async function vetSave(req, env, slug, ctx) {
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first())) return fail("No such project.", 404);
   const sum = readSummary(b);
   if (!sum) return fail("Bad summary.");
   const { label, notes, skipped } = sum;
-  const now = Date.now(), old = await env.DB.prepare("SELECT commit_sha, label, changed, changed_at, changed_from FROM vets WHERE slug = ?1").bind(slug).first();
+  const now = Date.now(), old = await env.DB.prepare("SELECT commit_sha, verdict, label, changed, changed_at, changed_from FROM vets WHERE slug = ?1").bind(slug).first();
   const { changed, changedAt, changedFrom } = newAbilities(old, sum, now);
   await env.DB.prepare(`INSERT INTO vets (slug, commit_sha, version, scanned_at, verdict, files, label, notes, changed, changed_at, changed_from, skipped)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
       ON CONFLICT (slug) DO UPDATE SET commit_sha = excluded.commit_sha, version = excluded.version, scanned_at = excluded.scanned_at, verdict = excluded.verdict,
         files = excluded.files, label = excluded.label, notes = excluded.notes, changed = excluded.changed, changed_at = excluded.changed_at, changed_from = excluded.changed_from, skipped = excluded.skipped`)
     .bind(slug, sum.commit, sum.version, now, sum.verdict, sum.files, JSON.stringify(label), JSON.stringify(notes), JSON.stringify(changed), changedAt, changedFrom, JSON.stringify(skipped)).run();
+  // abilities that appeared in this very scan, or a verdict that got worse: tell the makers
+  if (old) ctx.waitUntil(mail.check(env, { slug, commit: sum.commit, verdict: sum.verdict, oldVerdict: old.verdict, abilities: changedAt === now ? changed : [] })
+    .then(() => mail.drain(env, 5)).catch(e => console.error("check mail", e)));
   return json({ slug, verdict: sum.verdict, changed });
 }
 
@@ -482,10 +496,10 @@ export default {
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
-      if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path);
-      if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url);
+      if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
+      if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
       let m = /^\/api\/comments\/(\d+)$/.exec(path);
-      if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]));
+      if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]), ctx);
       m = /^\/api\/edit\/([a-z0-9-]+)$/.exec(path);
       if (m && (req.method === "GET" || req.method === "POST")) return edit(req, env, ctx, m[1]);
       if ((m = /^\/u\/([A-Za-z0-9_-]+)$/.exec(path))) {
@@ -505,7 +519,7 @@ export default {
         return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=120" } });
       }
       if (path === "/api/vet/queue" && req.method === "GET") return scanner(req, env) ? vetQueue(env) : fail("Not allowed.", 403);
-      if ((m = /^\/api\/vet\/([a-z0-9-]+)$/.exec(path)) && req.method === "POST") return scanner(req, env) ? vetSave(req, env, m[1]) : fail("Not allowed.", 403);
+      if ((m = /^\/api\/vet\/([a-z0-9-]+)$/.exec(path)) && req.method === "POST") return scanner(req, env) ? vetSave(req, env, m[1], ctx) : fail("Not allowed.", 403);
       if ((m = /^\/badge\/([a-z0-9-]+)\.svg$/.exec(path))) {
         const v = await env.DB.prepare("SELECT v.verdict FROM vets v JOIN projects p ON p.slug = v.slug WHERE v.slug = ?1 AND p.hidden = 0").bind(m[1]).first();
         return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
@@ -551,6 +565,7 @@ export default {
         const { results } = await env.DB.prepare("SELECT * FROM projects WHERE hidden = 0 ORDER BY created_at DESC").all();
         return new Response(settingsPage({ user, site: SITE, mine: results.filter(r => owns(user, r)).map(r => toApi(r, now)) }), { headers: PRIVATE });
       }
+      if (path === "/unsubscribe" && (req.method === "GET" || req.method === "POST")) return mail.unsubscribe(req, env, url, SITE);
       if (path === "/privacy") return new Response(privacyPage({ site: SITE }), { headers: HTML });
       if ((m = /^\/@([A-Za-z0-9-]{1,39})\/?$/.exec(path))) {
         const person = await env.DB.prepare("SELECT id, login, name, avatar, bio, created_at FROM users WHERE login = ?1 COLLATE NOCASE AND deleted_at IS NULL AND banned = 0").bind(m[1]).first();
@@ -599,5 +614,11 @@ export default {
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(refreshStats(env));
+    // Mondays at 01:17 UTC (08:17 in Vietnam) queue the weekly note; every hour send what is waiting.
+    const at = new Date(event.scheduledTime);
+    ctx.waitUntil((async () => {
+      if (at.getUTCDay() === 1 && at.getUTCHours() === 1) await mail.digest(env, await listProjects(env, event.scheduledTime), event.scheduledTime);
+      await mail.drain(env, 40);
+    })().catch(e => console.error("mail cron", e)));
   },
 };

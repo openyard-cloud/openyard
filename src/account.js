@@ -44,12 +44,12 @@ const ACC_JS = `<script>
       e.preventDefault();
       const b = form.querySelector("button[type=submit]"); b.disabled = true; msg.className = "msg"; msg.textContent = "";
       try {
-        await post("/api/me", { ...read(), onboarded: true });
+        await post("/api/me", { ...read(), onboarded: true, lang: document.documentElement.lang });
         if (form.dataset.back) { location.href = form.dataset.back; return; }
         msg.textContent = T("Saved.", "Đã lưu.");
       } catch (x) { msg.className = "msg bad"; msg.textContent = x.message; } finally { b.disabled = false; }
     });
-    form.querySelector("[data-skip]")?.addEventListener("click", async () => { try { await post("/api/me", { onboarded: true }); } catch (x) {} location.href = form.dataset.back; });
+    form.querySelector("[data-skip]")?.addEventListener("click", async () => { try { await post("/api/me", { onboarded: true, lang: document.documentElement.lang }); } catch (x) {} location.href = form.dataset.back; });
   }
   const del = document.getElementById("del");
   if (del) {
