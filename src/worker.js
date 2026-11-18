@@ -745,8 +745,8 @@ async function pulse(env, now) {
   const { talk } = await env.DB.prepare("SELECT COUNT(*) AS talk FROM comments WHERE created_at > ?1 AND deleted = 0").bind(week).first();
   // the members: everyone with an account, the most recently seen first (their profiles are public)
   const { results: people } = await env.DB.prepare("SELECT login, avatar, provider FROM users WHERE deleted_at IS NULL AND banned = 0 ORDER BY seen_at DESC LIMIT 12").all();
-  const { members } = await env.DB.prepare("SELECT COUNT(*) AS members FROM users WHERE deleted_at IS NULL AND banned = 0").first();
-  return { recent, likes, talk, people, members };
+  const { results: accounts } = await env.DB.prepare("SELECT login, avatar FROM users WHERE deleted_at IS NULL AND banned = 0").all();
+  return { recent, likes, talk, people, accounts };
 }
 
 async function page(env, slug) {
