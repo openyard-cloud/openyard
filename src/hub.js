@@ -46,7 +46,7 @@ export const HUB_PATHS = ["/projects", ...CATS.map(c => `/${c.slug}`), "/about",
 
 export const HUB_CSS = `
 .pulse{display:flex;align-items:center;gap:18px 26px;flex-wrap:wrap;margin-top:26px}
-.pulse .stack img{width:34px;height:34px;margin-left:-10px;border-width:2.5px}.pulse .stack img:first-child{margin-left:0}
+.pulse .stack img{width:34px;height:34px;margin:0;border-width:2.5px;display:block}.pulse .stack>*{display:block;margin-left:-10px;position:relative;transition:transform .3s var(--ease)}.pulse .stack>:first-child{margin-left:0}.pulse .stack>a:hover{transform:translateY(-3px);z-index:2}
 .pulse dl{display:flex;gap:22px;flex-wrap:wrap;margin:0}.pulse dl div{display:flex;flex-direction:column}
 .pulse dt{font-size:22px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}.pulse dd{margin:0;font-size:12.5px;color:var(--muted)}
 .lcols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
@@ -212,11 +212,16 @@ function grid(list, now = Date.now()) {
 function pulseBar(all, pulse) {
   // a maker is a GitHub login, or the project itself when nobody was named; the team counts once
   const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || `p:${p.slug}`));
-  // faces: makers first, then people talking lately
-  const faces = [...new Map([...all.flatMap(p => p.team ? [] : p.maintainers.map(m => [m.toLowerCase(), `https://github.com/${m}.png?size=56`])),
-    ...(pulse?.recent || []).map(c => [c.login.toLowerCase(), c.avatar || `https://github.com/${c.login}.png?size=56`])]).entries()].slice(0, 9);
-  const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
-  return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(([login, src]) => `<img src="${esc(src)}" alt="" title="@${esc(login)}" loading="lazy">`).join("")}<img src="/favicon.svg" alt="" title="OpenYard team"></span>
+  // faces: the people in the yard, makers first (the team's too), then members seen lately and people talking
+  const face = (login, src) => [login.toLowerCase(), [login, src || `https://github.com/${login}.png?size=56`]];
+  const faces = [...new Map([
+    ...all.flatMap(p => p.maintainers.map(m => face(m))),
+    ...all.filter(p => p.owner).map(p => face(p.owner.login, p.owner.avatar)),
+    ...(pulse?.people || []).map(u => face(u.login, u.avatar)),
+    ...(pulse?.recent || []).map(c => face(c.login, c.avatar)),
+  ]).values()].slice(0, 10);
+  const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[pulse.members, ["members", "thành viên"]], [pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
+  return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(([login, src]) => `<a href="/@${esc(login)}" title="@${esc(login)}"><img src="${esc(src)}" alt="@${esc(login)}" loading="lazy"></a>`).join("")}<img src="/favicon.svg" alt="" title="OpenYard team"></span>
     <dl>${n.map(([v, l]) => `<div><dt>${+v || 0}</dt><dd>${t(...l)}</dd></div>`).join("")}</dl></div>`;
 }
 
