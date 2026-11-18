@@ -6,7 +6,7 @@
 //   /tags/<tag>                   projects sharing a tag (indexed once two or more share it)
 //   /about, /community            why OpenYard exists, and how to take part
 // Same look, nav, footer and EN/VI switch as the project pages in pages.js.
-import { ORIGIN, esc, en, vi, t, host, ARROW, ic, I, VERDICT, TYPE, KIND, CSS, head, LANG_JS, siteNav, siteFooter, logoClass, initials } from "./pages.js";
+import { ORIGIN, esc, en, vi, t, host, ARROW, ic, I, VERDICT, TYPE, KIND, CSS, head, LANG_JS, siteNav, siteFooter, logoClass, initials, since } from "./pages.js";
 
 const IMG = { url: `${ORIGIN}/og.png?v=2`, w: 1200, h: 630 };
 
@@ -45,6 +45,27 @@ export const tagPages = all => tagCounts(all).filter(([, n]) => n >= 2).map(([x]
 export const HUB_PATHS = ["/projects", ...CATS.map(c => `/${c.slug}`), "/about", "/community"];
 
 export const HUB_CSS = `
+.pulse{display:flex;align-items:center;gap:18px 26px;flex-wrap:wrap;margin-top:26px}
+.pulse .stack img{width:34px;height:34px;margin-left:-10px;border-width:2.5px}.pulse .stack img:first-child{margin-left:0}
+.pulse dl{display:flex;gap:22px;flex-wrap:wrap;margin:0}.pulse dl div{display:flex;flex-direction:column}
+.pulse dt{font-size:22px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}.pulse dd{margin:0;font-size:12.5px;color:var(--muted)}
+.lcols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+@media (max-width:1060px){.lcols{grid-template-columns:1fr}}
+.lrail{position:sticky;top:88px;display:flex;flex-direction:column;gap:12px}@media (max-width:1060px){.lrail{position:static}}
+.feed{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column}
+.feed a{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.4}.feed li:first-child a{border-top:0}
+.feed img{flex:none;width:28px;height:28px;border-radius:50%;background:var(--bg2)}.feed b{font-weight:600}.feed p{margin:3px 0 0;color:var(--muted);overflow-wrap:anywhere}.feed small{color:var(--muted);font-size:12px}
+.feed a:hover p{color:var(--ink)}.quiet{margin:6px 0 0;color:var(--muted);font-size:14px}
+.pc .new{position:absolute;top:12px;left:12px;z-index:1;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(100deg,#7c9cff,#b67cff,#ff7eb0)}
+.pby{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}.pby .who2{font-weight:500;margin-right:4px}
+.ring.sm{padding:1.5px}.ring.sm img{width:20px;height:20px;border-width:1.5px}
+.pby .kd{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid color-mix(in srgb,var(--kc) 45%,var(--line));color:var(--ink)}
+.pm .on{color:var(--ink)}.pm .on .ic{color:#f43f5e}.pm span:nth-child(2).on .ic{color:var(--c)}
+.pc.yours{border:1.5px dashed var(--line2);background:transparent}.pc.yours:hover{border-color:#b67cff}
+.pc.yours .pv{display:grid;place-items:center;background:repeating-linear-gradient(135deg,transparent 0 10px,color-mix(in srgb,#b67cff 8%,transparent) 10px 20px)}
+.pc.yours .pv span{font-size:44px;font-weight:300;color:#b67cff}.pc.yours h3{font-size:20px;letter-spacing:-.025em}.pc.yours .go{margin-top:auto;padding-top:10px;color:#b67cff;font-weight:500;font-size:14px;display:flex;gap:6px;align-items:center}.pc.yours .go .ar{width:14px;height:14px}
+.pc.yours[hidden]{display:none}
+
 .hero.hub{padding:76px 0 36px}.hero.hub h1{font-size:clamp(40px,6vw,68px)}.hero.hub .desc{margin-bottom:0;max-width:44em}
 .count{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
 .cats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
@@ -57,7 +78,7 @@ export const HUB_CSS = `
 .psearch input{flex:1;min-width:0;border:0;outline:0;background:none;color:var(--ink);font:15px Inter,system-ui,sans-serif}.psearch .ic{color:var(--muted);width:16px;height:16px}
 .sorts{display:flex;gap:2px;padding:3px;border-radius:999px;border:1px solid var(--line2)}
 .sorts button{height:34px;padding:0 14px;border:0;border-radius:999px;background:none;color:var(--muted);font:500 13.5px Inter,sans-serif;cursor:pointer}.sorts button[aria-pressed="true"]{background:var(--bg2);color:var(--ink)}
-.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,320px),1fr));gap:16px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:16px}
 .pc{position:relative;display:flex;flex-direction:column;border-radius:24px;border:1px solid var(--line);background:var(--bg2);overflow:hidden;transition:transform .7s var(--ease),border-color .3s,box-shadow .5s}
 .pc:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--c) 45%,var(--line2));box-shadow:0 26px 60px -32px color-mix(in srgb,var(--c) 90%,transparent)}
 .pc[hidden]{display:none}
@@ -113,7 +134,7 @@ const HUB_JS = `<script>
   const fold = s => s.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/đ/g, "d").toLowerCase();
   const filter = () => {
     const words = fold(q.value.trim()).split(/\\s+/).filter(Boolean); let n = 0;
-    cards.forEach(c => { const on = words.every(w => c.dataset.q.includes(w)); c.hidden = !on; if (on) { n++; c.classList.add("in"); } });
+    cards.forEach(c => { if (!c.dataset.q) { c.hidden = !!words.length; return; } const on = words.every(w => c.dataset.q.includes(w)); c.hidden = !on; if (on) { n++; c.classList.add("in"); } });
     none.classList.toggle("on", !n);
   };
   q.addEventListener("input", filter);
@@ -123,7 +144,8 @@ const HUB_JS = `<script>
   document.querySelectorAll(".sorts button").forEach(b => b.addEventListener("click", () => {
     document.querySelectorAll(".sorts button").forEach(x => x.setAttribute("aria-pressed", x === b));
     const key = b.dataset.s;
-    cards.slice().sort((a, c) => key === "new" ? c.dataset.added.localeCompare(a.dataset.added) || a.dataset.o - c.dataset.o : a.dataset.o - c.dataset.o).forEach(c => grid.appendChild(c));
+    cards.filter(c => c.dataset.q).sort((a, c) => key === "new" ? c.dataset.added.localeCompare(a.dataset.added) || a.dataset.o - c.dataset.o : a.dataset.o - c.dataset.o).forEach(c => grid.appendChild(c));
+    const y = grid.querySelector(".yours"); if (y) grid.appendChild(y);
   }));
 })();
 </script>`;
@@ -132,18 +154,24 @@ const logoTag = (p, size) => p.logo
   ? `<img class="${logoClass(p)}" src="${esc(p.logo)}" alt="" width="${size}" height="${size}" loading="lazy">`
   : `<span class="ini" style="--c:${esc(p.color || "#6d5bd0")}">${initials(p.name)}</span>`;
 
-/** A project card. Links inside a link are not allowed, so tags are plain text here and links in the tag cloud. */
-export function card(p, i) {
+/** A project card: what it is, who made it, how people responded. Links inside a link are not
+ * allowed, so the maker and tags are plain text here; the tag cloud and profiles carry the links. */
+export function card(p, i, now) {
+  if (typeof now !== "number") now = Date.now(); // also called as list.map(card)
   const kc = { people: "#10b981", wild: "#b67cff", dev: "#7c9cff" };
   const v = p.vet && VERDICT[p.vet.verdict];
-  const q = fold([p.name, en(p.tagline), vi(p.tagline), en(p.description), vi(p.description), ...(p.tags || []), ...p.kinds.flatMap(k => KIND[k] || [])].join(" "));
+  const fresh = now - Date.parse(p.added) < 7 * 86400000;
+  const mk = p.team ? null : p.maintainers[0];
+  const q = fold([p.name, en(p.tagline), vi(p.tagline), en(p.description), vi(p.description), ...(p.tags || []), ...p.maintainers, ...p.kinds.flatMap(k => KIND[k] || [])].join(" "));
   return `<a class="pc reveal" style="--c:${esc(p.color || "#6d5bd0")};--d:${i % 6}" href="/p/${esc(p.slug)}" data-o="${i}" data-added="${esc(p.added)}" data-q="${esc(q)}">
   ${p.image ? `<div class="pv"><img class="shot" src="${esc(p.image)}" alt="${esc(p.name)} screenshot" loading="lazy"></div>` : `<div class="pv gen">${logoTag(p, 84)}</div>`}
+  ${fresh ? `<span class="new">${t("New", "Mới")}</span>` : ""}
   <div class="pb">
     <div class="ph">${logoTag(p, 32)}<h3>${esc(p.name)}</h3><span class="ptag">${t(...TYPE(p))}</span></div>
-    <p>${t(en(p.description), vi(p.description))}</p>
-    <div class="pk">${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}${(p.tags || []).slice(0, 3).map(x => `<span>${esc(x)}</span>`).join("")}</div>
-    <div class="pm">${v ? `<span class="vc ${esc(p.vet.verdict)}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}${t(p.vet.verdict === "clear" ? "Code checked" : p.vet.verdict === "review" ? "Worth a look" : "Warning", p.vet.verdict === "clear" ? "Đã kiểm tra code" : p.vet.verdict === "review" ? "Nên xem lại" : "Cảnh báo")}</span>` : ""}${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${p.likes ? `<span>${ic(I.heart)}${+p.likes}</span>` : ""}${p.comments ? `<span>${ic(I.talk)}${+p.comments}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
+    <p>${t(en(p.tagline), vi(p.tagline))}</p>
+    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : t("a community member", "một thành viên")}</span>
+      ${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}</div>
+    <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(t(VERDICT[p.vet.verdict][0], VERDICT[p.vet.verdict][1]).replace(/<[^>]+>/g, ""))}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
 }
 
@@ -168,25 +196,51 @@ export const hero = (pill, h1, lead, extra = "") => `<header class="hero hub"><d
 
 export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed. It also gets its own post in #showcase on Discord.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản. Dự án còn được đăng riêng trong #showcase trên Discord.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
 
-function grid(list) {
+const yours = () => `<a class="pc yours reveal" href="/submit"><div class="pv"><span>+</span></div><div class="pb"><h3>${t("Your project here", "Dự án của bạn ở đây")}</h3><p>${t("Built something free? Put it in the yard in five minutes. It gets a page, a post in #showcase and a code check.", "Bạn làm ra thứ gì đó miễn phí? Đưa lên OpenYard chỉ mất năm phút. Dự án có trang riêng, một bài trong #showcase và được kiểm tra code.")}</p><span class="go">${t("Submit a project", "Gửi dự án")} ${ARROW}</span></div></a>`;
+
+function grid(list, now = Date.now()) {
   return `<div class="ptools reveal">
     <label class="psearch">${ic('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}<input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search by name, tag or what it does" aria-label="Search projects"></label>
     <div class="sorts" role="group" aria-label="Sort"><button type="button" data-s="trend" aria-pressed="true">${t("Trending", "Đang lên")}</button><button type="button" data-s="new" aria-pressed="false">${t("Newest", "Mới nhất")}</button></div>
   </div>
-  <div class="pgrid" id="pgrid">${list.map(card).join("")}</div>
+  <div class="pgrid" id="pgrid">${list.map((p, i) => card(p, i, now)).join("")}${yours()}</div>
   <p class="none2" id="none">${t("Nothing matches. Try another word, or browse all projects.", "Không có kết quả. Thử từ khác, hoặc xem tất cả dự án.")}</p>`;
 }
 
+// The yard's pulse at the top of a list: projects, makers, this week's likes and comments, and faces.
+function pulseBar(all, pulse) {
+  // a maker is a GitHub login, or the project itself when nobody was named; the team counts once
+  const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || `p:${p.slug}`));
+  // faces: makers first, then people talking lately
+  const faces = [...new Map([...all.flatMap(p => p.team ? [] : p.maintainers.map(m => [m.toLowerCase(), `https://github.com/${m}.png?size=56`])),
+    ...(pulse?.recent || []).map(c => [c.login.toLowerCase(), c.avatar || `https://github.com/${c.login}.png?size=56`])]).entries()].slice(0, 9);
+  const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
+  return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(([login, src]) => `<img src="${esc(src)}" alt="" title="@${esc(login)}" loading="lazy">`).join("")}<img src="/favicon.svg" alt="" title="OpenYard team"></span>
+    <dl>${n.map(([v, l]) => `<div><dt>${+v || 0}</dt><dd>${t(...l)}</dd></div>`).join("")}</dl></div>`;
+}
+
+// "Being talked about": the latest comments across the yard, each linking to its thread.
+function rail(pulse, now = Date.now()) {
+  const list = pulse?.recent || [];
+  return `<aside class="lrail">
+    <div class="box reveal"><span class="eyebrow">${t("Being talked about", "Đang bàn tán")}</span>
+      ${list.length ? `<ul class="feed">${list.map(c => `<li><a href="/p/${esc(c.slug)}#comments"><img src="${esc(c.avatar || `https://github.com/${c.login}.png?size=48`)}" alt="" width="28" height="28" loading="lazy"><div><b>@${esc(c.login)}</b> ${t("on", "trên")} <b>${esc(c.name)}</b><p>${esc(c.body.length > 110 ? c.body.slice(0, 110) + "…" : c.body)}</p><small>${t(...since(c.created_at, now))}</small></div></a></li>`).join("")}</ul>`
+        : `<p class="quiet">${t("No comments yet. Open a project and be the first to say what you think.", "Chưa có bình luận nào. Mở một dự án và là người đầu tiên nói bạn nghĩ gì.")}</p>`}
+    </div>
+    <a class="box dcard reveal" href="/community">${ic(I.talk)}<div><b>${t("Join the yard", "Tham gia OpenYard")}</b><small>${t("Discord, #showcase and #help", "Discord, #showcase và #help")}</small></div></a>
+  </aside>`;
+}
+
 /** /projects and the five type and kind pages. `all` is in trending order, as /api/projects returns it. */
-export function listPage({ all, site, slug }) {
+export function listPage({ all, site, slug, pulse = null }) {
   const cat = CAT[slug], list = all.filter(cat.test), path = `/${slug}`;
   const chips = [ALL, ...CATS].map(c => `<a href="/${c.slug}"${c.slug === slug ? ' aria-current="page"' : ""}>${t(...c.name)}<small>${all.filter(c.test).length}</small></a>`).join("");
   const tags = tagCounts(list).filter(([x]) => tagPages(all).includes(x));
   const desc = `${cat.lead[0]} ${list.length} project${list.length === 1 ? "" : "s"}.`;
-  const body = `${hero(`${t(...(slug === "projects" ? ["Explore", "Khám phá"] : cat.name))} <span class="count">· ${list.length}</span>`, t(...cat.h1), t(...cat.lead))}
+  const body = `${hero(slug === "projects" ? t("The yard", "OpenYard") : t(...cat.name), t(...cat.h1), t(...cat.lead), pulseBar(all, pulse))}
 <div class="wrap">
   <div class="cats reveal" role="navigation" aria-label="Categories">${chips}</div>
-  ${grid(list)}
+  <div class="lcols"><div>${grid(list)}</div>${rail(pulse)}</div>
   ${tags.length ? `<section class="tcloud"><h2 class="reveal">${t("Browse by tag", "Xem theo thẻ")}</h2><div class="reveal">${tags.map(([x, n]) => `<a href="/tags/${esc(x)}">${esc(x)}<small>${n}</small></a>`).join("")}</div></section>` : ""}
   ${band()}
 </div>`;
@@ -195,14 +249,14 @@ export function listPage({ all, site, slug }) {
 }
 
 /** /tags/<tag>, or null when no project has it. */
-export function tagPage({ all, site, tag }) {
+export function tagPage({ all, site, tag, pulse = null }) {
   const list = all.filter(p => (p.tags || []).includes(tag));
   if (!list.length) return null;
   const path = `/tags/${tag}`, desc = `${list.length} free project${list.length === 1 ? "" : "s"} tagged ${tag} on OpenYard: ${list.slice(0, 4).map(p => p.name).join(", ")}${list.length > 4 ? " and more" : ""}.`;
   const related = tagCounts(list).filter(([x]) => x !== tag && tagPages(all).includes(x)).slice(0, 16);
   const body = `${hero(`${t("Tag", "Thẻ")} <span class="count">· ${list.length}</span>`, esc(tag), t(`Free apps and tools tagged “${tag}”, made by people in the OpenYard community.`, `App và công cụ miễn phí gắn thẻ “${tag}”, do người trong cộng đồng OpenYard làm ra.`))}
 <div class="wrap">
-  ${grid(list)}
+  <div class="lcols"><div>${grid(list)}</div>${rail(pulse)}</div>
   ${related.length ? `<section class="tcloud"><h2 class="reveal">${t("Related tags", "Thẻ liên quan")}</h2><div class="reveal">${related.map(([x, n]) => `<a href="/tags/${esc(x)}">${esc(x)}<small>${n}</small></a>`).join("")}</div></section>` : ""}
   <section class="others"><h2 class="reveal">${t("Browse more", "Xem thêm")}</h2><div class="cats reveal">${[ALL, ...CATS].map(c => `<a href="/${c.slug}">${t(...c.name)}</a>`).join("")}</div></section>
   ${band()}
