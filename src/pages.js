@@ -357,7 +357,7 @@ footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;m
 .pside{position:sticky;top:88px;display:flex;flex-direction:column;gap:12px}
 @media (max-width:980px){.pside{position:static}}
 .box{display:block;padding:18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
-.acts{display:flex;flex-direction:column;gap:8px}.acts .btn{width:100%}.acts .row2{display:flex;gap:8px}.acts .row2 .btn{flex:1}
+.pacts{display:flex;flex-direction:column;gap:8px}.pacts .btn{width:100%}.pacts .row2{display:flex;gap:8px}.pacts .row2 .btn{flex:1}
 #like .lt{margin-right:auto}#like{justify-content:flex-start}
 .mk{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
 .mk>div{min-width:0;flex:1}.mk small{display:block;font-size:12px;color:var(--muted)}.mk b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk a:hover b{text-decoration:underline}.mk span:not(.ring){display:block;font-size:12.5px;color:var(--muted)}
@@ -473,7 +473,7 @@ const FX_JS = `<script>
     }), { threshold: .6 });
     document.querySelectorAll(".cnt").forEach(el => { if (+el.dataset.n) { el.textContent = "0"; count.observe(el); } });
   }
-  const nav = document.querySelector("nav"), frame = document.querySelector(".frame"), cta = document.querySelector(".hero .cta, .pside .acts");
+  const nav = document.querySelector("nav"), frame = document.querySelector(".frame"), cta = document.querySelector(".hero .cta, .pside .pacts");
   if (cta) new IntersectionObserver(([e]) => nav.classList.toggle("pinned", !e.isIntersecting && e.boundingClientRect.top < 0)).observe(cta);
   let queued = false;
   const paint = () => {
@@ -824,7 +824,7 @@ ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_b
     ${activity}
   </div>
   <aside class="pside">
-    <div class="box acts reveal">
+    <div class="box pacts reveal">
       <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${/^https:\/\/github\.com\//.test(p.url) ? `${svg(GITHUB)}${t("View on GitHub", "Xem trên GitHub")}` : `${t("Open", "Mở")} ${esc(host(p.url).split("/")[0])} ${ARROW}`}</a>
       <button class="btn line" id="like" type="button" aria-pressed="false" data-slug="${esc(p.slug)}">${ic(I.heart)}<span class="lt">${t("Like", "Thích")}</span><b class="lk">${+p.likes || 0}</b></button>
       <div class="row2">${p.repo && p.repo !== p.url ? `<a class="btn line sm" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Code", "Mã nguồn")}</a>` : ""}<button class="btn line sm" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button></div>
