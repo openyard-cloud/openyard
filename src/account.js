@@ -1,5 +1,5 @@
 // Pages about people, rendered by the Worker:
-//   /welcome     after the first sign-in: what you are into, whether we may email you, the Discord
+//   /welcome     after the first sign-in: what you are into, whether we may email you, where to talk
 //   /settings    the same choices later, your projects with edit links, deleting the account
 //   /@<login>    public profile: projects someone made and what they said lately
 //   /privacy     what we keep and why
@@ -96,7 +96,7 @@ export function welcomePage({ user, site, back }) {
     ${idBox(user, true)}
     <div class="box reveal"><h2>${t("What are you into?", "Bạn thích gì?")}</h2><p>${t("We use this to pick what to show you first.", "Để chọn thứ hiện cho bạn trước.")}</p>${picks(JSON.parse(user.interests || "[]"))}</div>
     <div class="box reveal"><h2>${t("Can we email you?", "Gửi email cho bạn được không?")}</h2><p>${t("Untick it to get nothing. We never share your address.", "Bỏ tick nếu không muốn nhận gì. Không bao giờ chia sẻ địa chỉ của bạn.")}</p>${emailBox(user, true)}</div>
-    <div class="box reveal"><h2>${t("Say hi on Discord", "Chào mọi người trên Discord")}</h2><p>${t("Most of the talk happens there: #showcase for new projects, #help when you are stuck.", "Phần lớn câu chuyện diễn ra ở đó: #showcase cho dự án mới, #help khi bạn bí.")}</p><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Open the Discord", "Mở Discord")} ${ARROW}</a></div>
+    <div class="box reveal"><h2>${t("Say hi", "Chào mọi người")}</h2><p>${t("The talk happens in Discuss: Showcase for new projects, Help when you are stuck.", "Mọi người trò chuyện ở mục Thảo luận: Khoe dự án cho dự án mới, Hỏi đáp khi bạn bí.")}</p><a class="btn line" href="/discuss/general" target="_blank" rel="noopener">${t("Open Discuss", "Mở Thảo luận")} ${ARROW}</a></div>
     <div class="acts"><button class="btn dark" type="submit">${t("Continue", "Tiếp tục")}</button><button class="btn line" type="button" data-skip>${t("Skip for now", "Để sau")}</button><span class="msg" role="status"></span></div>
   </form>
 </div>`;
@@ -217,13 +217,13 @@ export function privacyPage({ site }) {
     ["Clicks on a project's link are counted per day, with nothing about who clicked.", "Lượt bấm vào link dự án được đếm theo ngày, không kèm thông tin ai bấm."],
   ]])}
   ${sec(["Who else sees it", "Ai khác thấy"], [
-    ["The site runs on Cloudflare. New projects are posted to our Discord server. Nobody else gets your data, and we never sell it.", "Trang chạy trên Cloudflare. Dự án mới được đăng lên server Discord của chúng mình. Ngoài ra không ai nhận dữ liệu của bạn, và chúng mình không bao giờ bán nó."],
+    ["The site runs on Cloudflare, and email goes out through Resend. Nobody else gets your data, and we never sell it.", "Trang chạy trên Cloudflare, email gửi qua Resend. Ngoài ra không ai nhận dữ liệu của bạn, và chúng mình không bao giờ bán nó."],
   ])}
   ${sec(["Your choices", "Lựa chọn của bạn"], [
     ["In Settings you can turn email off, change your interests, or delete your account. Deleting erases your email and profile and empties your comments straight away.", "Ở trang Cài đặt bạn có thể tắt email, đổi sở thích hoặc xoá tài khoản. Xoá tài khoản sẽ xoá ngay email, hồ sơ và nội dung bình luận."],
-    ["Questions: ask on Discord or open an issue on GitHub.", "Có câu hỏi: hỏi trên Discord hoặc mở issue trên GitHub."],
+    ["Questions: ask in Discuss or open an issue on GitHub.", "Có câu hỏi: hỏi ở mục Thảo luận hoặc mở issue trên GitHub."],
   ])}
-  <div class="acts"><a class="btn line" href="/settings">${t("Open Settings", "Mở Cài đặt")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">Discord ${ARROW}</a></div>
+  <div class="acts"><a class="btn line" href="/settings">${t("Open Settings", "Mở Cài đặt")}</a><a class="btn line" href="/discuss/help">${t("Ask in Discuss", "Hỏi ở Thảo luận")} ${ARROW}</a></div>
 </div>`;
   return page({ title: "Privacy · OpenYard", desc: "What OpenYard keeps about you, why, and how to delete it.", path: "/privacy", color: "#10b981", site, body, css: ACC_CSS,
     jsonld: [crumbs([["OpenYard", ORIGIN], ["Privacy", `${ORIGIN}/privacy`]])] });

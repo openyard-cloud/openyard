@@ -4,14 +4,13 @@
 <p align="center"><a href="https://openyard.cloud"><img src="assets/banner.png" alt="OpenYard: free apps, wild ideas, open tools"></a></p>
 
 <p align="center">
-  <a href="https://discord.gg/TFKsfh6tMk"><img src="https://img.shields.io/discord/1567359859119231056?label=Discord&logo=discord&logoColor=white&color=5865F2" alt="Discord"></a>
   <a href="https://openyard.cloud"><img src="https://img.shields.io/badge/site-openyard.cloud-111?logo=cloudflare" alt="openyard.cloud"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT"></a>
 </p>
 
 **A community for people who make free software: free apps, wild ideas and open tools.**
 
-[openyard.cloud](https://openyard.cloud) · [Discord](https://discord.gg/TFKsfh6tMk) · [Submit a project](https://openyard.cloud/submit) · [Introduce yourself](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml) · [Discussions](https://github.com/openyard-cloud/openyard/discussions)
+[openyard.cloud](https://openyard.cloud) · [Discuss](https://openyard.cloud/discuss) · [Submit a project](https://openyard.cloud/submit) · [Introduce yourself](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml) · [Discussions](https://github.com/openyard-cloud/openyard/discussions)
 
 OpenYard is a shared yard for people who make free things. You build on your own GitHub or site, then bring your project here to show it off, get feedback, find testers and ask for help. Every project gets its own page at `openyard.cloud/p/<slug>` with its GitHub stars, pull requests, issues and discussions, and the busiest ones rise to the top of Trending.
 
@@ -21,7 +20,7 @@ Fill in the form at **[openyard.cloud/submit](https://openyard.cloud/submit)**. 
 
 There is one rule: **it has to be free to use.** Open source is welcome but not required. Any stage, any stack, any size.
 
-Want `yourproject.openyard.cloud`? Ask on [Discord](https://discord.gg/TFKsfh6tMk).
+Want `yourproject.openyard.cloud`? Ask in [Discuss](https://openyard.cloud/discuss/ideas).
 
 ## Every repository gets a code check
 
@@ -44,7 +43,7 @@ The checks run in [`.github/workflows/vet.yml`](.github/workflows/vet.yml) with 
 
 ## Join the community
 
-Share what you are making, ask when you are stuck, help someone else. Developers, designers, translators, testers and people with ideas are all welcome. Come say hi on [Discord](https://discord.gg/TFKsfh6tMk), or [introduce yourself](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
+Share what you are making, ask when you are stuck, help someone else. Developers, designers, translators, testers and people with ideas are all welcome. Come say hi in [Discuss](https://openyard.cloud/discuss), or [introduce yourself](https://github.com/openyard-cloud/openyard/issues/new?template=join-team.yml).
 
 ## Run the site locally
 
@@ -53,11 +52,7 @@ npm run dev      # local database with the seed projects, on http://localhost:87
 npm run check    # syntax check
 ```
 
-One Cloudflare Worker serves everything: static files from `public/` (home page, submit form), and from `src/worker.js` the API, project pages, sitemap and a cron trigger that refreshes GitHub stats. Projects live in a D1 database (`migrations/`). Every push to `main` deploys through Cloudflare Workers Builds, whose deploy command is `npm run deploy`: it applies new migrations to the production database first, then deploys the Worker. An optional `GITHUB_TOKEN` secret raises GitHub's rate limit and adds discussions to project pages. People sign in with GitHub (`src/auth.js`, scopes `read:user user:email`) or, without GitHub, with a one-time link by email (`/signin`, `/auth/email`): those accounts pick a nickname and get a generated picture (`/a/<seed>/<letter>.svg`); a first sign-in goes through `/welcome` (interests, email consent), `/settings` changes those and deletes the account, and `/@<login>` is a public profile (`src/account.js`). A project submitted while signed in belongs to that account, and anyone listed as its maker can edit it without the private link. Email goes through Resend (`src/email.js`, the `RESEND_API_KEY` secret, sender in the `EMAIL_FROM` var): a welcome when someone turns email on, replies, comments on your project, code-check changes and a Monday digest, only with consent and with one-click unsubscribe. Messages wait in the `outbox` table and go out right away and hourly from the cron, under `EMAIL_DAILY_LIMIT` a day (the free plan allows 100). The submit form asks for an email (`projects.contact_email`, never shown): the maker gets their page and private edit link by email, comments and a daily note of likes, and tips on day 3 and day 7. Signed-in people can like a project; likes count toward Trending. An optional `DISCORD_WEBHOOK_URL` secret (a Discord channel webhook) posts every new submission there: as a new forum post when the `DISCORD_FORUM` var is `"true"` (the #showcase forum), otherwise as a message.
-
-## Tiếng Việt
-
-OpenYard là cộng đồng của những người làm phần mềm miễn phí. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí. Luật chỉ có một: dự án phải miễn phí.
+Discussions live on the site (`/discuss`, `src/discuss.js`): topics in Help, Ideas & feedback, Building in public and General, with replies through the comment code; new projects are the Showcase. One Cloudflare Worker serves everything: static files from `public/` (home page, submit form), and from `src/worker.js` the API, project pages, sitemap and a cron trigger that refreshes GitHub stats. Projects live in a D1 database (`migrations/`). Every push to `main` deploys through Cloudflare Workers Builds, whose deploy command is `npm run deploy`: it applies new migrations to the production database first, then deploys the Worker. An optional `GITHUB_TOKEN` secret raises GitHub's rate limit and adds discussions to project pages. People sign in with GitHub (`src/auth.js`, scopes `read:user user:email`) or, without GitHub, with a one-time link by email (`/signin`, `/auth/email`): those accounts pick a nickname and get a generated picture (`/a/<seed>/<letter>.svg`); a first sign-in goes through `/welcome` (interests, email consent), `/settings` changes those and deletes the account, and `/@<login>` is a public profile (`src/account.js`). A project submitted while signed in belongs to that account, and anyone listed as its maker can edit it without the private link. Email goes through Resend (`src/email.js`, the `RESEND_API_KEY` secret, sender in the `EMAIL_FROM` var): a welcome when someone turns email on, replies, comments on your project, code-check changes and a Monday digest, only with consent and with one-click unsubscribe. Messages wait in the `outbox` table and go out right away and hourly from the cron, under `EMAIL_DAILY_LIMIT` a day (the free plan allows 100). The submit form asks for an email (`projects.contact_email`, never shown): the maker gets their page and private edit link by email, comments and a daily note of likes, and tips on day 3 and day 7. Signed-in people can like a project; likes count toward Trending. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí. Luật chỉ có một: dự án phải miễn phí.
 
 Bạn có dự án miễn phí? Điền form tại [openyard.cloud/submit](https://openyard.cloud/submit): không cần tài khoản, gửi xong là có mặt trên OpenYard ngay.
 
