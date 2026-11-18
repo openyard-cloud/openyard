@@ -231,14 +231,17 @@ export async function digest(env, all, now = Date.now()) {
 
 // ---------- sign-in links ----------
 /** The one-time sign-in link, sent at once (it is what the person is waiting for), within the daily budget. */
-export async function signin(env, email, link, lang) {
+export async function signin(env, email, link, code, lang) {
   if (!ready(env)) return false;
   const now = Date.now(), budget = +env.EMAIL_DAILY_LIMIT || 90;
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM outbox WHERE sent_at > ?1").bind(now - DAY).first();
   if (n >= budget + 8) return false; // a few over the budget for sign-ins, never the provider's limit
   const u = { lang, contact: "signin", unsub_token: "" };
-  const title = L(u, "Your OpenYard sign-in link", "Link đăng nhập OpenYard");
-  const html = `<p style="margin:0">${L(u, "Press the button to sign in. The link works once, for 20 minutes.", "Bấm nút để đăng nhập. Link chỉ dùng được một lần, trong 20 phút.")}</p><p style="margin:14px 0 0;color:#6b6b73;font-size:14px">${L(u, "If you did not ask for it, ignore this email: nobody can sign in without it.", "Nếu bạn không yêu cầu, cứ bỏ qua email này: không ai đăng nhập được nếu không có nó.")}</p>`;
+  const title = L(u, `${code} is your OpenYard code`, `${code} là mã đăng nhập OpenYard`);
+  const html = `<p style="margin:0">${L(u, "Type this code on the sign-in page:", "Nhập mã này ở trang đăng nhập:")}</p>
+<p style="margin:14px 0 0;font:600 34px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.28em;color:#0d0d0f;background:#f6f6f7;border-radius:14px;padding:14px 18px;display:inline-block">${code}</p>
+<p style="margin:16px 0 0">${L(u, "Or press the button below on this device. Both work once, for 20 minutes.", "Hoặc bấm nút bên dưới trên thiết bị này. Mã và nút đều chỉ dùng được một lần, trong 20 phút.")}</p>
+<p style="margin:14px 0 0;color:#6b6b73;font-size:14px">${L(u, "If you did not ask for it, ignore this email: nobody can sign in without it.", "Nếu bạn không yêu cầu, cứ bỏ qua email này: không ai đăng nhập được nếu không có nó.")}</p>`;
   const body = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f6f6f7;font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0d0d0f">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border:1px solid #e7e7ea;border-radius:20px">
 <tr><td style="padding:28px 32px 8px;font-weight:600;font-size:17px"><img src="${ORIGIN}/og/mark.png" width="22" height="22" alt="" style="vertical-align:-5px;margin-right:8px">Open<span style="color:#8b5cf6">Yard</span></td></tr>
@@ -248,11 +251,7 @@ export async function signin(env, email, link, lang) {
 </table></td></tr></table></body></html>`;
   const r = await fetch(`${env.RESEND_URL || "https://api.resend.com"}/emails`, {
     method: "POST", headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: title, html: body, text: `${title}
-
-${link}
-
-${L(u, "The link works once, for 20 minutes.", "Link chỉ dùng được một lần, trong 20 phút.")}` }),
+    body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: title, html: body, text: `${title}\n\n${L(u, "Code", "Mã")}: ${code}\n${L(u, "Or open", "Hoặc mở")}: ${link}\n\n${L(u, "Both work once, for 20 minutes.", "Mã và link đều chỉ dùng được một lần, trong 20 phút.")}` }),
   });
   if (!r.ok) { console.error("signin mail", r.status, (await r.text()).slice(0, 200)); return false; }
   // counted with the rest so the daily budget stays honest

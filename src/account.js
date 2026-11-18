@@ -26,7 +26,7 @@ const ACC_CSS = `
 .fld input,.fld textarea,.sgn input{height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);font:15px Inter,system-ui,sans-serif;outline:0}
 .fld textarea{height:auto;padding:10px 14px;resize:vertical}.fld input:focus,.fld textarea:focus,.sgn input:focus{border-color:#8b7cff;box-shadow:0 0 0 4px rgba(139,124,255,.16)}
 .sgn{display:flex;flex-direction:column;gap:10px}.sgn .btn{width:100%}.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:6px 0}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
-.btn.gh{background:#24292f;color:#fff}.btn.gh svg{width:18px;height:18px}
+.btn.gh{background:#24292f;color:#fff}.otp{font:600 26px ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.4em;text-align:center;height:56px!important}.btn.gh svg{width:18px;height:18px}
 .danger{border-color:color-mix(in srgb,#ef4444 40%,var(--line2))!important}.danger h2{color:#ef4444}
 .danger input{height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);font:15px ui-monospace,Menlo,monospace;min-width:0;flex:1}
 .btn.red{background:#ef4444;color:#fff}.btn.red:disabled{opacity:.45;cursor:default}
@@ -155,7 +155,7 @@ const GH = "M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9
 /** /signin: GitHub, or a one-time link by email for everyone else. */
 export function signinPage({ site, back, expired, turnstile }) {
   const go = safeBack(back);
-  const body = `${hero(t("Sign in", "Đăng nhập"), t("Join the yard", "Tham gia OpenYard"), t("Comment, like projects and start discussions. No password: use GitHub, or get a one-time link by email.", "Bình luận, thích dự án và mở thảo luận. Không cần mật khẩu: dùng GitHub, hoặc nhận link đăng nhập qua email."))}
+  const body = `${hero(t("Sign in", "Đăng nhập"), t("Join the yard", "Tham gia OpenYard"), t("Comment, like projects and start discussions. No password: use GitHub, or get a one-time code by email.", "Bình luận, thích dự án và mở thảo luận. Không cần mật khẩu: dùng GitHub, hoặc nhận mã đăng nhập qua email."))}
 <div class="wrap acc">
   ${expired ? `<p class="box" style="border-color:#f59e0b">${t("That link has expired or was already used. Ask for a new one below.", "Link đó đã hết hạn hoặc đã được dùng. Hãy lấy link mới bên dưới.")}</p>` : ""}
   <div class="box reveal sgn">
@@ -164,17 +164,42 @@ export function signinPage({ site, back, expired, turnstile }) {
     <form id="mail" class="sgn" data-ts="${esc(turnstile || "")}" data-back="${esc(go)}" novalidate>
       <label class="sr" for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
       <div id="ts"></div>
-      <button class="btn dark" type="submit">${t("Email me a sign-in link", "Gửi link đăng nhập qua email")}</button>
+      <button class="btn dark" type="submit">${t("Email me a code", "Gửi mã qua email")}</button>
       <p class="msg fine" role="status" style="margin:0"></p>
     </form>
   </div>
-  <p class="fine">${t("New here? The link makes your account. You pick a nickname next, and you can change it any time.", "Mới tới? Link sẽ tạo tài khoản cho bạn. Bước sau bạn chọn biệt danh, đổi lúc nào cũng được.")} <a href="/privacy">${t("Privacy", "Quyền riêng tư")}</a></p>
+  <p class="fine">${t("New here? The code makes your account. You pick a nickname next, and you can change it any time.", "Mới tới? Mã sẽ tạo tài khoản cho bạn. Bước sau bạn chọn biệt danh, đổi lúc nào cũng được.")} <a href="/privacy">${t("Privacy", "Quyền riêng tư")}</a></p>
 </div>`;
   const js = `<script>
 (() => {
   const f = document.getElementById("mail"), msg = f.querySelector(".msg"), key = f.dataset.ts, T = (e, v) => document.documentElement.lang === "vi" ? v : e;
   if (key) { window.onTs = () => turnstile.render("#ts", { sitekey: key, theme: "auto", appearance: "interaction-only" }); const s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTs&render=explicit"; s.async = true; document.head.appendChild(s); }
+  // step two: the 6-digit code from the email (the link in it works too)
+  const code = email => {
+    const safe = email.replace(/[<>&"]/g, "");
+    f.innerHTML = '<p style="margin:0"><b>' + T("Check your email", "Kiểm tra email của bạn") + '</b><br>' + T("We sent a 6-digit code to ", "Chúng mình đã gửi mã 6 số tới ") + safe + T(". Type it here, or press the button in the email.", ". Nhập mã ở đây, hoặc bấm nút trong email.") + '</p>'
+      + '<label class="sr" for="otp">' + T("Code", "Mã") + '</label><input id="otp" class="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••">'
+      + '<button class="btn dark" type="submit">' + T("Sign in", "Đăng nhập") + '</button><p class="msg fine" role="status" style="margin:0"></p>'
+      + '<p class="fine" style="margin:0"><a href="#" id="again">' + T("Use another email or send a new code", "Dùng email khác hoặc gửi mã mới") + '</a></p>';
+    const otp = f.querySelector("#otp"), m = f.querySelector(".msg"), b = f.querySelector("button");
+    otp.focus();
+    const go = async () => {
+      const v = otp.value.replace(/\\D/g, "");
+      if (v.length !== 6) { m.textContent = T("Type the 6 digits from the email.", "Nhập đủ 6 số trong email."); return; }
+      b.disabled = true; m.textContent = "";
+      try {
+        const r = await fetch("/auth/email/code", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code: v }) });
+        const d = await r.json();
+        if (!r.ok) throw new Error(r.status === 400 ? T("That code is not right. Check the email and try again.", "Mã chưa đúng. Kiểm tra email rồi thử lại.") : r.status === 410 ? T("That code has expired. Send a new one.", "Mã đã hết hạn. Hãy gửi mã mới.") : r.status === 429 ? T("Too many wrong codes. Send a new one.", "Sai quá nhiều lần. Hãy gửi mã mới.") : d.error);
+        location.href = d.go;
+      } catch (x) { m.textContent = x.message; b.disabled = false; otp.select(); }
+    };
+    otp.addEventListener("input", () => { otp.value = otp.value.replace(/\\D/g, "").slice(0, 6); if (otp.value.length === 6) go(); });
+    f.onsubmit = e => { e.preventDefault(); e.stopImmediatePropagation(); go(); };
+    f.querySelector("#again").addEventListener("click", e => { e.preventDefault(); location.reload(); });
+  };
   f.addEventListener("submit", async e => {
+    if (f.querySelector("#otp")) return;
     e.preventDefault();
     const email = f.querySelector("input").value.trim(), b = f.querySelector("button");
     if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) { msg.textContent = T("Type your email address.", "Nhập địa chỉ email của bạn."); return; }
@@ -184,7 +209,7 @@ export function signinPage({ site, back, expired, turnstile }) {
       const r = await fetch("/auth/email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, back: f.dataset.back, ts, lang: document.documentElement.lang }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      f.innerHTML = '<p class="box" style="margin:0"><b>' + T("Check your email", "Kiểm tra email của bạn") + '</b><br>' + T("We sent a sign-in link to ", "Chúng mình đã gửi link đăng nhập tới ") + email.replace(/[<>&]/g, "") + T(". It works once, for 20 minutes.", ". Link dùng được một lần, trong 20 phút.") + '</p>';
+      code(email);
     } catch (x) { msg.textContent = x.message; b.disabled = false; if (key && window.turnstile) turnstile.reset(); }
   });
 })();
