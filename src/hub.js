@@ -119,7 +119,7 @@ export const HUB_CSS = `
 .steps4 h3{font-size:17px}.steps4 p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
 .roles{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.roles>span{display:inline-flex;gap:7px;align-items:center;font-size:14px;padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--solid)}.roles .ic{width:15px;height:15px;color:var(--c)}
 .chans{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
-.chan{padding:18px 20px;border-radius:18px;border:1px solid var(--line2);background:var(--solid)}.chan b{font:600 14.5px "JetBrains Mono",ui-monospace,monospace}.chan p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
+.chan{display:block;padding:18px 20px;border-radius:18px;border:1px solid var(--line2);background:var(--solid);transition:border-color .2s,transform .5s var(--ease)}a.chan:hover{border-color:#b67cff;transform:translateY(-2px)}.chan b{font-weight:600;font-size:15.5px}.chan p{margin:6px 0 0;color:var(--muted);font-size:14.5px}
 .hub .cta{margin-top:28px}
 `;
 
@@ -162,6 +162,7 @@ export function card(p, i, now) {
   const v = p.vet && VERDICT[p.vet.verdict];
   const fresh = now - Date.parse(p.added) < 7 * 86400000;
   const mk = p.team ? null : p.maintainers[0];
+  const own = !p.team && !mk ? p.owner : null; // signed in with email: show their nickname
   const q = fold([p.name, en(p.tagline), vi(p.tagline), en(p.description), vi(p.description), ...(p.tags || []), ...p.maintainers, ...p.kinds.flatMap(k => KIND[k] || [])].join(" "));
   return `<a class="pc reveal" style="--c:${esc(p.color || "#6d5bd0")};--d:${i % 6}" href="/p/${esc(p.slug)}" data-o="${i}" data-added="${esc(p.added)}" data-q="${esc(q)}">
   ${p.image ? `<div class="pv"><img class="shot" src="${esc(p.image)}" alt="${esc(p.name)} screenshot" loading="lazy"></div>` : `<div class="pv gen">${logoTag(p, 84)}</div>`}
@@ -169,7 +170,7 @@ export function card(p, i, now) {
   <div class="pb">
     <div class="ph">${logoTag(p, 32)}<h3>${esc(p.name)}</h3><span class="ptag">${t(...TYPE(p))}</span></div>
     <p>${t(en(p.tagline), vi(p.tagline))}</p>
-    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : t("a community member", "một thành viên")}</span>
+    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : own?.avatar ? esc(own.avatar) : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : own ? `@${esc(own.login)}` : t("a community member", "một thành viên")}</span>
       ${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}</div>
     <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(t(VERDICT[p.vet.verdict][0], VERDICT[p.vet.verdict][1]).replace(/<[^>]+>/g, ""))}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
@@ -194,7 +195,7 @@ export const hero = (pill, h1, lead, extra = "") => `<header class="hero hub"><d
   <p class="desc up" style="--d:3">${lead}</p>${extra}
 </div></header>`;
 
-export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed. It also gets its own post in #showcase on Discord.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản. Dự án còn được đăng riêng trong #showcase trên Discord.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
+export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Sign in with GitHub or email and put it in the yard in five minutes. It shows up in Showcase, where people try new projects.", "Đăng nhập bằng GitHub hoặc email rồi đưa lên OpenYard chỉ mất năm phút. Dự án sẽ có mặt trong mục Khoe dự án, nơi mọi người dùng thử dự án mới.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
 
 const yours = () => `<a class="pc yours reveal" href="/submit"><div class="pv"><span>+</span></div><div class="pb"><h3>${t("Your project here", "Dự án của bạn ở đây")}</h3><p>${t("Built something free? Put it in the yard in five minutes. It gets a page, a post in #showcase and a code check.", "Bạn làm ra thứ gì đó miễn phí? Đưa lên OpenYard chỉ mất năm phút. Dự án có trang riêng, một bài trong #showcase và được kiểm tra code.")}</p><span class="go">${t("Submit a project", "Gửi dự án")} ${ARROW}</span></div></a>`;
 
@@ -224,10 +225,10 @@ function rail(pulse, now = Date.now()) {
   const list = pulse?.recent || [];
   return `<aside class="lrail">
     <div class="box reveal"><span class="eyebrow">${t("Being talked about", "Đang bàn tán")}</span>
-      ${list.length ? `<ul class="feed">${list.map(c => `<li><a href="/p/${esc(c.slug)}#comments"><img src="${esc(c.avatar || `https://github.com/${c.login}.png?size=48`)}" alt="" width="28" height="28" loading="lazy"><div><b>@${esc(c.login)}</b> ${t("on", "trên")} <b>${esc(c.name)}</b><p>${esc(c.body.length > 110 ? c.body.slice(0, 110) + "…" : c.body)}</p><small>${t(...since(c.created_at, now))}</small></div></a></li>`).join("")}</ul>`
+      ${list.length ? `<ul class="feed">${list.map(c => `<li><a href="${esc(c.href || `/p/${c.slug}#comments`)}"><img src="${esc(c.avatar || `https://github.com/${c.login}.png?size=48`)}" alt="" width="28" height="28" loading="lazy"><div><b>@${esc(c.login)}</b> ${t("on", "trên")} <b>${esc(c.name)}</b><p>${esc(c.body.length > 110 ? c.body.slice(0, 110) + "…" : c.body)}</p><small>${t(...since(c.created_at, now))}</small></div></a></li>`).join("")}</ul>`
         : `<p class="quiet">${t("No comments yet. Open a project and be the first to say what you think.", "Chưa có bình luận nào. Mở một dự án và là người đầu tiên nói bạn nghĩ gì.")}</p>`}
     </div>
-    <a class="box dcard reveal" href="/community">${ic(I.talk)}<div><b>${t("Join the yard", "Tham gia OpenYard")}</b><small>${t("Discord, #showcase and #help", "Discord, #showcase và #help")}</small></div></a>
+    <a class="box dcard reveal" href="/discuss">${ic(I.talk)}<div><b>${t("Join the conversation", "Tham gia thảo luận")}</b><small>${t("Help, ideas, building in public", "Hỏi đáp, ý tưởng, chuyện làm sản phẩm")}</small></div></a>
   </aside>`;
 }
 
@@ -268,12 +269,12 @@ export function tagPage({ all, site, tag, pulse = null }) {
 const VALUES = [
   ['<path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/>', ["Free is the only rule", "Miễn phí là đủ"], ["If people can use it without paying, it belongs here. Open source welcome, not required.", "Ai cũng dùng được mà không phải trả tiền là đưa lên OpenYard được. Mở mã nguồn thì càng tốt, nhưng không bắt buộc."]],
   [I.code, ["Yours stays yours", "Dự án vẫn là của bạn"], ["Build on your own GitHub or site. We link to you, so the stars and credit go to you.", "Bạn làm trên GitHub hay trang của mình. Chúng mình chỉ dẫn link, sao và công trạng vẫn về bạn."]],
-  [I.talk, ["Ask anything", "Cứ hỏi"], ["Stuck on code, design or building with AI? Ask in Discord. Someone has been there.", "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi trên Discord, kiểu gì cũng có người từng gặp."]],
+  [I.talk, ["Ask anything", "Cứ hỏi"], ["Stuck on code, design or building with AI? Ask in Discuss. Someone has been there.", "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi ở mục Thảo luận, kiểu gì cũng có người từng gặp."]],
   [I.shield, ["Read before you install", "Đọc trước khi cài"], ["Every listed repository is read by vetcode for malware and supply-chain tricks, and checked again when its code changes.", "Mọi repo trên OpenYard đều được vetcode đọc để tìm mã độc và thủ đoạn chuỗi cung ứng, và kiểm tra lại khi code thay đổi."]],
 ];
 const STEPS = [
   [["Build anywhere", "Làm ở đâu cũng được"], ["On your own GitHub, site or app store. Any stack, with or without AI.", "Trên GitHub, trang web hay kho ứng dụng của bạn. Công nghệ gì cũng được, có hay không dùng AI."]],
-  [["Share it here", "Mang lên OpenYard"], ["List it in five minutes. It gets its own page and a post in #showcase on Discord.", "Đăng dự án mất năm phút. Dự án có trang riêng và một bài trong #showcase trên Discord."]],
+  [["Share it here", "Mang lên OpenYard"], ["List it in five minutes. It gets its own page and a place in Showcase.", "Đăng dự án mất năm phút. Dự án có trang riêng và có mặt trong mục Khoe dự án."]],
   [["Get feedback", "Nhận góp ý"], ["Members try it, report bugs and suggest what to build next.", "Mọi người dùng thử, báo lỗi và gợi ý nên làm gì tiếp."]],
   [["Help each other", "Giúp nhau"], ["Ask when you are stuck, share updates, answer someone else's question.", "Bí thì hỏi, có gì mới thì kể, thấy ai cần thì giúp."]],
 ];
@@ -296,16 +297,17 @@ export function aboutPage({ all, site }) {
 }
 
 const CHANNELS = [
-  ["#showcase", ["Every new project gets its own post here, the moment it is submitted. Try it and reply to the maker.", "Mỗi dự án mới có một bài riêng ở đây ngay khi được gửi. Dùng thử rồi trả lời người làm."]],
-  ["#help", ["Stuck on code, design, deploys or building with AI? Ask, and answer when you can.", "Bí code, thiết kế, deploy hay dùng AI? Cứ hỏi, và trả lời khi bạn biết."]],
-  ["#ideas-and-feedback", ["Ideas for OpenYard or for your next project. Rough is fine.", "Ý tưởng cho OpenYard hay cho dự án tiếp theo của bạn. Chưa chín cũng được."]],
-  ["#general", ["Say hello, share what you are working on this week.", "Chào mọi người, kể tuần này bạn đang làm gì."]],
+  ["showcase", ["Every new project shows up here the moment it is submitted. Try it and reply to the maker.", "Mỗi dự án mới xuất hiện ở đây ngay khi được gửi. Dùng thử rồi trả lời người làm."]],
+  ["help", ["Stuck on code, design, deploys or building with AI? Ask, and answer when you can.", "Bí code, thiết kế, deploy hay dùng AI? Cứ hỏi, và trả lời khi bạn biết."]],
+  ["ideas", ["Ideas for OpenYard or for your next project. Rough is fine.", "Ý tưởng cho OpenYard hay cho dự án tiếp theo của bạn. Chưa chín cũng được."]],
+  ["progress", ["What you shipped this week, what broke, what you learned.", "Tuần này bạn làm được gì, hỏng gì, học được gì."]],
 ];
+const CHAN_NAME = { showcase: ["Showcase", "Khoe dự án"], help: ["Help", "Hỏi đáp"], ideas: ["Ideas & feedback", "Ý tưởng & góp ý"], progress: ["Building in public", "Đang làm gì"] };
 const WAYS = [
   [I.eye, ["Try a project", "Dùng thử một dự án"], ["Pick one, use it for real, and leave a comment on its page. Makers rarely hear from users.", "Chọn một dự án, dùng thật, rồi để lại bình luận trên trang của nó. Người làm hiếm khi được nghe người dùng nói."], "/projects", 0],
   [I.pr, ["Pick a good first issue", "Nhận một việc dễ"], ["Small, well-described tasks on the OpenYard site, a good first pull request.", "Việc nhỏ, mô tả rõ trên trang OpenYard, hợp để gửi pull request đầu tiên."], "issues", 1],
   [I.globe, ["Translate", "Dịch"], ["Every page is in English and Vietnamese. Help a maker get their listing into both.", "Mọi trang đều có tiếng Anh và tiếng Việt. Giúp người làm có bản giới thiệu ở cả hai thứ tiếng."], "contrib", 1],
-  [I.share, ["Share your own", "Khoe dự án của bạn"], ["Built something free? It takes five minutes and needs no account.", "Bạn làm ra thứ gì đó miễn phí? Mất năm phút, không cần tài khoản."], "/submit", 0],
+  [I.share, ["Share your own", "Khoe dự án của bạn"], ["Built something free? Sign in and it takes five minutes.", "Bạn làm ra thứ gì đó miễn phí? Đăng nhập rồi chỉ mất năm phút."], "/submit", 0],
 ];
 
 export function communityPage({ all, site }) {
@@ -314,18 +316,18 @@ export function communityPage({ all, site }) {
   const fresh = all.slice().sort((a, b) => b.added.localeCompare(a.added)).slice(0, 6);
   const logo = o => o.logo ? `<img class="${logoClass(o)}" src="${esc(o.logo)}" alt="" width="44" height="44" loading="lazy">` : `<span class="ini" style="--c:${esc(o.color || "#6d5bd0")}">${initials(o.name)}</span>`;
   const body = `${hero(t("Community", "Cộng đồng"), t("Come hang out in the yard.", "Ghé OpenYard chơi cùng mọi người."), t("Share what you are making, ask when you are stuck, help someone else. Developers, designers, translators, testers and people with ideas are all welcome.", "Khoe thứ bạn đang làm, hỏi khi bí, giúp người khác khi rảnh. Dev, designer, người dịch, người test hay chỉ có ý tưởng đều được chào đón."),
-    `<div class="cta up" style="--d:4"><a class="btn dark" href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Join our Discord", "Vào Discord")} ${ARROW}</a><a class="btn line" href="${esc(site.repo)}/issues/new?template=join-team.yml" target="_blank" rel="noopener">${t("Introduce yourself", "Giới thiệu bản thân")}</a><a class="btn line" href="${esc(site.repo)}" target="_blank" rel="noopener">${t("Contribute on GitHub", "Đóng góp trên GitHub")}</a></div>
+    `<div class="cta up" style="--d:4"><a class="btn dark" href="/discuss">${t("Open Discuss", "Vào Thảo luận")} ${ARROW}</a><a class="btn line" href="${esc(site.repo)}/issues/new?template=join-team.yml" target="_blank" rel="noopener">${t("Introduce yourself", "Giới thiệu bản thân")}</a><a class="btn line" href="${esc(site.repo)}" target="_blank" rel="noopener">${t("Contribute on GitHub", "Đóng góp trên GitHub")}</a></div>
   <div class="roles up" style="--d:5">${roles.map(([icon, x]) => `<span>${ic(icon)}${t(...x)}</span>`).join("")}</div>`)}
 <div class="wrap">
-  <section class="sec"><h2 class="reveal">${t("What happens on the Discord", "Trên Discord có gì")}</h2><p class="sub reveal">${t("A small, friendly server. The channels you will use most:", "Một server nhỏ và thân thiện. Những kênh bạn sẽ dùng nhiều nhất:")}</p>
-    <div class="chans">${CHANNELS.map(([n, d], i) => `<div class="chan reveal" style="--d:${i}"><b>${n}</b><p>${t(...d)}</p></div>`).join("")}</div></section>
+  <section class="sec"><h2 class="reveal">${t("Where the talk happens", "Mọi người nói chuyện ở đâu")}</h2><p class="sub reveal">${t("Right here on openyard.cloud. Sign in with GitHub or just your email.", "Ngay trên openyard.cloud. Đăng nhập bằng GitHub hoặc chỉ cần email.")}</p>
+    <div class="chans">${CHANNELS.map(([n, d], i) => `<a class="chan reveal" style="--d:${i}" href="/discuss/${n}"><b>${t(...CHAN_NAME[n])}</b><p>${t(...d)}</p></a>`).join("")}</div></section>
   <section class="sec"><h2 class="reveal">${t("Ways to help", "Cách để góp sức")}</h2><p class="sub reveal">${t("No need to be an expert. A few minutes helps a maker more than you think.", "Không cần là chuyên gia. Vài phút của bạn giúp người làm nhiều hơn bạn nghĩ.")}</p>
     <div class="vals4">${WAYS.map(([icon, h, d, k, ext], i) => `<a class="vl reveal" style="--d:${i}" href="${esc(href(k))}"${ext ? ' target="_blank" rel="noopener"' : ""}>${ic(icon)}<h3>${t(...h)}</h3><p>${t(...d)}</p></a>`).join("")}</div></section>
   ${fresh.length ? `<section class="sec"><div class="hd2 reveal"><h2 style="margin:0">${t("New in the yard", "Mới trên OpenYard")}</h2><a class="btn sm line" href="/projects">${t("All projects", "Tất cả dự án")} ${ARROW}</a></div>
     <div class="grid">${fresh.map((o, i) => `<a class="mini reveal" style="--d:${i};--c:${esc(o.color || "#6d5bd0")}" href="/p/${esc(o.slug)}">${logo(o)}<div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div>${ARROW}</a>`).join("")}</div></section>` : ""}
   ${band()}
 </div>`;
-  const desc = "Join the OpenYard community on Discord: share the free software you make, get feedback and testers, and help other makers.";
-  return page({ title: "Join the OpenYard community: Discord for makers of free software", desc, path: "/community", color: "#5865f2", site, current: "/community", body,
+  const desc = "Join the OpenYard community: share the free software you make, get feedback and testers, ask for help and help other makers.";
+  return page({ title: "Join the OpenYard community of people who make free software", desc, path: "/community", color: "#b67cff", site, current: "/community", body,
     jsonld: [{ "@context": "https://schema.org", "@type": "WebPage", name: "OpenYard community", url: `${ORIGIN}/community`, description: desc }, crumbs([["OpenYard", ORIGIN], ["Community", `${ORIGIN}/community`]])] });
 }

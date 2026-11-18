@@ -1,7 +1,7 @@
 // openyard.cloud: static assets from public/, plus the project database (D1).
 //   GET  /api/projects        every visible project with its GitHub stats and trending score
 //   GET  /api/github?repo=     what the submit form fills in from a GitHub link
-//   POST /api/submit           add a project (no account; Turnstile and a per-IP limit)
+//   POST /api/submit           add a project (signed in with GitHub or email; a per-account and per-IP limit)
 //   GET/POST /api/edit/<slug>  change or remove a project with the edit token from submitting
 //   GET  /projects, /apps, /open-source, /for-people, /wild-ideas, /dev-tools, /tags/<tag>, /about, /community   (hub.js)
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
@@ -10,6 +10,8 @@
 //   GET/POST /api/likes        like a project (signed in); its makers hear about it once a day
 //   POST /auth/email, GET /auth/email?t=, POST /auth/email/confirm   sign in with a one-time email link (no GitHub needed)
 //   GET  /a/<seed>/<letter>.svg   the generated picture of an account that has none
+//   GET  /discuss, /discuss/<category>, /discuss/t/<id>-<slug>, /discuss/new   discussions (discuss.js)
+//   POST /api/topics, DELETE /api/topics/<id>   start or remove a topic; replies go through /api/comments
 //   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
 //   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
@@ -23,6 +25,7 @@
 import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import * as mail from "./email.js";
+import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
@@ -64,7 +67,7 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
 }
 
 const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
@@ -75,7 +78,8 @@ async function listProjects(env, now = Date.now()) {
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
       (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk,
       (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug) AS likes,
-      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d
+      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d,
+      (SELECT o.login || char(9) || COALESCE(o.avatar, '') FROM users o WHERE o.id = p.owner_id AND o.deleted_at IS NULL AND o.banned = 0) AS owner
     FROM projects p LEFT JOIN stats s ON s.slug = p.slug LEFT JOIN vets v ON v.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
   return results.map(r => toApi(r, now)).sort((a, b) => {
     const ra = rank(a), rb = rank(b);
@@ -143,17 +147,21 @@ async function checkHuman(env, form, ip) {
 
 async function submit(req, env, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
+  // a project belongs to an account: signing in (GitHub, or a link sent to an email) is the check against spam
+  const user = await currentUser(req, env);
+  if (!user) return fail("Sign in to submit a project.", 401);
+  if (user.banned) return fail("Not allowed.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
-  if (!(await checkHuman(env, form, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
+  if (String(form.get("website") || "")) return fail("Could not verify you are human. Reload and try again.", 403); // honeypot
   const ipHash = await sha256(ip + "|openyard|" + today(now));
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
-  if (n >= SUBMITS_PER_DAY) return fail("Too many projects from this connection today. Try again tomorrow.", 429);
+  const { mine } = await env.DB.prepare("SELECT COUNT(*) AS mine FROM projects WHERE owner_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
+  if (n >= SUBMITS_PER_DAY || mine >= SUBMITS_PER_DAY) return fail("That is five projects today. Try again tomorrow.", 429);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
-  // signed in: the project is theirs to edit from their profile, and they are its maker unless they named someone
-  const user = await currentUser(req, env);
-  if (user && user.provider !== "email" && !f.maintainers.length) f.maintainers = [user.login];
+  // the project is theirs to edit from their profile, and a GitHub account is its maker unless they named someone
+  if (user.provider !== "email" && !f.maintainers.length) f.maintainers = [user.login];
   // where we tell them about their listing; a signed-in person's account email will do
-  const contactEmail = f.email || user?.email || null;
+  const contactEmail = f.email || user.email || null;
   if (!contactEmail) return fail("Add your email so we can send you the edit link and tell you when people comment.");
 
   let slug = slugify(f.name);
@@ -165,14 +173,13 @@ async function submit(req, env, ctx) {
     env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id, contact_email, contact_lang)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22)`)
       .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(f.tagline), JSON.stringify(f.description), f.url, f.repo, f.license,
-        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user ? user.id : null, contactEmail, f.lang),
+        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user.id, contactEmail, f.lang),
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
-  ctx.waitUntil(notifyDiscord(env, slug, f, logo, image).catch(e => console.error(e)));
   ctx.waitUntil(mail.live(env, slug, `/submit?edit=${slug}#${edit}`).then(() => mail.drain(env, 3)).catch(e => console.error("live mail", e)));
-  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user ? user.login : null }, 201);
+  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user.login }, 201);
 }
 
 // Who may change a project: the private edit link, or a signed-in person who submitted it or is listed as its maker.
@@ -306,7 +313,7 @@ async function emailSignin(req, env, url) {
   }
   return null;
 }
-const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
+const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, provider: u.provider, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
 // Writes need a JSON body, which another site cannot send with the cookie without a CORS preflight.
 async function me(req, env, path, ctx) {
@@ -380,6 +387,56 @@ async function likes(req, env, url) {
   return json({ count: n, liked: !had, signedIn: true, people }, 200, priv);
 }
 
+// A comment thread is a project (its slug) or a discussion topic ("t-<id>").
+const threadExists = (env, key) => /^t-\d+$/.test(key)
+  ? env.DB.prepare("SELECT 1 FROM topics WHERE id = ?1 AND deleted = 0").bind(+key.slice(2)).first()
+  : env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(key).first();
+
+// POST /api/topics starts a discussion; DELETE /api/topics/<id> removes one (its author or an admin).
+async function topics(req, env, url, id) {
+  const user = await currentUser(req, env), now = Date.now();
+  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!user) return fail("Sign in first.", 401);
+  if (user.banned) return fail("Not allowed.", 403);
+  if (req.method === "DELETE") {
+    const tp = await env.DB.prepare("SELECT user_id FROM topics WHERE id = ?1 AND deleted = 0").bind(id).first();
+    if (!tp) return fail("No such topic.", 404);
+    if (tp.user_id !== user.id && !isAdmin(env, user)) return fail("Not yours.", 403);
+    await env.DB.prepare("UPDATE topics SET deleted = 1 WHERE id = ?1").bind(id).run();
+    return json({ deleted: id });
+  }
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const cat = String(b.cat || ""), title = String(b.title || "").replace(/\s+/g, " ").trim(), body = String(b.body || "").replace(/\r\n/g, "\n").trim();
+  if (!DCAT[cat] || cat === "showcase") return fail("Pick a category.");
+  if (title.length < 5 || title.length > 120) return fail("Write a title of 5 to 120 characters.");
+  if (!body || body.length > 5000) return fail("Write between 1 and 5,000 characters.");
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM topics WHERE user_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
+  if (n >= 5) return fail("That is five topics today. Reply to one, or come back tomorrow.", 429);
+  const r = await env.DB.prepare("INSERT INTO topics (cat, title, body, user_id, created_at, last_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5) RETURNING id").bind(cat, title, body, user.id, now).first();
+  return json({ id: r.id, url: topicPath({ id: r.id, title }) }, 201);
+}
+
+// Everything to show on /discuss: topics, and projects as the Showcase, newest activity first.
+async function discussItems(env, cat, all) {
+  const last = new Map((await env.DB.prepare("SELECT slug, MAX(created_at) AS at, COUNT(*) AS n FROM comments WHERE deleted = 0 GROUP BY slug").all()).results.map(r => [r.slug, r]));
+  const items = [];
+  if (!cat || cat === "showcase") for (const p of all) {
+    const c = last.get(p.slug);
+    items.push({ kind: "project", cat: "showcase", title: `${p.name}: ${p.tagline.en || p.tagline.vi}`, excerpt: "", href: `/p/${p.slug}#comments`, logo: p.logo, team: p.team,
+      login: p.maintainers[0] || null, last_at: Math.max(Date.parse(p.added), c?.at || 0), replies: c?.n || 0 });
+  }
+  if (cat !== "showcase") {
+    const { results } = await env.DB.prepare(`SELECT t.id, t.cat, t.title, t.body, t.created_at, t.last_at, t.pinned, u.login, u.avatar FROM topics t JOIN users u ON u.id = t.user_id
+      WHERE t.deleted = 0 AND u.banned = 0 ${cat ? "AND t.cat = ?1" : ""} ORDER BY t.pinned DESC, t.last_at DESC LIMIT 100`).bind(...(cat ? [cat] : [])).all();
+    for (const tp of results) items.push({ kind: "topic", cat: tp.cat, title: tp.title, excerpt: tp.body.replace(/\s+/g, " ").slice(0, 140), href: topicPath(tp), login: tp.login, avatar: tp.avatar, pinned: tp.pinned, last_at: tp.last_at, replies: last.get(`t-${tp.id}`)?.n || 0 });
+  }
+  return items.sort((a, b) => (b.pinned || 0) - (a.pinned || 0) || b.last_at - a.last_at).slice(0, 100);
+}
+async function discussCounts(env, all) {
+  const { results } = await env.DB.prepare("SELECT cat, COUNT(*) AS n FROM topics WHERE deleted = 0 GROUP BY cat").all();
+  return { showcase: all.length, ...Object.fromEntries(results.map(r => [r.cat, r.n])) };
+}
+
 async function comments(req, env, url, id, ctx) {
   const user = await currentUser(req, env), admin = isAdmin(env, user), now = Date.now();
   if (req.method === "GET") {
@@ -406,11 +463,12 @@ async function comments(req, env, url, id, ctx) {
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   const slug = String(b.slug || ""), body = String(b.body || "").replace(/\r\n/g, "\n").trim(), parent = b.parent ? Number(b.parent) : null;
   if (!body || body.length > 2000) return fail("Write between 1 and 2,000 characters.");
-  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first())) return fail("No such project.", 404);
+  if (!(await threadExists(env, slug))) return fail("No such project or topic.", 404);
   if (parent && !(await env.DB.prepare("SELECT 1 FROM comments WHERE id = ?1 AND slug = ?2 AND parent_id IS NULL AND deleted = 0").bind(parent, slug).first())) return fail("That comment is gone.");
   const recent = await env.DB.prepare("SELECT SUM(created_at > ?2) AS minute, COUNT(*) AS day FROM comments WHERE user_id = ?1 AND created_at > ?3").bind(user.id, now - 60000, now - DAY).first();
   if ((recent.minute || 0) >= 3 || (recent.day || 0) >= 60) return fail("Slow down a little, then try again.", 429);
   const r = await env.DB.prepare("INSERT INTO comments (slug, user_id, parent_id, body, created_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id").bind(slug, user.id, parent, body, now).first();
+  if (slug.startsWith("t-")) await env.DB.prepare("UPDATE topics SET last_at = ?2 WHERE id = ?1").bind(+slug.slice(2), now).run();
   ctx.waitUntil(mail.comment(env, { id: r.id, slug, parentId: parent, body, author: user }).then(() => mail.drain(env, 5)).catch(e => console.error("comment mail", e)));
   return json({ id: r.id, parent, at: now, body, deleted: false, mine: true, user: { login: user.login, name: user.name, avatar: user.avatar } }, 201);
 }
@@ -466,36 +524,6 @@ async function vetSave(req, env, slug, ctx) {
   return json({ slug, verdict: sum.verdict, changed });
 }
 
-// Posts each new submission to Discord through the DISCORD_WEBHOOK_URL secret: a new post in the
-// #showcase forum when DISCORD_FORUM is "true", otherwise a message in the webhook's text channel.
-// Nothing is posted where the secret is unset (previews).
-async function notifyDiscord(env, slug, f, logo, image) {
-  if (!env.DISCORD_WEBHOOK_URL) return;
-  const page = `https://openyard.cloud/p/${slug}`, abs = u => !u ? null : /^https?:/.test(u) ? u : `https://openyard.cloud${u}`;
-  const fields = [
-    { name: "Link", value: clip(f.url, 1000), inline: false },
-    ...(f.repo ? [{ name: "Code", value: clip(f.repo, 1000), inline: false }] : []),
-    { name: "Type", value: f.type === "app" ? "Free app" : `Open source${f.license ? ` · ${f.license}` : ""}`, inline: true },
-    { name: "Kinds", value: f.kinds.join(", "), inline: true },
-    { name: "Status", value: f.status, inline: true },
-    ...(f.maintainers[0] ? [{ name: "Maker", value: `github.com/${f.maintainers[0]}`, inline: true }] : []),
-    ...(f.tags.length ? [{ name: "Tags", value: f.tags.join(", "), inline: true }] : []),
-  ];
-  const r = await fetch(env.DISCORD_WEBHOOK_URL, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      username: "OpenYard", allowed_mentions: { parse: [] }, // submitted text can never ping anyone
-      ...(env.DISCORD_FORUM === "true" ? { thread_name: clip(`${f.name} · ${f.tagline[f.lang]}`, 100) } : {}),
-      embeds: [{
-        title: clip(env.DISCORD_FORUM === "true" ? f.name : `New project: ${f.name}`, 256), url: page, color: parseInt((f.color || "#6d5bd0").slice(1), 16),
-        description: clip(`**${f.tagline[f.lang]}**\n${f.description[f.lang]}`, 4000), fields,
-        ...(abs(logo) ? { thumbnail: { url: abs(logo) } } : {}), ...(abs(image) ? { image: { url: abs(image) } } : {}),
-        footer: { text: `openyard.cloud/p/${slug}` }, timestamp: new Date().toISOString(),
-      }],
-    }),
-  });
-  if (!r.ok) console.error("discord", r.status, await r.text());
-}
 
 // IndexNow: new project pages and new check results are announced to the search engines that
 // take part (Bing, Yandex, Seznam, Naver…) instead of waiting for the next crawl. Google reads the sitemap.
@@ -586,9 +614,10 @@ const recentChecks = env => env.DB.prepare("SELECT repo, verdict, scanned_at FRO
 
 // What the yard is talking about: the latest comments and this week's likes and comments.
 async function pulse(env, now) {
-  const { results: recent } = await env.DB.prepare(`SELECT c.id, c.slug, c.body, c.created_at, u.login, u.avatar, p.name FROM comments c
-    JOIN users u ON u.id = c.user_id JOIN projects p ON p.slug = c.slug
-    WHERE c.deleted = 0 AND p.hidden = 0 AND u.banned = 0 AND u.deleted_at IS NULL ORDER BY c.created_at DESC LIMIT 6`).all();
+  const { results: rows } = await env.DB.prepare(`SELECT c.id, c.slug, c.body, c.created_at, u.login, u.avatar, p.name, t.id AS tid, t.title FROM comments c
+    JOIN users u ON u.id = c.user_id LEFT JOIN projects p ON p.slug = c.slug AND p.hidden = 0 LEFT JOIN topics t ON c.slug = 't-' || t.id AND t.deleted = 0
+    WHERE c.deleted = 0 AND u.banned = 0 AND u.deleted_at IS NULL AND (p.slug IS NOT NULL OR t.id IS NOT NULL) ORDER BY c.created_at DESC LIMIT 6`).all();
+  const recent = rows.map(r => ({ ...r, name: r.name || r.title, href: r.tid ? `${topicPath({ id: r.tid, title: r.title })}#comments` : `/p/${r.slug}#comments` }));
   const week = now - 7 * DAY;
   const { likes } = await env.DB.prepare("SELECT COUNT(*) AS likes FROM likes WHERE created_at > ?1").bind(week).first();
   const { talk } = await env.DB.prepare("SELECT COUNT(*) AS talk FROM comments WHERE created_at > ?1 AND deleted = 0").bind(week).first();
@@ -602,7 +631,7 @@ async function page(env, slug) {
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
   const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
   const here = all.find(p => p.slug === slug);
-  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0 }, all, SITE, stats, now, vet);
+  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0, owner: here?.owner }, all, SITE, stats, now, vet);
 }
 
 export default {
@@ -627,6 +656,23 @@ export default {
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
       if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
+      let dm; // discussions
+      if (path === "/api/topics" && req.method === "POST") return topics(req, env, url);
+      if ((dm = /^\/api\/topics\/(\d+)$/.exec(path)) && req.method === "DELETE") return topics(req, env, url, +dm[1]);
+      if (path === "/discuss/new") return new Response(newTopicPage({ site: SITE, cat: url.searchParams.get("cat") || "help" }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
+      if ((dm = /^\/discuss(?:\/([a-z]+))?\/?$/.exec(path)) && (!dm[1] || DCAT[dm[1]])) {
+        const all = await listProjects(env, now);
+        return new Response(discussPage({ items: await discussItems(env, dm[1] || null, all), cat: dm[1] || null, counts: await discussCounts(env, all), site: SITE, now }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=30" } });
+      }
+      if ((dm = /^\/discuss\/t\/(\d+)(?:-[a-z0-9-]*)?\/?$/.exec(path))) {
+        const tp = await env.DB.prepare("SELECT * FROM topics WHERE id = ?1 AND deleted = 0").bind(+dm[1]).first();
+        if (!tp) return Response.redirect(`${url.origin}/discuss`, 302);
+        if (path !== topicPath(tp)) return Response.redirect(`${url.origin}${topicPath(tp)}`, 301);
+        const author = await env.DB.prepare("SELECT login, name, avatar FROM users WHERE id = ?1").bind(tp.user_id).first() || { login: "someone" };
+        const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM comments WHERE slug = ?1 AND deleted = 0").bind(`t-${tp.id}`).first();
+        const user = await currentUser(req, env);
+        return new Response(topicPage({ tp, author, replies: n, site: SITE, now, canDelete: !!user && (user.id === tp.user_id || isAdmin(env, user)) }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-cache" } });
+      }
       let m = /^\/api\/comments\/(\d+)$/.exec(path);
       if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]), ctx);
       m = /^\/api\/edit\/([a-z0-9-]+)$/.exec(path);
@@ -734,7 +780,8 @@ export default {
       if (env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) return new Response(env.INDEXNOW_KEY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
       if (path === "/sitemap.xml") {
         const all = await listProjects(env, now), checks = (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results;
-        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, "/privacy", ...tagPages(all).map(x => `/tags/${x}`), ...[...new Set(all.flatMap(p => p.maintainers))].map(x => `/@${x}`)]), { headers: { "Content-Type": "application/xml" } });
+        const tps = (await env.DB.prepare("SELECT id, title FROM topics WHERE deleted = 0 ORDER BY last_at DESC LIMIT 1000").all()).results;
+        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, "/privacy", "/discuss", ...DCATS.map(c => `/discuss/${c.slug}`), ...tps.map(topicPath), ...tagPages(all).map(x => `/tags/${x}`), ...[...new Set(all.flatMap(p => p.maintainers))].map(x => `/@${x}`)]), { headers: { "Content-Type": "application/xml" } });
       }
     } catch (e) {
       console.error(e);

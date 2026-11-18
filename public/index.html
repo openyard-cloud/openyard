@@ -18,7 +18,7 @@
 <link rel="canonical" href="https://openyard.cloud/">
 <meta name="google-site-verification" content="2hCCiiJ5g1WgdzfvhrzISgLuNwzjvu_7Q9EiHIDazFw">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Organization","name":"OpenYard","url":"https://openyard.cloud","logo":"https://openyard.cloud/favicon.svg","sameAs":["https://github.com/openyard-cloud","https://discord.gg/TFKsfh6tMk"]},{"@context":"https://schema.org","@type":"WebSite","name":"OpenYard","url":"https://openyard.cloud","inLanguage":["en","vi"]}]</script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Organization","name":"OpenYard","url":"https://openyard.cloud","logo":"https://openyard.cloud/favicon.svg","sameAs":["https://github.com/openyard-cloud"]},{"@context":"https://schema.org","@type":"WebSite","name":"OpenYard","url":"https://openyard.cloud","inLanguage":["en","vi"]}]</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -261,9 +261,6 @@ nav .links a:hover{color:var(--ink)}
 .join .eyebrow{margin-bottom:14px}
 .roles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 auto 30px}
 .roles>span{font-size:13.5px;padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);backdrop-filter:blur(8px)}
-.btn.discord{background:#5865f2;color:#fff}
-.btn.discord:hover{background:#4752c4}
-.btn.discord svg{width:20px;height:20px}
 
 /* icons */
 .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -548,14 +545,13 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
     <a class="brand" href="#"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
     <div class="links">
       <a href="/projects" data-i="nav.projects">Projects</a>
+      <a href="/discuss" data-i="nav.discuss">Discuss</a>
       <a href="/check" data-i="nav.check">Check a repo</a>
       <a href="/submit" data-i="nav.submit">Submit</a>
-      <a href="/community" data-i="nav.join">Community</a>
     </div>
     <div class="right">
       <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
       <a class="btn sm line" id="me" href="/signin" data-i="nav.signin">Sign in</a><script src="/me.js" defer></script>
-      <a class="btn sm navdc" data-href="discord" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="nav.dc">Join Discord</span><span class="dc-on" id="dcon" hidden></span></a>
     </div>
   </div>
 </nav>
@@ -637,7 +633,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
     <div class="vals">
       <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z"/></svg></div><h3 data-i="v1.t">Free is the only rule</h3><p data-i="v1.d">If people can use it without paying, it belongs here. Open source welcome, not required.</p></div>
       <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></div><h3 data-i="v2.t">Yours stays yours</h3><p data-i="v2.d">Build on your own GitHub or site. We link to you, so the stars and credit go to you.</p></div>
-      <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6-4.6-1.9 4.6-1.9zM19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div><h3 data-i="v3.t">Ask anything</h3><p data-i="v3.d">Stuck on code, design or building with AI? Ask in Discord. Someone has been there.</p></div>
+      <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6 4.6 1.9-4.6 1.9L12 16l-1.9-4.6-4.6-1.9 4.6-1.9zM19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div><h3 data-i="v3.t">Ask anything</h3><p data-i="v3.d">Stuck on code, design or building with AI? Ask in Discuss. Someone has been there.</p></div>
       <div class="val rv"><div class="vi"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.5a5 5 0 0 1 5.5 5.5"/></svg></div><h3 data-i="v4.t">Real feedback</h3><p data-i="v4.d">Post a new version and members try it, report bugs and tell you what to do next.</p></div>
     </div>
   </div>
@@ -674,12 +670,12 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
       <div class="steps" id="steps">
         <div class="fill" id="fill"></div>
         <div class="st"><h3 data-i="s1.t">Build anywhere</h3><p data-i="s1.d">On your own GitHub, site or app store. Any stack, with or without AI.</p></div>
-        <div class="st"><h3 data-i="s2.t">Share it here</h3><p data-i="s2.d">List it in five minutes and post it in #showcase on Discord.</p></div>
+        <div class="st"><h3 data-i="s2.t">Share it here</h3><p data-i="s2.d">List it in five minutes. It shows up in Showcase, where people try new projects.</p></div>
         <div class="st"><h3 data-i="s3.t">Get feedback</h3><p data-i="s3.d">Members try it, report bugs and suggest what to build next.</p></div>
         <div class="st" style="padding-bottom:0"><h3 data-i="s4.t">Help each other</h3><p data-i="s4.d">Ask when you are stuck, share updates, answer someone else's question.</p></div>
       </div>
       <div class="chat rv" id="chat">
-        <div class="hd"><div class="team"><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-user"/></svg></i></div><span data-i="chat.hd">Discord · #showcase</span></div>
+        <div class="hd"><div class="team"><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-user"/></svg></i></div><span data-i="chat.hd">OpenYard · Showcase</span></div>
       </div>
     </div>
     <div class="stats">
@@ -698,7 +694,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
     <div class="paths">
       <a class="path rv" href="/submit">
         <span class="pi"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2zM9 12h6M9 16h4"/></svg></span>
-        <h3 data-i="sub.p1.t">No account needed</h3>
+        <h3 data-i="sub.p1.t">Sign in, fill one form</h3>
         <p data-i="sub.p1.d">A short form: your link, a few lines, a logo if you have one. It goes live the moment you send it.</p>
         <div class="form-demo" aria-hidden="true">
           <div class="fd-row"><span data-i="sub.f1">Project name</span><b class="fd-val" data-type="Rice Diary" data-type-vi="Sổ Ruộng"></b></div>
@@ -720,7 +716,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
       </a>
     </div>
     <div class="flow rv" id="flow">
-      <div class="fl"><b><svg class="ico "><use href="#i-send"/></svg></b><div><h4 data-i="fl1.t">Submit</h4><p data-i="fl1.d">One short form, no account</p></div></div>
+      <div class="fl"><b><svg class="ico "><use href="#i-send"/></svg></b><div><h4 data-i="fl1.t">Submit</h4><p data-i="fl1.d">Sign in with GitHub or email, one short form</p></div></div>
       <div class="fl"><b><svg class="ico "><use href="#i-eye"/></svg></b><div><h4 data-i="fl2.t">Live right away</h4><p data-i="fl2.d">Your page is ready the moment you send it</p></div></div>
       <div class="fl"><b><svg class="ico "><use href="#i-rocket"/></svg></b><div><h4 data-i="fl3.t">Trending</h4><p data-i="fl3.d">Stars, pull requests, issues and visits move it up the list</p></div></div>
       <i class="fl-line"><i id="flfill"></i></i>
@@ -745,7 +741,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
         <span><svg class="ico "><use href="#i-code"/></svg><span data-i="ro1">Developers</span></span><span><svg class="ico "><use href="#i-palette"/></svg><span data-i="ro2">Designers</span></span><span><svg class="ico "><use href="#i-languages"/></svg><span data-i="ro3">Translators</span></span><span><svg class="ico "><use href="#i-bug"/></svg><span data-i="ro4">Testers</span></span><span><svg class="ico "><use href="#i-bulb"/></svg><span data-i="ro5">Idea people</span></span>
       </div>
       <div class="cta">
-        <a class="btn discord" data-href="discord" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="join.discord">Join our Discord</span></a>
+        <a class="btn dark" href="/discuss"><span data-i="join.chat">Join the conversation</span></a>
         <a class="btn line" data-href="joinform" target="_blank" rel="noopener" data-i="join.form">Introduce yourself</a>
         <a class="btn line" data-href="repo" target="_blank" rel="noopener" data-i="join.gh">Contribute on GitHub</a>
       </div>
@@ -761,7 +757,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
         <a class="brand" href="#"><img src="/favicon.svg" alt="" width="28" height="28"><span>Open<em>Yard</em></span></a>
         <p data-i="foot.tag">A community for people who make free apps, wild ideas and open tools.</p>
         <div class="fsocial">
-          <a class="fdc" data-href="discord" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg><span data-i="foot.dc">Join the Discord</span><span class="fon" id="fon" hidden></span></a>
+
           <a class="fic" data-href="repo" href="https://github.com/openyard-cloud/openyard" target="_blank" rel="noopener" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5Z"/></svg></a>
         </div>
       </div>
@@ -791,7 +787,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
 
 <script>
 /* ---------- i18n ---------- */
-const VI = { "nav.why": "Vì sao", "nav.dc": "Vào Discord", "nav.projects": "Dự án", "nav.how": "Cách hoạt động", "nav.join": "Cộng đồng", "nav.submit": "Gửi dự án", "nav.check": "Kiểm tra repo", "proj.all": "Xem tất cả dự án", "nav.signin": "Đăng nhập", "foot.c5": "Tham gia cộng đồng", "foot.c6": "Về OpenYard", "hero.badge": "Cộng đồng của những người làm phần mềm miễn phí", "hero.title": "App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.", "hero.sub": "OpenYard là nơi những người làm ra thứ miễn phí gặp nhau. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí.", "hero.cta2": "Chia sẻ dự án", "hero.cta1": "Xem các dự án", "so.trend": "Đang lên", "so.new": "Mới nhất", "f.all": "Tất cả", "f.people": "Cho mọi người", "f.wild": "Ý tưởng điên rồ", "f.dev": "Công cụ cho dev", "f.com": "Cộng đồng", "il.n1":"Chuồng 3: hôm nay tiêm","il.n2":"15:00 có giông, nhớ che chuồng","il.n3":"Video của bạn đã xong","il.n4":"12 hộ trong xóm đã tham gia","pl1.t": "Cho những người bị phần mềm bỏ quên", "pl1.d": "Nông dân, người làm nội dung nhỏ, hội nhóm địa phương. Những app không ai làm vì chẳng có lời.", "pl2.t": "Ý tưởng điên rồ", "pl2.d": "Quốc gia do AI cai trị. Hình nền biết chuyển động sau khung chat. Những thí nghiệm quá lạ để khởi nghiệp, làm vì thấy vui.", "pl3.t": "Công cụ cho dev", "pl3.d": "Thư viện, agent và quy trình mã nguồn mở, giúp ai làm dự án sau cũng nhanh hơn.", "sub.eye": "Bạn cũng có dự án?", "sub.title": "Đưa dự án của bạn lên OpenYard.", "sub.lead": "Bạn làm ra thứ gì đó miễn phí? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev đều đưa lên được. Mở mã nguồn hay không, to hay nhỏ đều được. Chỉ mất năm phút.", "sub.p1.t": "Không cần tài khoản", "sub.p1.d": "Một form ngắn: đường dẫn, vài dòng giới thiệu, logo nếu có. Gửi xong là có mặt trên OpenYard ngay.", "sub.p1.cta": "Mở biểu mẫu", "sub.f1": "Tên dự án", "sub.f2": "Đường dẫn", "sub.f3": "Loại", "sub.p2.t": "Có repo GitHub?", "sub.p2.d": "Dán link vào, tên, mô tả, giấy phép và logo tự điền sẵn. Sao, pull request và issue hiện trên trang dự án và đẩy bạn lên mục Đang lên.", "sub.p2.cta": "Dán link", "fl1.t": "Gửi", "fl1.d": "Một form ngắn, không cần tài khoản", "fl2.t": "Lên trang ngay", "fl2.d": "Trang dự án có ngay khi bạn gửi", "fl3.t": "Đang lên", "fl3.d": "Sao, pull request, issue và lượt ghé thăm đẩy dự án lên đầu", "r1.t": "Miễn phí. Luật chỉ có vậy.", "r1.d": "Ai cũng dùng được mà không phải trả tiền. Mở mã nguồn thì hoan nghênh, không bắt buộc.", "r2.t": "Giai đoạn nào cũng được", "r2.d": "Mới thử nghiệm hay đã có người dùng hằng ngày.", "r3.t": "Công nghệ gì cũng được", "r3.d": "Web, mobile, CLI, extension, game. Có hay không dùng AI.", "r4.t": "Ai cũng được", "r4.d": "Sinh viên, người làm một mình hay cả nhóm. Dự án đầu tay cũng được.", "join.eye": "Tham gia cộng đồng", "join.discord": "Vào Discord", "join.form": "Giới thiệu bản thân", "join.gh": "Đóng góp trên GitHub", "join.chat": "Tham gia thảo luận", "ro1": "Lập trình viên", "ro2": "Thiết kế", "ro3": "Dịch thuật", "ro4": "Kiểm thử", "ro5": "Góp ý tưởng", "now.k": "Mới trên OpenYard", "hero.hint": "", "demo.eye": "Từ cộng đồng", "demo.title": "Một ý tưởng, một người làm, thêm chút sức AI.", "why.eye": "Vì sao có OpenYard", "mani": "AI giúp làm phần mềm rẻ đi cả chục lần, nên ngày càng nhiều người làm ra những thứ chẳng ai rót vốn: một cái app cho vài trăm hộ nuôi heo, một thí nghiệm quá lạ để khởi nghiệp, một công cụ mà chính mình cần. Phần lớn họ làm một mình. OpenYard là nơi để mang những thứ đó tới: có người xem, có người giúp khi bí, có người cổ vũ. Luật chỉ có một: phải miễn phí.", "v1.t": "Miễn phí là đủ", "v1.d": "Ai cũng dùng được mà không phải trả tiền là đưa lên OpenYard được. Mở mã nguồn thì càng tốt, nhưng không bắt buộc.", "v2.t": "Dự án vẫn là của bạn", "v2.d": "Bạn làm trên GitHub hay trang của mình. Chúng mình chỉ dẫn link, sao và công trạng vẫn về bạn.", "v3.t": "Cứ hỏi", "v3.d": "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi trên Discord, kiểu gì cũng có người từng gặp.", "v4.t": "Góp ý thật", "v4.d": "Đăng bản mới lên là có người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "proj.eye": "Dự án", "proj.title": "Đang có gì trên OpenYard", "proj.lead": "App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, của nhóm lẫn của cộng đồng. Tất cả đều miễn phí, phần lớn mở mã nguồn, và mọi repo đều được đọc để tìm mã độc trước khi bạn cài.", "t.app": "App miễn phí", "t.oss": "Mã nguồn mở", "t.soon": "Sắp ra mắt", "fm.d": "Dành cho chủ trại chăn nuôi, thủy sản ở Việt Nam: ghi sổ trại, xem thời tiết, hỏi trợ lý AI bằng lời dễ hiểu, kết nối cảm biến IoT.", "ac.d": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng.", "sm.d": "Một thế giới nơi mỗi quốc gia do một AI riêng cai trị, khởi đầu từ thời đồ đá. Bạn là Người Quan Sát, phân xử và ban chiếu chỉ.", "cs.d": "Hình nền chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, dữ liệu không rời khỏi trình duyệt.", "cs.go": "Tiện ích trình duyệt", "idea.t": "Dự án tiếp theo có thể là của bạn.", "idea.d": "Bạn biết một nhóm người vẫn phải dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng mình nghe. Ý tưởng hay nhất thường đến từ chính người gặp khó khăn.", "idea.cta": "Gửi ý tưởng", "how.eye": "OpenYard hoạt động thế nào", "how.title": "Làm ở đâu cũng được. Mang lên đây. Làm tiếp.", "s1.t": "Làm ở đâu cũng được", "s1.d": "Trên GitHub, trang web hay kho ứng dụng của bạn. Công nghệ gì cũng được, có hay không dùng AI.", "s2.t": "Mang lên OpenYard", "s2.d": "Đăng dự án mất năm phút, rồi khoe trong kênh #showcase trên Discord.", "s3.t": "Nhận góp ý", "s3.d": "Mọi người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "s4.t": "Giúp nhau", "s4.d": "Bí thì hỏi, có gì mới thì kể, thấy ai cần thì giúp.", "chat.hd": "Discord · #showcase", "st1": "dự án trên OpenYard", "st2": "repo mã nguồn mở", "st3.v": "0₫", "st3": "là số tiền bạn phải trả", "join.title": "Ghé OpenYard chơi cùng mọi người.", "join.d": "Khoe thứ bạn đang làm, hỏi khi bí, giúp người khác khi rảnh. Dev, designer, người dịch, người test hay chỉ có ý tưởng đều được chào đón.", "join.cta": "Tìm chúng mình trên GitHub", "join.cta2": "Xem các dự án", "foot": "Miễn phí cho tất cả. Làm tại Việt Nam.", "foot.tag": "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.", "foot.dc": "Vào Discord", "foot.p": "Dự án", "foot.c": "Cộng đồng", "foot.c1": "Gửi dự án", "foot.c2": "Giới thiệu bản thân", "foot.c3": "Thảo luận", "foot.c4": "Việc dễ cho người mới", "foot.r": "Mã nguồn mở", "foot.r1": "Mã nguồn trang web", "foot.r2": "Hướng dẫn đóng góp", "foot.r3": "Tổ chức trên GitHub", "foot.r4": "Giấy phép MIT" };
+const VI = { "nav.why": "Vì sao", "nav.projects": "Dự án", "nav.how": "Cách hoạt động", "nav.join": "Cộng đồng", "nav.submit": "Gửi dự án", "nav.check": "Kiểm tra repo", "nav.discuss": "Thảo luận", "proj.all": "Xem tất cả dự án", "nav.signin": "Đăng nhập", "foot.c5": "Tham gia cộng đồng", "foot.c6": "Về OpenYard", "hero.badge": "Cộng đồng của những người làm phần mềm miễn phí", "hero.title": "App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.", "hero.sub": "OpenYard là nơi những người làm ra thứ miễn phí gặp nhau. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí.", "hero.cta2": "Chia sẻ dự án", "hero.cta1": "Xem các dự án", "so.trend": "Đang lên", "so.new": "Mới nhất", "f.all": "Tất cả", "f.people": "Cho mọi người", "f.wild": "Ý tưởng điên rồ", "f.dev": "Công cụ cho dev", "f.com": "Cộng đồng", "il.n1":"Chuồng 3: hôm nay tiêm","il.n2":"15:00 có giông, nhớ che chuồng","il.n3":"Video của bạn đã xong","il.n4":"12 hộ trong xóm đã tham gia","pl1.t": "Cho những người bị phần mềm bỏ quên", "pl1.d": "Nông dân, người làm nội dung nhỏ, hội nhóm địa phương. Những app không ai làm vì chẳng có lời.", "pl2.t": "Ý tưởng điên rồ", "pl2.d": "Quốc gia do AI cai trị. Hình nền biết chuyển động sau khung chat. Những thí nghiệm quá lạ để khởi nghiệp, làm vì thấy vui.", "pl3.t": "Công cụ cho dev", "pl3.d": "Thư viện, agent và quy trình mã nguồn mở, giúp ai làm dự án sau cũng nhanh hơn.", "sub.eye": "Bạn cũng có dự án?", "sub.title": "Đưa dự án của bạn lên OpenYard.", "sub.lead": "Bạn làm ra thứ gì đó miễn phí? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev đều đưa lên được. Mở mã nguồn hay không, to hay nhỏ đều được. Chỉ mất năm phút.", "sub.p1.t": "Đăng nhập, điền một form", "sub.p1.d": "Một form ngắn: đường dẫn, vài dòng giới thiệu, logo nếu có. Gửi xong là có mặt trên OpenYard ngay.", "sub.p1.cta": "Mở biểu mẫu", "sub.f1": "Tên dự án", "sub.f2": "Đường dẫn", "sub.f3": "Loại", "sub.p2.t": "Có repo GitHub?", "sub.p2.d": "Dán link vào, tên, mô tả, giấy phép và logo tự điền sẵn. Sao, pull request và issue hiện trên trang dự án và đẩy bạn lên mục Đang lên.", "sub.p2.cta": "Dán link", "fl1.t": "Gửi", "fl1.d": "Đăng nhập bằng GitHub hoặc email, một form ngắn", "fl2.t": "Lên trang ngay", "fl2.d": "Trang dự án có ngay khi bạn gửi", "fl3.t": "Đang lên", "fl3.d": "Sao, pull request, issue và lượt ghé thăm đẩy dự án lên đầu", "r1.t": "Miễn phí. Luật chỉ có vậy.", "r1.d": "Ai cũng dùng được mà không phải trả tiền. Mở mã nguồn thì hoan nghênh, không bắt buộc.", "r2.t": "Giai đoạn nào cũng được", "r2.d": "Mới thử nghiệm hay đã có người dùng hằng ngày.", "r3.t": "Công nghệ gì cũng được", "r3.d": "Web, mobile, CLI, extension, game. Có hay không dùng AI.", "r4.t": "Ai cũng được", "r4.d": "Sinh viên, người làm một mình hay cả nhóm. Dự án đầu tay cũng được.", "join.eye": "Tham gia cộng đồng", "join.discord": "Vào Discord", "join.form": "Giới thiệu bản thân", "join.gh": "Đóng góp trên GitHub", "join.chat": "Tham gia thảo luận", "ro1": "Lập trình viên", "ro2": "Thiết kế", "ro3": "Dịch thuật", "ro4": "Kiểm thử", "ro5": "Góp ý tưởng", "now.k": "Mới trên OpenYard", "hero.hint": "", "demo.eye": "Từ cộng đồng", "demo.title": "Một ý tưởng, một người làm, thêm chút sức AI.", "why.eye": "Vì sao có OpenYard", "mani": "AI giúp làm phần mềm rẻ đi cả chục lần, nên ngày càng nhiều người làm ra những thứ chẳng ai rót vốn: một cái app cho vài trăm hộ nuôi heo, một thí nghiệm quá lạ để khởi nghiệp, một công cụ mà chính mình cần. Phần lớn họ làm một mình. OpenYard là nơi để mang những thứ đó tới: có người xem, có người giúp khi bí, có người cổ vũ. Luật chỉ có một: phải miễn phí.", "v1.t": "Miễn phí là đủ", "v1.d": "Ai cũng dùng được mà không phải trả tiền là đưa lên OpenYard được. Mở mã nguồn thì càng tốt, nhưng không bắt buộc.", "v2.t": "Dự án vẫn là của bạn", "v2.d": "Bạn làm trên GitHub hay trang của mình. Chúng mình chỉ dẫn link, sao và công trạng vẫn về bạn.", "v3.t": "Cứ hỏi", "v3.d": "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi ở mục Thảo luận, kiểu gì cũng có người từng gặp.", "v4.t": "Góp ý thật", "v4.d": "Đăng bản mới lên là có người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "proj.eye": "Dự án", "proj.title": "Đang có gì trên OpenYard", "proj.lead": "App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, của nhóm lẫn của cộng đồng. Tất cả đều miễn phí, phần lớn mở mã nguồn, và mọi repo đều được đọc để tìm mã độc trước khi bạn cài.", "t.app": "App miễn phí", "t.oss": "Mã nguồn mở", "t.soon": "Sắp ra mắt", "fm.d": "Dành cho chủ trại chăn nuôi, thủy sản ở Việt Nam: ghi sổ trại, xem thời tiết, hỏi trợ lý AI bằng lời dễ hiểu, kết nối cảm biến IoT.", "ac.d": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng.", "sm.d": "Một thế giới nơi mỗi quốc gia do một AI riêng cai trị, khởi đầu từ thời đồ đá. Bạn là Người Quan Sát, phân xử và ban chiếu chỉ.", "cs.d": "Hình nền chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, dữ liệu không rời khỏi trình duyệt.", "cs.go": "Tiện ích trình duyệt", "idea.t": "Dự án tiếp theo có thể là của bạn.", "idea.d": "Bạn biết một nhóm người vẫn phải dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng mình nghe. Ý tưởng hay nhất thường đến từ chính người gặp khó khăn.", "idea.cta": "Gửi ý tưởng", "how.eye": "OpenYard hoạt động thế nào", "how.title": "Làm ở đâu cũng được. Mang lên đây. Làm tiếp.", "s1.t": "Làm ở đâu cũng được", "s1.d": "Trên GitHub, trang web hay kho ứng dụng của bạn. Công nghệ gì cũng được, có hay không dùng AI.", "s2.t": "Mang lên OpenYard", "s2.d": "Đăng dự án mất năm phút. Dự án có mặt trong mục Khoe dự án, nơi mọi người dùng thử.", "s3.t": "Nhận góp ý", "s3.d": "Mọi người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "s4.t": "Giúp nhau", "s4.d": "Bí thì hỏi, có gì mới thì kể, thấy ai cần thì giúp.", "chat.hd": "OpenYard · Khoe dự án", "st1": "dự án trên OpenYard", "st2": "repo mã nguồn mở", "st3.v": "0₫", "st3": "là số tiền bạn phải trả", "join.title": "Ghé OpenYard chơi cùng mọi người.", "join.d": "Khoe thứ bạn đang làm, hỏi khi bí, giúp người khác khi rảnh. Dev, designer, người dịch, người test hay chỉ có ý tưởng đều được chào đón.", "join.cta": "Tìm chúng mình trên GitHub", "join.cta2": "Xem các dự án", "foot": "Miễn phí cho tất cả. Làm tại Việt Nam.", "foot.tag": "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.", "foot.dc": "Vào Discord", "foot.p": "Dự án", "foot.c": "Cộng đồng", "foot.c1": "Gửi dự án", "foot.c2": "Giới thiệu bản thân", "foot.c3": "Thảo luận", "foot.c4": "Việc dễ cho người mới", "foot.r": "Mã nguồn mở", "foot.r1": "Mã nguồn trang web", "foot.r2": "Hướng dẫn đóng góp", "foot.r3": "Tổ chức trên GitHub", "foot.r4": "Giấy phép MIT" };
 const EN = {};
 document.querySelectorAll("[data-i]").forEach(el => { EN[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
 let LANG = "en";
@@ -1070,14 +1066,9 @@ function links(){
     issues: repo + "/issues?q=is%3Aopen+label%3A%22good+first+issue%22",
     license: repo + "/blob/main/LICENSE",
     org: repo.replace(/\/[^/]+$/, ""),
-    discord: SITE.discord || repo + "/discussions"
+    discord: "/discuss"
   };
   document.querySelectorAll("[data-href]").forEach(a => a.href = map[a.dataset.href]);
-  const dl = document.querySelector('.btn.discord [data-i]');
-  if (dl) {
-    dl.dataset.i = SITE.discord ? "join.discord" : "join.chat";
-    dl.textContent = SITE.discord ? T("Join our Discord", "Vào Discord") : T("Join the conversation", "Tham gia thảo luận");
-  }
 }
 // Why a project is in the yard, shown as chips on its card (colours from the pillars above).
 const KIND = {
@@ -1181,22 +1172,6 @@ DATA.then(d => {
 addEventListener("oy-lang", () => { if (PROJECTS.length) renderProjects(); links(); });
 
 
-/* ---------- Discord: show the member count on the Discord buttons ---------- */
-DATA.then(d => {
-  const code = (d.site?.discord || "").split("/").pop();
-  if (!code) return;
-  return fetch(`https://discord.com/api/v10/invites/${code}?with_counts=true`).then(r => r.ok ? r.json() : null).then(j => {
-    // Total members (not who is online right now), so the count grows with the community.
-    const n = j?.approximate_member_count;
-    if (!n) return;
-    const dc = document.getElementById("dcon"), fo = document.getElementById("fon");
-    const show = () => {
-      const label = T(`${n} members`, `${n} thành viên`);
-      dc.innerHTML = fo.innerHTML = `${ICO("users")}${n}`; dc.title = fo.title = label; dc.hidden = fo.hidden = false;
-    };
-    show(); addEventListener("oy-lang", show);
-  });
-}).catch(() => {});
 
 function renderFooterProjects(){
   document.getElementById("fprojects").innerHTML = PROJECTS.map(p => `<a href="/p/${esc(p.slug)}">${logoTag(p)}${esc(p.name)}</a>`).join("") + `<a href="#submit" style="color:#b67cff">${T("+ Add yours", "+ Thêm dự án của bạn")}</a>`;
