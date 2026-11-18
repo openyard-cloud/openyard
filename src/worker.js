@@ -76,7 +76,6 @@ function toApi(row, now) {
   return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
 }
 
-const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
 async function listProjects(env, now = Date.now()) {
   const since = today(now - 7 * DAY);
   const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated, v.verdict AS v_verdict, v.scanned_at AS v_scanned,
@@ -87,11 +86,9 @@ async function listProjects(env, now = Date.now()) {
       (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d,
       (SELECT o.login || char(9) || COALESCE(o.avatar, '') FROM users o WHERE o.id = p.owner_id AND o.deleted_at IS NULL AND o.banned = 0) AS owner
     FROM projects p LEFT JOIN stats s ON s.slug = p.slug LEFT JOIN vets v ON v.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
-  return results.map(r => toApi(r, now)).sort((a, b) => {
-    const ra = rank(a), rb = rank(b);
-    for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i];
-    return b.added.localeCompare(a.added) || a.name.localeCompare(b.name);
-  });
+  // Trending order: the trend score (see trend()), then newest. "Coming soon" goes last.
+  return results.map(r => toApi(r, now)).sort((a, b) =>
+    (a.status === "soon") - (b.status === "soon") || b.trend - a.trend || b.added.localeCompare(a.added) || a.name.localeCompare(b.name));
 }
 
 async function readImage(file, max) {
