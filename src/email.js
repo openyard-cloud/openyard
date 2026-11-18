@@ -140,11 +140,11 @@ export async function welcome(env, userId, picks) {
     html: L(u, `<p style="margin:0 0 12px">OpenYard is where people who make free software show what they built, get feedback and help each other. Three ways to start:</p>`, `<p style="margin:0 0 12px">OpenYard là nơi những người làm phần mềm miễn phí khoe thứ mình làm, nhận góp ý và giúp nhau. Ba cách để bắt đầu:</p>`)
       + `<ol style="margin:0;padding-left:20px">${[
         L(u, `<b>Try something.</b> Use a project for real and leave a comment. Makers rarely hear from users.`, `<b>Dùng thử.</b> Dùng thật một dự án rồi để lại bình luận. Người làm hiếm khi được nghe người dùng nói.`),
-        L(u, `<b>Share yours.</b> <a href="${ORIGIN}/submit" style="color:#8b5cf6">Submit a project</a>: five minutes, and it gets its own post in #showcase.`, `<b>Khoe dự án của bạn.</b> <a href="${ORIGIN}/submit" style="color:#8b5cf6">Gửi dự án</a>: mất năm phút, và có bài riêng trong #showcase.`),
-        L(u, `<b>Say hi.</b> <a href="${ORIGIN}/community" style="color:#8b5cf6">Join the Discord</a>, ask in #help when you are stuck.`, `<b>Chào mọi người.</b> <a href="${ORIGIN}/community" style="color:#8b5cf6">Vào Discord</a>, hỏi trong #help khi bí.`),
+        L(u, `<b>Share yours.</b> <a href="${ORIGIN}/submit" style="color:#8b5cf6">Submit a project</a>: five minutes, and it shows up in Showcase.`, `<b>Khoe dự án của bạn.</b> <a href="${ORIGIN}/submit" style="color:#8b5cf6">Gửi dự án</a>: mất năm phút, và dự án có mặt trong mục Khoe dự án.`),
+        L(u, `<b>Say hi.</b> <a href="${ORIGIN}/discuss" style="color:#8b5cf6">Open Discuss</a>, and ask in Help when you are stuck.`, `<b>Chào mọi người.</b> <a href="${ORIGIN}/discuss" style="color:#8b5cf6">Vào Thảo luận</a>, và hỏi ở mục Hỏi đáp khi bí.`),
       ].map(x => `<li style="margin:0 0 8px">${x}</li>`).join("")}</ol>`
       + (picks.length ? `<p style="margin:18px 0 0">${L(u, "A few to start with:", "Vài dự án để bắt đầu:")}</p>${projTable(u, picks)}` : ""),
-    text: L(u, "OpenYard is where people who make free software show what they built, get feedback and help each other.\n\n1. Try something and leave a comment.\n2. Share yours: ", "OpenYard là nơi những người làm phần mềm miễn phí khoe thứ mình làm, nhận góp ý và giúp nhau.\n\n1. Dùng thử và để lại bình luận.\n2. Khoe dự án của bạn: ") + `${ORIGIN}/submit\n3. Discord: ${ORIGIN}/community` + (picks.length ? `\n\n${projText(u, picks)}` : ""),
+    text: L(u, "OpenYard is where people who make free software show what they built, get feedback and help each other.\n\n1. Try something and leave a comment.\n2. Share yours: ", "OpenYard là nơi những người làm phần mềm miễn phí khoe thứ mình làm, nhận góp ý và giúp nhau.\n\n1. Dùng thử và để lại bình luận.\n2. Khoe dự án của bạn: ") + `${ORIGIN}/submit\n3. ${L(u, "Discuss", "Thảo luận")}: ${ORIGIN}/discuss` + (picks.length ? `\n\n${projText(u, picks)}` : ""),
     button: [`${ORIGIN}/projects`, L(u, "Browse projects", "Xem các dự án")],
     why: L(u, "You get this because you turned on email at openyard.cloud.", "Bạn nhận email này vì đã bật nhận email trên openyard.cloud."),
   });
@@ -154,6 +154,7 @@ export async function welcome(env, userId, picks) {
 /** A new comment: tell the person it answers, and the people who made the project. */
 export async function comment(env, { id, slug, parentId, body, author }) {
   if (!ready(env)) return;
+  if (slug.startsWith("t-")) return topicReply(env, { id, slug, parentId, body, author });
   const p = await env.DB.prepare("SELECT name FROM projects WHERE slug = ?1").bind(slug).first();
   if (!p) return;
   const parent = parentId ? await env.DB.prepare("SELECT user_id FROM comments WHERE id = ?1").bind(parentId).first() : null;
@@ -167,6 +168,24 @@ export async function comment(env, { id, slug, parentId, body, author }) {
       button: [link, L(u, "Reply on OpenYard", "Trả lời trên OpenYard")],
       why: reply ? L(u, "You get this because you commented there and turned on email.", "Bạn nhận email này vì đã bình luận ở đó và bật nhận email.") : makerWhy(u, p.name) });
     await enqueue(env, u, reply ? "reply" : "comment", `${reply ? "reply" : "comment"}:${id}:${who_(u)}`, { subject: title, ...m });
+  }
+}
+
+/** A reply in a discussion: tell the person who started the topic, and the one being answered. */
+async function topicReply(env, { id, slug, parentId, body, author }) {
+  const tp = await env.DB.prepare("SELECT id, title, user_id FROM topics WHERE id = ?1 AND deleted = 0").bind(+slug.slice(2)).first();
+  if (!tp) return;
+  const parent = parentId ? await env.DB.prepare("SELECT user_id FROM comments WHERE id = ?1").bind(parentId).first() : null;
+  const ids = [parent?.user_id, tp.user_id].filter(x => x && x !== author.id);
+  const who = author.name || author.login;
+  const link = `${ORIGIN}/discuss/t/${tp.id}#comments`;
+  for (const u of await recipients(env, ids)) {
+    const reply = parent && u.id === parent.user_id;
+    const title = reply ? L(u, `${who} replied to you in “${tp.title}”`, `${who} đã trả lời bạn trong “${tp.title}”`) : L(u, `${who} replied to your topic “${tp.title}”`, `${who} đã trả lời chủ đề “${tp.title}” của bạn`);
+    const m = layout(u, { pre: clip(body, 120), title, html: `<p style="margin:0">@${esc(author.login)}:</p>${quote(body)}`, text: `@${author.login}:\n${clip(body, 600)}`,
+      button: [link, L(u, "Reply on OpenYard", "Trả lời trên OpenYard")],
+      why: L(u, "You get this because you took part in this discussion and turned on email.", "Bạn nhận email này vì đã tham gia thảo luận này và bật nhận email.") });
+    await enqueue(env, u, "reply", `treply:${id}:${u.id}`, { subject: clip(title, 150), ...m });
   }
 }
 
@@ -274,7 +293,7 @@ export async function live(env, slug, editPath) {
     const edit = u.contact && editPath ? `${ORIGIN}${editPath}` : u.contact ? null : `${ORIGIN}/settings`;
     const title = L(u, `${p.name} is live on OpenYard`, `${p.name} đã có mặt trên OpenYard`);
     const m = layout(u, { pre: L(u, "Your page, your edit link, and what to add next.", "Trang dự án, link sửa, và nên thêm gì tiếp."), title,
-      html: `<p style="margin:0">${L(u, `Your page is up at ${link(page, page.replace("https://", ""))}, and it has its own post in #showcase on ${link(`${ORIGIN}/community`, "Discord")}, where members try new projects.`, `Trang dự án đã có tại ${link(page, page.replace("https://", ""))}, và có bài riêng trong #showcase trên ${link(`${ORIGIN}/community`, "Discord")}, nơi mọi người dùng thử dự án mới.`)}</p>`
+      html: `<p style="margin:0">${L(u, `Your page is up at ${link(page, page.replace("https://", ""))}, and it is in ${link(`${ORIGIN}/discuss/showcase`, "Showcase")}, where people try new projects.`, `Trang dự án đã có tại ${link(page, page.replace("https://", ""))}, và có mặt trong mục ${link(`${ORIGIN}/discuss/showcase`, "Khoe dự án")}, nơi mọi người dùng thử dự án mới.`)}</p>`
         + (edit ? `<p style="margin:14px 0 0;padding:12px 14px;background:#f6f6f7;border-radius:12px">${u.contact ? L(u, `<b>Your private edit link.</b> Keep this email: anyone with the link can change or remove the listing.<br>${link(edit, edit.replace("https://", "").slice(0, 60) + "…")}`, `<b>Link sửa riêng của bạn.</b> Giữ email này: ai có link đều sửa hoặc gỡ được dự án.<br>${link(edit, edit.replace("https://", "").slice(0, 60) + "…")}`) : L(u, `Edit it any time from ${link(edit, "Settings")}.`, `Sửa bất cứ lúc nào ở trang ${link(edit, "Cài đặt")}.`)}</p>` : "")
         + (todo.length ? `<p style="margin:16px 0 0">${L(u, "To help people find and try it, add:", "Để mọi người dễ tìm và dùng thử, hãy thêm:")}</p>${li(todo)}` : ""),
       text: `${page}\n\n${edit ? `${L(u, "Edit", "Sửa")}: ${edit}\n\n` : ""}${todo.map(x => `- ${x}`).join("\n")}`,
@@ -291,10 +310,10 @@ async function nurture(env, p, day, now) {
     const body = day === 3
       ? `<p style="margin:0">${L(u, "So far:", "Đến giờ:")}</p>${nums(u, st)}${li([
           L(u, `<b>Share your OpenYard page</b>, not just your site: ${link(page, page.replace("https://", ""))} has a preview picture and a code check, and visits from it count toward Trending.`, `<b>Chia sẻ trang OpenYard</b> chứ không chỉ trang của bạn: ${link(page, page.replace("https://", ""))} có ảnh xem trước và kết quả kiểm tra code, và lượt ghé từ đó được tính vào mục Đang lên.`),
-          L(u, "<b>Answer people.</b> Reply to comments on your page and in the #showcase post. Makers who answer get more people coming back.", "<b>Trả lời mọi người.</b> Trả lời bình luận trên trang và trong bài #showcase. Người làm chịu trả lời sẽ có nhiều người quay lại hơn."),
-          L(u, `<b>Ask for the one thing you need:</b> testers, feedback on the design, a translator. Post it in ${link(`${ORIGIN}/community`, "#help")}.`, `<b>Hỏi đúng thứ bạn cần:</b> người test, góp ý thiết kế, người dịch. Đăng trong ${link(`${ORIGIN}/community`, "#help")}.`),
+          L(u, "<b>Answer people.</b> Reply to comments on your page. Makers who answer get more people coming back.", "<b>Trả lời mọi người.</b> Trả lời bình luận trên trang dự án. Người làm chịu trả lời sẽ có nhiều người quay lại hơn."),
+          L(u, `<b>Ask for the one thing you need:</b> testers, feedback on the design, a translator. Post it in ${link(`${ORIGIN}/discuss/help`, "Help")}.`, `<b>Hỏi đúng thứ bạn cần:</b> người test, góp ý thiết kế, người dịch. Đăng ở mục ${link(`${ORIGIN}/discuss/help`, "Hỏi đáp")}.`),
         ])}`
-      : `<p style="margin:0">${L(u, "Here is the first week:", "Tuần đầu tiên:")}</p>${nums(u, st)}<p style="margin:14px 0 0">${L(u, `Shipped something since? Update the listing so the page says so, and post the news in #showcase. Ideas for OpenYard itself are welcome in ${link(`${ORIGIN}/community`, "#ideas-and-feedback")}.`, `Có gì mới từ hôm đó? Cập nhật trang dự án cho đúng, và báo tin trong #showcase. Ý tưởng cho chính OpenYard thì gửi ở ${link(`${ORIGIN}/community`, "#ideas-and-feedback")}.`)}</p>`;
+      : `<p style="margin:0">${L(u, "Here is the first week:", "Tuần đầu tiên:")}</p>${nums(u, st)}<p style="margin:14px 0 0">${L(u, `Shipped something since? Update the listing so the page says so, and tell people in ${link(`${ORIGIN}/discuss/progress`, "Building in public")}. Ideas for OpenYard itself are welcome in ${link(`${ORIGIN}/discuss/ideas`, "Ideas & feedback")}.`, `Có gì mới từ hôm đó? Cập nhật trang dự án cho đúng, và kể cho mọi người ở mục ${link(`${ORIGIN}/discuss/progress`, "Đang làm gì")}. Ý tưởng cho chính OpenYard thì gửi ở mục ${link(`${ORIGIN}/discuss/ideas`, "Ý tưởng & góp ý")}.`)}</p>`;
     const m = layout(u, { pre: L(u, `${st.clicks} visits, ${st.likes} likes, ${st.comments} comments so far.`, `${st.clicks} lượt ghé, ${st.likes} lượt thích, ${st.comments} bình luận.`), title, html: body,
       text: `${st.clicks} ${L(u, "visits", "lượt ghé")} · ${st.likes} ${L(u, "likes", "lượt thích")} · ${st.comments} ${L(u, "comments", "bình luận")}\n${page}`,
       button: [page, L(u, "See your page", "Xem trang dự án")], why: makerWhy(u, p.name) });

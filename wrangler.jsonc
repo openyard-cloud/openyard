@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/llms.txt", "/1f6e54887a1437cf51811144db0cb242.txt", "/projects", "/projects/", "/apps", "/apps/", "/open-source", "/open-source/", "/for-people", "/for-people/", "/wild-ideas", "/wild-ideas/", "/dev-tools", "/dev-tools/", "/tags/*", "/about", "/about/", "/community", "/community/", "/welcome", "/settings", "/privacy", "/@*", "/unsubscribe", "/signin", "/a/*"]
+    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/llms.txt", "/1f6e54887a1437cf51811144db0cb242.txt", "/projects", "/projects/", "/apps", "/apps/", "/open-source", "/open-source/", "/for-people", "/for-people/", "/wild-ideas", "/wild-ideas/", "/dev-tools", "/dev-tools/", "/tags/*", "/about", "/about/", "/community", "/community/", "/welcome", "/settings", "/privacy", "/@*", "/unsubscribe", "/signin", "/a/*", "/discuss", "/discuss/*"]
   },
   "d1_databases": [
     { "binding": "DB", "database_name": "openyard", "database_id": "90c96a85-e184-41fb-b6de-324f0a4bed51" }
@@ -22,8 +22,6 @@
     "ADMIN_LOGINS": "thihodev",
     // IndexNow key (public by design: served at /<key>.txt); tells Bing, Yandex and others about new pages
     "INDEXNOW_KEY": "1f6e54887a1437cf51811144db0cb242",
-    // New submissions become posts in the #showcase forum (the DISCORD_WEBHOOK_URL secret points there)
-    "DISCORD_FORUM": "true",
     // Email through Resend (the RESEND_API_KEY secret); its free plan sends 100 a day, so we stop at 90
     "EMAIL_FROM": "OpenYard <hello@openyard.cloud>",
     "EMAIL_DAILY_LIMIT": "90"
