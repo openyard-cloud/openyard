@@ -763,10 +763,11 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
     </div>
   </section>` : "";
   // The maker card in the sidebar: a person with a GitHub login, the OpenYard team, or nobody named
-  const mk = p.team ? null : p.maintainers[0] || null;
-  const mkCount = mk ? all.filter(o => o.maintainers.some(m => m.toLowerCase() === mk.toLowerCase())).length : all.filter(o => o.team).length;
+  const mk = p.team ? null : p.maintainers[0] || p.owner?.login || null;
+  const mkPic = p.team ? "/favicon.svg" : p.maintainers[0] ? `https://github.com/${esc(p.maintainers[0])}.png?size=96` : p.owner?.avatar ? esc(p.owner.avatar) : "/favicon.svg";
+  const mkCount = mk ? all.filter(o => o.maintainers.some(m => m.toLowerCase() === mk.toLowerCase()) || o.owner?.login === mk).length : all.filter(o => o.team).length;
   const makerCard = `<div class="mk reveal">
-    <span class="ring"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=96` : "/favicon.svg"}" alt="" width="48" height="48"></span>
+    <span class="ring"><img src="${mkPic}" alt="" width="48" height="48"></span>
     <div><small>${t("Made by", "Người làm")}</small>${p.team ? `<b>OpenYard team</b>` : mk ? `<a href="/@${esc(mk)}"><b>@${esc(mk)}</b></a>` : `<b>${t("A community member", "Một thành viên cộng đồng")}</b>`}
     <span>${p.team || mk ? t(`${mkCount} project${mkCount === 1 ? "" : "s"} in the yard`, `${mkCount} dự án trên OpenYard`) : ""}</span></div>
     ${mk ? `<a class="btn sm line" href="/@${esc(mk)}">${t("Profile", "Hồ sơ")}</a>` : ""}

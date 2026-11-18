@@ -162,6 +162,7 @@ export function card(p, i, now) {
   const v = p.vet && VERDICT[p.vet.verdict];
   const fresh = now - Date.parse(p.added) < 7 * 86400000;
   const mk = p.team ? null : p.maintainers[0];
+  const own = !p.team && !mk ? p.owner : null; // signed in with email: show their nickname
   const q = fold([p.name, en(p.tagline), vi(p.tagline), en(p.description), vi(p.description), ...(p.tags || []), ...p.maintainers, ...p.kinds.flatMap(k => KIND[k] || [])].join(" "));
   return `<a class="pc reveal" style="--c:${esc(p.color || "#6d5bd0")};--d:${i % 6}" href="/p/${esc(p.slug)}" data-o="${i}" data-added="${esc(p.added)}" data-q="${esc(q)}">
   ${p.image ? `<div class="pv"><img class="shot" src="${esc(p.image)}" alt="${esc(p.name)} screenshot" loading="lazy"></div>` : `<div class="pv gen">${logoTag(p, 84)}</div>`}
@@ -169,7 +170,7 @@ export function card(p, i, now) {
   <div class="pb">
     <div class="ph">${logoTag(p, 32)}<h3>${esc(p.name)}</h3><span class="ptag">${t(...TYPE(p))}</span></div>
     <p>${t(en(p.tagline), vi(p.tagline))}</p>
-    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : t("a community member", "một thành viên")}</span>
+    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : own?.avatar ? esc(own.avatar) : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : own ? `@${esc(own.login)}` : t("a community member", "một thành viên")}</span>
       ${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}</div>
     <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(t(VERDICT[p.vet.verdict][0], VERDICT[p.vet.verdict][1]).replace(/<[^>]+>/g, ""))}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
@@ -194,7 +195,7 @@ export const hero = (pill, h1, lead, extra = "") => `<header class="hero hub"><d
   <p class="desc up" style="--d:3">${lead}</p>${extra}
 </div></header>`;
 
-export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed. It shows up in Showcase, where people try new projects.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản. Dự án sẽ có mặt trong mục Khoe dự án, nơi mọi người dùng thử dự án mới.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
+export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Sign in with GitHub or email and put it in the yard in five minutes. It shows up in Showcase, where people try new projects.", "Đăng nhập bằng GitHub hoặc email rồi đưa lên OpenYard chỉ mất năm phút. Dự án sẽ có mặt trong mục Khoe dự án, nơi mọi người dùng thử dự án mới.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
 
 const yours = () => `<a class="pc yours reveal" href="/submit"><div class="pv"><span>+</span></div><div class="pb"><h3>${t("Your project here", "Dự án của bạn ở đây")}</h3><p>${t("Built something free? Put it in the yard in five minutes. It gets a page, a post in #showcase and a code check.", "Bạn làm ra thứ gì đó miễn phí? Đưa lên OpenYard chỉ mất năm phút. Dự án có trang riêng, một bài trong #showcase và được kiểm tra code.")}</p><span class="go">${t("Submit a project", "Gửi dự án")} ${ARROW}</span></div></a>`;
 
@@ -306,7 +307,7 @@ const WAYS = [
   [I.eye, ["Try a project", "Dùng thử một dự án"], ["Pick one, use it for real, and leave a comment on its page. Makers rarely hear from users.", "Chọn một dự án, dùng thật, rồi để lại bình luận trên trang của nó. Người làm hiếm khi được nghe người dùng nói."], "/projects", 0],
   [I.pr, ["Pick a good first issue", "Nhận một việc dễ"], ["Small, well-described tasks on the OpenYard site, a good first pull request.", "Việc nhỏ, mô tả rõ trên trang OpenYard, hợp để gửi pull request đầu tiên."], "issues", 1],
   [I.globe, ["Translate", "Dịch"], ["Every page is in English and Vietnamese. Help a maker get their listing into both.", "Mọi trang đều có tiếng Anh và tiếng Việt. Giúp người làm có bản giới thiệu ở cả hai thứ tiếng."], "contrib", 1],
-  [I.share, ["Share your own", "Khoe dự án của bạn"], ["Built something free? It takes five minutes and needs no account.", "Bạn làm ra thứ gì đó miễn phí? Mất năm phút, không cần tài khoản."], "/submit", 0],
+  [I.share, ["Share your own", "Khoe dự án của bạn"], ["Built something free? Sign in and it takes five minutes.", "Bạn làm ra thứ gì đó miễn phí? Đăng nhập rồi chỉ mất năm phút."], "/submit", 0],
 ];
 
 export function communityPage({ all, site }) {

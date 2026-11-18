@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Share your project · OpenYard</title>
-<meta name="description" content="Put your free project in the yard. No account, one short form, live right away.">
+<meta name="description" content="Put your free project in the yard. Sign in with GitHub or email, fill in one short form, live right away.">
 <link rel="canonical" href="https://openyard.cloud/submit">
 <meta property="og:title" content="Share your project · OpenYard">
-<meta property="og:description" content="Put your free project in the yard. No account, one short form, live right away.">
+<meta property="og:description" content="Put your free project in the yard. Sign in with GitHub or email, fill in one short form, live right away.">
 <meta property="og:image" content="https://openyard.cloud/og.png?v=2">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -30,7 +30,8 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .nlinks{display:flex;gap:2px;margin-left:6px}.nlinks a{font-size:14px;font-weight:500;color:var(--muted);padding:6px 10px;border-radius:9px;white-space:nowrap;transition:color .2s,background .2s}
 .nlinks a:hover{color:var(--ink)}.nlinks a[aria-current]{color:var(--ink);background:var(--bg2)}
 @media (max-width:820px){nav .wrap{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:6px;row-gap:6px}.nlinks{order:3;flex-basis:100%;margin:0 0 0 -10px;overflow-x:auto;scrollbar-width:none}.nlinks::-webkit-scrollbar{display:none}}
-.right{margin-left:auto;display:flex;gap:8px;align-items:center}.right #me{height:34px;padding:0 14px;font-size:13px}
+.right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.gate{max-width:640px;margin:0 0 40px}.gate p{margin:8px 0 18px}.right #me{height:34px;padding:0 14px;font-size:13px}
 .chip{border:1px solid var(--line2);background:transparent;color:var(--ink);border-radius:999px;height:34px;padding:0 14px;font:500 13px Inter,sans-serif;cursor:pointer}.chip:hover{background:var(--bg2)}
 .hero{position:relative;padding:56px 0 28px}
 .hero::before{content:"";position:absolute;inset:-40px 0 auto;height:380px;z-index:-1;background:radial-gradient(560px 240px at 15% 30%,rgba(124,156,255,.22),transparent 70%),radial-gradient(520px 240px at 85% 10%,rgba(255,126,176,.16),transparent 70%);pointer-events:none}
@@ -98,18 +99,23 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
 <body>
 <nav><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
-  <div class="nlinks"><a href="/projects"><span data-vi="Dự án">Projects</span></a><a href="/check"><span data-vi="Kiểm tra repo">Check a repo</span></a><a href="/submit" aria-current="page"><span data-vi="Gửi dự án">Submit</span></a><a href="/community"><span data-vi="Cộng đồng">Community</span></a></div>
+  <div class="nlinks"><a href="/projects"><span data-vi="Dự án">Projects</span></a><a href="/discuss"><span data-vi="Thảo luận">Discuss</span></a><a href="/check"><span data-vi="Kiểm tra repo">Check a repo</span></a><a href="/submit" aria-current="page"><span data-vi="Gửi dự án">Submit</span></a></div>
   <div class="right"><button class="chip" id="lang" type="button" aria-label="Switch language">VI</button><a class="btn sm line" id="me" href="/signin"><span data-vi="Đăng nhập">Sign in</span></a><script src="/me.js" defer></script></div>
 </div></nav>
 
 <header class="hero"><div class="wrap">
   <div class="eyebrow" id="eye" data-vi="Gửi dự án">Share your project</div>
   <h1 id="title" data-vi="Đưa dự án của bạn lên OpenYard.">Put your project in the yard.</h1>
-  <p class="lead" id="lead" data-vi="Không cần tài khoản. Điền form, bấm gửi là dự án có trang riêng và hiện trong danh sách ngay. Luật chỉ có một: phải miễn phí.">No account needed. Fill in the form, send it, and your project gets its own page and shows up in the list right away. One rule: it has to be free.</p>
+  <p class="lead" id="lead" data-vi="Điền form, bấm gửi là dự án có trang riêng và hiện trong danh sách ngay. Luật chỉ có một: phải miễn phí.">Fill in the form, send it, and your project gets its own page and shows up in the list right away. One rule: it has to be free.</p>
 </div></header>
 
 <main class="wrap">
-<div class="grid" id="formgrid">
+<div class="box gate" id="gate" hidden>
+  <h2 data-vi="Đăng nhập để gửi dự án">Sign in to submit a project</h2>
+  <p data-vi="Mỗi dự án thuộc về một tài khoản, để bạn sửa được bất cứ lúc nào, nhận thông báo khi có người bình luận hay thích, và để OpenYard tránh spam. Đăng nhập bằng GitHub hoặc chỉ cần email, không mật khẩu.">Every project belongs to an account, so you can edit it any time, hear when people comment or like it, and OpenYard stays free of spam. Use GitHub, or just your email. No password.</p>
+  <a class="btn dark" id="gatego" href="/signin?return=%2Fsubmit"><span data-vi="Đăng nhập">Sign in</span></a>
+</div>
+<div class="grid" id="formgrid" hidden>
 <form id="form" novalidate>
   <div class="box" id="repo">
     <h2 data-vi="Có repo GitHub?">Got a GitHub repo?</h2>
@@ -281,21 +287,18 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
   }
   form.addEventListener("input", () => { preview(); counts(); });
 
-  /* Turnstile, when the site has a key */
-  let tsKey = null;
-  fetch("/api/projects").then(r => r.json()).then(d => {
-    tsKey = d.site?.turnstile;
-    if (!tsKey) return;
-    window.onTs = () => turnstile.render("#ts", { sitekey: tsKey, theme: "auto" });
-    const s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTs&render=explicit"; s.async = true; document.head.appendChild(s);
-  }).catch(() => {});
+  const tsKey = null; // signing in is the check now; no Turnstile on this form
 
   /* signed in: fill in the account's email and GitHub name */
+  /* Submitting needs an account; editing with a private link from before does not */
+  const open = () => { $("formgrid").hidden = false; $("gate").hidden = true; };
+  $("gatego").href = "/signin?return=" + encodeURIComponent(location.pathname + location.search + location.hash);
   fetch("/api/me", { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(u => {
-    if (!u) return;
+    if (!u) { if (editSlug && location.hash.length > 1) open(); else $("gate").hidden = false; return; }
+    open();
     if (u.email && !$("f-email").value) $("f-email").value = u.email;
-    if (!editSlug && !$("f-maint").value) $("f-maint").value = u.login;
-  }).catch(() => {});
+    if (!editSlug && !$("f-maint").value && u.provider !== "email") $("f-maint").value = u.login;
+  }).catch(open);
 
   /* edit mode: /submit?edit=<slug>#<token>, or /submit?edit=<slug> when signed in as its owner */
   const editSlug = new URLSearchParams(location.search).get("edit"), editToken = location.hash.slice(1);

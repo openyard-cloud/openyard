@@ -1,7 +1,7 @@
 // openyard.cloud: static assets from public/, plus the project database (D1).
 //   GET  /api/projects        every visible project with its GitHub stats and trending score
 //   GET  /api/github?repo=     what the submit form fills in from a GitHub link
-//   POST /api/submit           add a project (no account; Turnstile and a per-IP limit)
+//   POST /api/submit           add a project (signed in with GitHub or email; a per-account and per-IP limit)
 //   GET/POST /api/edit/<slug>  change or remove a project with the edit token from submitting
 //   GET  /projects, /apps, /open-source, /for-people, /wild-ideas, /dev-tools, /tags/<tag>, /about, /community   (hub.js)
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
@@ -67,7 +67,7 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
 }
 
 const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
@@ -78,7 +78,8 @@ async function listProjects(env, now = Date.now()) {
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
       (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk,
       (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug) AS likes,
-      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d
+      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d,
+      (SELECT o.login || char(9) || COALESCE(o.avatar, '') FROM users o WHERE o.id = p.owner_id AND o.deleted_at IS NULL AND o.banned = 0) AS owner
     FROM projects p LEFT JOIN stats s ON s.slug = p.slug LEFT JOIN vets v ON v.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
   return results.map(r => toApi(r, now)).sort((a, b) => {
     const ra = rank(a), rb = rank(b);
@@ -146,17 +147,21 @@ async function checkHuman(env, form, ip) {
 
 async function submit(req, env, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
+  // a project belongs to an account: signing in (GitHub, or a link sent to an email) is the check against spam
+  const user = await currentUser(req, env);
+  if (!user) return fail("Sign in to submit a project.", 401);
+  if (user.banned) return fail("Not allowed.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
-  if (!(await checkHuman(env, form, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
+  if (String(form.get("website") || "")) return fail("Could not verify you are human. Reload and try again.", 403); // honeypot
   const ipHash = await sha256(ip + "|openyard|" + today(now));
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
-  if (n >= SUBMITS_PER_DAY) return fail("Too many projects from this connection today. Try again tomorrow.", 429);
+  const { mine } = await env.DB.prepare("SELECT COUNT(*) AS mine FROM projects WHERE owner_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
+  if (n >= SUBMITS_PER_DAY || mine >= SUBMITS_PER_DAY) return fail("That is five projects today. Try again tomorrow.", 429);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
-  // signed in: the project is theirs to edit from their profile, and they are its maker unless they named someone
-  const user = await currentUser(req, env);
-  if (user && user.provider !== "email" && !f.maintainers.length) f.maintainers = [user.login];
+  // the project is theirs to edit from their profile, and a GitHub account is its maker unless they named someone
+  if (user.provider !== "email" && !f.maintainers.length) f.maintainers = [user.login];
   // where we tell them about their listing; a signed-in person's account email will do
-  const contactEmail = f.email || user?.email || null;
+  const contactEmail = f.email || user.email || null;
   if (!contactEmail) return fail("Add your email so we can send you the edit link and tell you when people comment.");
 
   let slug = slugify(f.name);
@@ -168,13 +173,13 @@ async function submit(req, env, ctx) {
     env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id, contact_email, contact_lang)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22)`)
       .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(f.tagline), JSON.stringify(f.description), f.url, f.repo, f.license,
-        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user ? user.id : null, contactEmail, f.lang),
+        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user.id, contactEmail, f.lang),
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   ctx.waitUntil(mail.live(env, slug, `/submit?edit=${slug}#${edit}`).then(() => mail.drain(env, 3)).catch(e => console.error("live mail", e)));
-  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user ? user.login : null }, 201);
+  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user.login }, 201);
 }
 
 // Who may change a project: the private edit link, or a signed-in person who submitted it or is listed as its maker.
@@ -308,7 +313,7 @@ async function emailSignin(req, env, url) {
   }
   return null;
 }
-const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
+const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, provider: u.provider, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
 // Writes need a JSON body, which another site cannot send with the cookie without a CORS preflight.
 async function me(req, env, path, ctx) {
@@ -626,7 +631,7 @@ async function page(env, slug) {
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
   const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
   const here = all.find(p => p.slug === slug);
-  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0 }, all, SITE, stats, now, vet);
+  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0, owner: here?.owner }, all, SITE, stats, now, vet);
 }
 
 export default {
