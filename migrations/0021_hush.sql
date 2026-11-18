@@ -1,0 +1,11 @@
+-- hush: stop coding agents narrating their plan in code comments (OpenYard team project).
+-- It has no site of its own; `url` is the repository.
+INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, og, color, maintainers, tags, team, featured, swarm, added, created_at, updated_at, install) VALUES
+('hush', 'hush', 'open-source', '["dev"]', 'beta',
+ '{"en":"Stop your coding agent narrating its plan in code comments","vi":"Không để agent viết kế hoạch của nó vào comment trong code"}',
+ '{"en":"In long sessions, coding agents leave comments written for the chat: \"Phase 8.4:\", \"(Task 7)\", \"the old code did X\". hush is a Claude Code hook that checks the comments in each edit right after Claude writes them, and has Claude rewrite any that narrate the work. About 1 public Claude commit in 27 adds a comment like these; none of 400 commits from 2021 did. It also checks diffs in CI and pre-commit, for any agent.","vi":"Trong các phiên dài, agent hay để lại comment viết cho cuộc trò chuyện chứ không cho code: \"Phase 8.4:\", \"(Task 7)\", \"code cũ làm X\". hush là một hook cho Claude Code, kiểm tra comment trong mỗi lần sửa ngay khi Claude vừa viết, và bắt Claude viết lại những comment kể chuyện. Khoảng 1 trên 27 commit công khai của Claude có comment như vậy; trong 400 commit năm 2021 không có cái nào. hush cũng kiểm tra diff trong CI và pre-commit, với agent nào cũng được."}',
+ 'https://github.com/openyard-cloud/hush', 'https://github.com/openyard-cloud/hush', 'MIT',
+ '/logos/hush.svg', 'tile', '/images/hush.webp', NULL, '#1d1b16',
+ '["thihodev"]', '["claude-code","code-quality","developer-tools"]', 1, 1, NULL,
+ '2026-11-18', 1795006314341, 1795006314341,
+ '[{"label":{"en":"Claude Code","vi":"Claude Code"},"cmd":"/plugin marketplace add openyard-cloud/hush","note":{"en":"Then /plugin install hush@hush and start a new session. Needs Node 18 or newer.","vi":"Sau đó chạy /plugin install hush@hush và mở phiên mới. Cần Node 18 trở lên."}},{"label":{"en":"Any agent, CI","vi":"Agent khác, CI"},"cmd":"npx github:openyard-cloud/hush check --base main","note":{"en":"Checks the comments a branch adds. --staged for a pre-commit hook, --all for the whole repository.","vi":"Kiểm tra comment mà một branch thêm vào. Dùng --staged cho pre-commit, --all cho cả repo."}}]');
