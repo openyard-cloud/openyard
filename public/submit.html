@@ -246,7 +246,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     note.className = "note"; note.textContent = T("Reading the repository…", "Đang đọc repo…");
     try {
       const r = await fetch("/api/github?repo=" + encodeURIComponent(repo)), d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       gh = d;
       const set = (id, v) => { if (v && !$(id).value) $(id).value = v; };
       set("f-name", d.name.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase()).slice(0, 40));
@@ -273,7 +273,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     try {
       const r = await fetch("/api/site?url=" + encodeURIComponent(v), { credentials: "same-origin" }), d = await r.json();
       if (v !== siteFor) return; // a newer link was typed meanwhile
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       site = d;
       const set = (id, val) => { if (val && !$(id).value.trim()) $(id).value = val; };
       const title = (d.title || "").split(/\s+[|·•–—-]\s+/)[0].trim();
@@ -335,7 +335,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
   if (editSlug) {
     fetch(`/api/edit/${encodeURIComponent(editSlug)}`, { credentials: "same-origin", headers: editToken ? { "X-Edit-Token": editToken } : {} }).then(async r => {
       const p = await r.json();
-      if (!r.ok) { $("err").textContent = p.error; return; }
+      if (!r.ok) { $("err").textContent = (document.documentElement.lang === "vi" && p.error_vi || p.error); return; }
       $("eye").dataset.en = "Edit your listing"; $("eye").dataset.vi = "Sửa dự án";
       $("title").dataset.en = p.name; $("title").dataset.vi = p.name;
       $("lead").dataset.en = "Change anything and save. Leave the pictures empty to keep the current ones."; $("lead").dataset.vi = "Sửa gì cũng được rồi lưu lại. Để trống phần hình ảnh thì giữ hình cũ.";
@@ -371,7 +371,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     try {
       const r = await fetch(editing ? `/api/edit/${encodeURIComponent(editSlug)}` : "/api/submit", { method: "POST", body: fd });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       if (d.removed) { location.href = "/#projects"; return; }
       if (editing) { location.href = d.page; return; }
       $("formgrid").hidden = true; document.querySelector(".hero").hidden = true;
