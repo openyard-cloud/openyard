@@ -11,6 +11,11 @@
 //   comment   someone commented on a project you made
 //   check     the code check of your project found new abilities or a worse verdict
 //   digest    Monday morning (Vietnam time): projects added in the last week
+//   live      right after a submit: the page, the private edit link, what to add
+//   day3/day7 tips and numbers in a listing's first week
+//   likes     once a day, who liked your project
+// Makers are told through their account (if they turned email on) and through the address on the
+// submit form (projects.contact_email), once per address.
 // GET/POST /unsubscribe?t=<token>   turns email off; POST is the one-click (RFC 8058) form.
 import { ORIGIN, esc, en, vi, VERDICT } from "./pages.js";
 import { page } from "./hub.js";
@@ -32,8 +37,8 @@ const clip = (s, n) => (s = String(s || "")).length > n ? s.slice(0, n - 1) + "�
 // ---------- layout ----------
 function layout(u, { pre, title, html, text, button, why }) {
   const unsub = `${ORIGIN}/unsubscribe?t=${u.unsub_token}`;
-  const foot = L(u, `${why} <a href="${ORIGIN}/settings" style="color:#6b6b73">Settings</a> · <a href="${unsub}" style="color:#6b6b73">Unsubscribe</a>`,
-    `${why} <a href="${ORIGIN}/settings" style="color:#6b6b73">Cài đặt</a> · <a href="${unsub}" style="color:#6b6b73">Huỷ nhận email</a>`);
+  const set = u.contact ? "" : L(u, `<a href="${ORIGIN}/settings" style="color:#6b6b73">Settings</a> · `, `<a href="${ORIGIN}/settings" style="color:#6b6b73">Cài đặt</a> · `);
+  const foot = `${why} ${set}<a href="${unsub}" style="color:#6b6b73">${L(u, "Unsubscribe", "Huỷ nhận email")}</a>`;
   return {
     html: `<!doctype html><html lang="${u.lang === "vi" ? "vi" : "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(title)}</title></head>
 <body style="margin:0;background:#f6f6f7;font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0d0d0f">
@@ -46,7 +51,7 @@ function layout(u, { pre, title, html, text, button, why }) {
 ${button ? `<tr><td style="padding:22px 32px 6px"><a href="${esc(button[0])}" style="display:inline-block;background:#0d0d0f;color:#ffffff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 22px;border-radius:999px">${esc(button[1])}</a></td></tr>` : ""}
 <tr><td style="padding:24px 32px 28px;font-size:12.5px;line-height:1.6;color:#8b8b95;border-top:1px solid #f0f0f2">${foot}</td></tr>
 </table></td></tr></table></body></html>`,
-    text: `${title}\n\n${text}${button ? `\n\n${button[1]}: ${button[0]}` : ""}\n\n--\n${L(u, "Settings", "Cài đặt")}: ${ORIGIN}/settings\n${L(u, "Unsubscribe", "Huỷ nhận email")}: ${unsub}\n`,
+    text: `${title}\n\n${text}${button ? `\n\n${button[1]}: ${button[0]}` : ""}\n\n--\n${u.contact ? "" : `${L(u, "Settings", "Cài đặt")}: ${ORIGIN}/settings\n`}${L(u, "Unsubscribe", "Huỷ nhận email")}: ${unsub}\n`,
   };
 }
 const quote = s => `<blockquote style="margin:14px 0 0;padding:12px 16px;border-left:3px solid #8b5cf6;background:#f6f6f7;border-radius:0 12px 12px 0;color:#0d0d0f;white-space:pre-wrap">${esc(clip(s, 600))}</blockquote>`;
@@ -65,9 +70,31 @@ async function recipients(env, ids) {
   for (const u of results) if (!u.unsub_token) { u.unsub_token = tok(); await env.DB.prepare("UPDATE users SET unsub_token = ?2 WHERE id = ?1").bind(u.id, u.unsub_token).run(); }
   return results;
 }
+/** The address given on the submit form, as a recipient, if it still wants email. */
+async function contact(env, slug) {
+  const p = await env.DB.prepare("SELECT slug, contact_email, contact_lang, contact_token FROM projects WHERE slug = ?1 AND contact_ok = 1 AND contact_email IS NOT NULL AND hidden = 0").bind(slug).first();
+  if (!p) return null;
+  if (!p.contact_token) { p.contact_token = tok(); await env.DB.prepare("UPDATE projects SET contact_token = ?2 WHERE slug = ?1").bind(slug, p.contact_token).run(); }
+  return { id: 0, contact: slug, email: p.contact_email, lang: p.contact_lang, unsub_token: p.contact_token, name: null, interests: "[]" };
+}
+/** Everyone to tell about a project: its owner and makers with accounts that want email, and its
+ * contact address; one entry per address. `skip` leaves out an account (the one who acted). */
+async function makers(env, slug, skip = null) {
+  const p = await env.DB.prepare("SELECT owner_id, maintainers FROM projects WHERE slug = ?1").bind(slug).first();
+  if (!p) return [];
+  const names = JSON.parse(p.maintainers || "[]").map(x => x.toLowerCase());
+  const ids = names.length ? (await env.DB.prepare(`SELECT id FROM users WHERE lower(login) IN (${names.map(() => "?").join(",")}) AND deleted_at IS NULL`).bind(...names).all()).results.map(r => r.id) : [];
+  const people = (await recipients(env, [p.owner_id, ...ids])).filter(u => u.id !== skip?.id);
+  const c = await contact(env, slug), seen = new Set(people.map(u => u.email.toLowerCase()));
+  if (skip?.email) seen.add(skip.email.toLowerCase());
+  return c && !seen.has(c.email.toLowerCase()) ? [...people, c] : people;
+}
+const who_ = u => u.contact ? `c:${u.contact}` : u.id; // the recipient part of a dedupe key
+const makerWhy = (u, name) => u.contact ? L(u, `You get this because you listed ${name} on OpenYard.`, `Bạn nhận email này vì đã đưa ${name} lên OpenYard.`)
+  : L(u, "You get this because you made this project and turned on email.", "Bạn nhận email này vì bạn làm dự án này và đã bật nhận email.");
 async function enqueue(env, u, kind, dedupe, mail) {
-  await env.DB.prepare(`INSERT INTO outbox (dedupe, user_id, kind, subject, html, text, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT (dedupe) DO NOTHING`)
-    .bind(dedupe, u.id, kind, mail.subject, mail.html, mail.text, Date.now()).run();
+  await env.DB.prepare(`INSERT INTO outbox (dedupe, user_id, kind, subject, html, text, created_at, contact_slug) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8) ON CONFLICT (dedupe) DO NOTHING`)
+    .bind(dedupe, u.id, kind, mail.subject, mail.html, mail.text, Date.now(), u.contact || null).run();
 }
 
 /** Sends waiting messages, at most `max` now and never more than the daily budget. */
@@ -79,10 +106,10 @@ export async function drain(env, max = 10) {
   if (take <= 0) return 0;
   const { results } = await env.DB.prepare(`UPDATE outbox SET claimed_at = ?1, tries = tries + 1 WHERE id IN (
       SELECT id FROM outbox WHERE sent_at IS NULL AND tries < 5 AND created_at > ?2 AND (claimed_at IS NULL OR claimed_at < ?3) ORDER BY id LIMIT ?4)
-    RETURNING id, dedupe, user_id, subject, html, text`).bind(now, now - 3 * DAY, now - 15 * 60000, take).all();
+    RETURNING id, dedupe, user_id, contact_slug, subject, html, text`).bind(now, now - 3 * DAY, now - 15 * 60000, take).all();
   let sent = 0;
   for (const m of results) {
-    const [u] = await recipients(env, [m.user_id]); // consent may have changed since it was queued
+    const u = m.contact_slug ? await contact(env, m.contact_slug) : (await recipients(env, [m.user_id]))[0]; // consent may have changed since it was queued
     if (!u) { await env.DB.prepare("UPDATE outbox SET tries = 99, error = 'no consent' WHERE id = ?1").bind(m.id).run(); continue; }
     const unsub = `${ORIGIN}/unsubscribe?t=${u.unsub_token}`;
     const r = await fetch(`${env.RESEND_URL || "https://api.resend.com"}/emails`, { // RESEND_URL: a stand-in for local tests
@@ -127,21 +154,19 @@ export async function welcome(env, userId, picks) {
 /** A new comment: tell the person it answers, and the people who made the project. */
 export async function comment(env, { id, slug, parentId, body, author }) {
   if (!ready(env)) return;
-  const p = await env.DB.prepare("SELECT name, owner_id, maintainers FROM projects WHERE slug = ?1").bind(slug).first();
+  const p = await env.DB.prepare("SELECT name FROM projects WHERE slug = ?1").bind(slug).first();
   if (!p) return;
   const parent = parentId ? await env.DB.prepare("SELECT user_id FROM comments WHERE id = ?1").bind(parentId).first() : null;
-  const makers = JSON.parse(p.maintainers || "[]").map(x => x.toLowerCase());
-  const makerIds = makers.length ? (await env.DB.prepare(`SELECT id FROM users WHERE lower(login) IN (${makers.map(() => "?").join(",")}) AND deleted_at IS NULL`).bind(...makers).all()).results.map(r => r.id) : [];
-  const replyTo = parent && parent.user_id !== author.id ? parent.user_id : null;
-  const owners = [p.owner_id, ...makerIds].filter(x => x && x !== author.id && x !== replyTo);
+  const replyTo = parent && parent.user_id !== author.id ? (await recipients(env, [parent.user_id]))[0] : null;
+  const team = await makers(env, slug, author), list = replyTo ? [replyTo, ...team.filter(u => u.email.toLowerCase() !== replyTo.email.toLowerCase())] : team;
   const who = author.name || author.login, link = `${ORIGIN}/p/${slug}#comments`;
-  for (const u of await recipients(env, [replyTo, ...owners])) {
-    const reply = u.id === replyTo;
+  for (const u of list) {
+    const reply = u === replyTo;
     const title = reply ? L(u, `${who} replied to you on ${p.name}`, `${who} đã trả lời bạn trên ${p.name}`) : L(u, `${who} commented on ${p.name}`, `${who} đã bình luận về ${p.name}`);
     const m = layout(u, { pre: clip(body, 120), title, html: `<p style="margin:0">@${esc(author.login)}:</p>${quote(body)}`, text: `@${author.login}:\n${clip(body, 600)}`,
       button: [link, L(u, "Reply on OpenYard", "Trả lời trên OpenYard")],
-      why: reply ? L(u, "You get this because you commented there and turned on email.", "Bạn nhận email này vì đã bình luận ở đó và bật nhận email.") : L(u, "You get this because you made this project and turned on email.", "Bạn nhận email này vì bạn làm dự án này và đã bật nhận email.") });
-    await enqueue(env, u, reply ? "reply" : "comment", `${reply ? "reply" : "comment"}:${id}:${u.id}`, { subject: title, ...m });
+      why: reply ? L(u, "You get this because you commented there and turned on email.", "Bạn nhận email này vì đã bình luận ở đó và bật nhận email.") : makerWhy(u, p.name) });
+    await enqueue(env, u, reply ? "reply" : "comment", `${reply ? "reply" : "comment"}:${id}:${who_(u)}`, { subject: title, ...m });
   }
 }
 
@@ -150,11 +175,9 @@ export async function check(env, { slug, commit, verdict, oldVerdict, abilities 
   if (!ready(env)) return;
   const worse = oldVerdict && verdict !== oldVerdict && verdict !== "clear";
   if (!abilities.length && !worse) return;
-  const p = await env.DB.prepare("SELECT name, owner_id, maintainers FROM projects WHERE slug = ?1").bind(slug).first();
+  const p = await env.DB.prepare("SELECT name FROM projects WHERE slug = ?1").bind(slug).first();
   if (!p) return;
-  const makers = JSON.parse(p.maintainers || "[]").map(x => x.toLowerCase());
-  const ids = makers.length ? (await env.DB.prepare(`SELECT id FROM users WHERE lower(login) IN (${makers.map(() => "?").join(",")})`).bind(...makers).all()).results.map(r => r.id) : [];
-  for (const u of await recipients(env, [p.owner_id, ...ids])) {
+  for (const u of await makers(env, slug)) {
     const title = worse ? L(u, `Code check of ${p.name}: ${VERDICT[verdict][0].toLowerCase()}`, `Kiểm tra code ${p.name}: ${VERDICT[verdict][1].toLowerCase()}`)
       : L(u, `${p.name} can do something new`, `${p.name} vừa có khả năng mới`);
     const said = abilities.map(a => ABILITY[a] ? L(u, ...ABILITY[a]) : a);
@@ -164,8 +187,8 @@ export async function check(env, { slug, commit, verdict, oldVerdict, abilities 
         + `<p style="margin:14px 0 0">${L(u, "If you meant it, nothing to do. If not, it is how hijacked dependencies usually show up, so take a look.", "Nếu đúng là bạn muốn vậy thì không cần làm gì. Nếu không, đây thường là dấu hiệu dependency bị chiếm quyền, nên xem lại.")}</p>`,
       text: `${said.map(a => `- ${a}`).join("\n")}\n\n${L(u, "If you meant it, nothing to do. If not, take a look.", "Nếu đúng là bạn muốn vậy thì không cần làm gì. Nếu không, hãy xem lại.")}`,
       button: [`${ORIGIN}/p/${slug}#check`, L(u, "See the check", "Xem kết quả kiểm tra")],
-      why: L(u, "You get this because you made this project and turned on email.", "Bạn nhận email này vì bạn làm dự án này và đã bật nhận email.") });
-    await enqueue(env, u, "check", `check:${slug}:${commit}:${u.id}`, { subject: title, ...m });
+      why: makerWhy(u, p.name) });
+    await enqueue(env, u, "check", `check:${slug}:${commit}:${who_(u)}`, { subject: title, ...m });
   }
 }
 
@@ -187,12 +210,103 @@ export async function digest(env, all, now = Date.now()) {
   }
 }
 
+// ---------- looking after makers ----------
+const link = (href, label) => `<a href="${href}" style="color:#8b5cf6">${label}</a>`;
+const li = items => `<ul style="margin:8px 0 0;padding-left:20px">${items.map(x => `<li style="margin:0 0 6px">${x}</li>`).join("")}</ul>`;
+const nums = (u, st) => `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0 0;width:100%"><tr>${[
+  [st.clicks, L(u, "visits", "lượt ghé")], [st.likes, L(u, "likes", "lượt thích")], [st.comments, L(u, "comments", "bình luận")]]
+  .map(([n, l]) => `<td style="padding:12px;border:1px solid #ececf0;border-radius:12px;text-align:center"><b style="display:block;font-size:22px">${+n || 0}</b><span style="color:#6b6b73;font-size:13px">${l}</span></td>`).join('<td style="width:8px"></td>')}</tr></table>`;
+async function stats(env, slug, since = 0) {
+  const q = (sql, ...b) => env.DB.prepare(sql).bind(slug, ...b).first();
+  const day = new Date(since).toISOString().slice(0, 10);
+  return {
+    clicks: (await q("SELECT COALESCE(SUM(n), 0) AS n FROM clicks WHERE slug = ?1 AND day >= ?2", day)).n,
+    likes: (await q("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1 AND created_at >= ?2", since)).n,
+    comments: (await q("SELECT COUNT(*) AS n FROM comments WHERE slug = ?1 AND deleted = 0 AND created_at >= ?2", since)).n,
+  };
+}
+
+/** Right after a submit: the page is live, the private edit link (only to the address that submitted), and what to add. */
+export async function live(env, slug, editPath) {
+  if (!ready(env)) return;
+  const p = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1").bind(slug).first();
+  if (!p) return;
+  const page = `${ORIGIN}/p/${slug}`, tl = JSON.parse(p.tagline), tags = JSON.parse(p.tags || "[]");
+  for (const u of await makers(env, slug)) {
+    const todo = [
+      !p.image && L(u, "a screenshot: cards with a picture get far more clicks", "một ảnh chụp màn hình: thẻ có ảnh được bấm nhiều hơn hẳn"),
+      !p.logo && L(u, "a logo", "logo"),
+      !(tl.en && tl.vi) && L(u, `the text in ${tl.en ? "Vietnamese" : "English"} too, so both languages find it`, `phần giới thiệu bằng ${tl.en ? "tiếng Việt" : "tiếng Anh"} nữa, để người đọc cả hai thứ tiếng đều tìm thấy`),
+      !tags.length && L(u, "a few tags, so it shows up on tag pages", "vài thẻ, để dự án hiện trên các trang thẻ"),
+      !p.repo && L(u, "the GitHub link if the code is open: every repo gets a free code check and a badge", "link GitHub nếu code mở: repo nào cũng được kiểm tra code miễn phí và có huy hiệu"),
+    ].filter(Boolean);
+    const edit = u.contact && editPath ? `${ORIGIN}${editPath}` : u.contact ? null : `${ORIGIN}/settings`;
+    const title = L(u, `${p.name} is live on OpenYard`, `${p.name} đã có mặt trên OpenYard`);
+    const m = layout(u, { pre: L(u, "Your page, your edit link, and what to add next.", "Trang dự án, link sửa, và nên thêm gì tiếp."), title,
+      html: `<p style="margin:0">${L(u, `Your page is up at ${link(page, page.replace("https://", ""))}, and it has its own post in #showcase on ${link(`${ORIGIN}/community`, "Discord")}, where members try new projects.`, `Trang dự án đã có tại ${link(page, page.replace("https://", ""))}, và có bài riêng trong #showcase trên ${link(`${ORIGIN}/community`, "Discord")}, nơi mọi người dùng thử dự án mới.`)}</p>`
+        + (edit ? `<p style="margin:14px 0 0;padding:12px 14px;background:#f6f6f7;border-radius:12px">${u.contact ? L(u, `<b>Your private edit link.</b> Keep this email: anyone with the link can change or remove the listing.<br>${link(edit, edit.replace("https://", "").slice(0, 60) + "…")}`, `<b>Link sửa riêng của bạn.</b> Giữ email này: ai có link đều sửa hoặc gỡ được dự án.<br>${link(edit, edit.replace("https://", "").slice(0, 60) + "…")}`) : L(u, `Edit it any time from ${link(edit, "Settings")}.`, `Sửa bất cứ lúc nào ở trang ${link(edit, "Cài đặt")}.`)}</p>` : "")
+        + (todo.length ? `<p style="margin:16px 0 0">${L(u, "To help people find and try it, add:", "Để mọi người dễ tìm và dùng thử, hãy thêm:")}</p>${li(todo)}` : ""),
+      text: `${page}\n\n${edit ? `${L(u, "Edit", "Sửa")}: ${edit}\n\n` : ""}${todo.map(x => `- ${x}`).join("\n")}`,
+      button: [page, L(u, "See your page", "Xem trang dự án")], why: makerWhy(u, p.name) });
+    await enqueue(env, u, "live", `live:${slug}:${who_(u)}`, { subject: title, ...m });
+  }
+}
+
+/** Day 3 and day 7 after a listing went up: how it is doing, and what helps. */
+async function nurture(env, p, day, now) {
+  const page = `${ORIGIN}/p/${p.slug}`, st = await stats(env, p.slug, p.created_at);
+  for (const u of await makers(env, p.slug)) {
+    const title = day === 3 ? L(u, `Three ways to get people trying ${p.name}`, `Ba cách để có người dùng thử ${p.name}`) : L(u, `${p.name}'s first week on OpenYard`, `Tuần đầu của ${p.name} trên OpenYard`);
+    const body = day === 3
+      ? `<p style="margin:0">${L(u, "So far:", "Đến giờ:")}</p>${nums(u, st)}${li([
+          L(u, `<b>Share your OpenYard page</b>, not just your site: ${link(page, page.replace("https://", ""))} has a preview picture and a code check, and visits from it count toward Trending.`, `<b>Chia sẻ trang OpenYard</b> chứ không chỉ trang của bạn: ${link(page, page.replace("https://", ""))} có ảnh xem trước và kết quả kiểm tra code, và lượt ghé từ đó được tính vào mục Đang lên.`),
+          L(u, "<b>Answer people.</b> Reply to comments on your page and in the #showcase post. Makers who answer get more people coming back.", "<b>Trả lời mọi người.</b> Trả lời bình luận trên trang và trong bài #showcase. Người làm chịu trả lời sẽ có nhiều người quay lại hơn."),
+          L(u, `<b>Ask for the one thing you need:</b> testers, feedback on the design, a translator. Post it in ${link(`${ORIGIN}/community`, "#help")}.`, `<b>Hỏi đúng thứ bạn cần:</b> người test, góp ý thiết kế, người dịch. Đăng trong ${link(`${ORIGIN}/community`, "#help")}.`),
+        ])}`
+      : `<p style="margin:0">${L(u, "Here is the first week:", "Tuần đầu tiên:")}</p>${nums(u, st)}<p style="margin:14px 0 0">${L(u, `Shipped something since? Update the listing so the page says so, and post the news in #showcase. Ideas for OpenYard itself are welcome in ${link(`${ORIGIN}/community`, "#ideas-and-feedback")}.`, `Có gì mới từ hôm đó? Cập nhật trang dự án cho đúng, và báo tin trong #showcase. Ý tưởng cho chính OpenYard thì gửi ở ${link(`${ORIGIN}/community`, "#ideas-and-feedback")}.`)}</p>`;
+    const m = layout(u, { pre: L(u, `${st.clicks} visits, ${st.likes} likes, ${st.comments} comments so far.`, `${st.clicks} lượt ghé, ${st.likes} lượt thích, ${st.comments} bình luận.`), title, html: body,
+      text: `${st.clicks} ${L(u, "visits", "lượt ghé")} · ${st.likes} ${L(u, "likes", "lượt thích")} · ${st.comments} ${L(u, "comments", "bình luận")}\n${page}`,
+      button: [page, L(u, "See your page", "Xem trang dự án")], why: makerWhy(u, p.name) });
+    await enqueue(env, u, `day${day}`, `day${day}:${p.slug}:${who_(u)}`, { subject: title, ...m });
+  }
+}
+
+/** Once a day: who liked each project in the last 24 hours, and the day-3 and day-7 notes. */
+export async function daily(env, now = Date.now()) {
+  if (!ready(env)) return;
+  const { results: likes } = await env.DB.prepare(`SELECT l.slug, u.id, u.login, u.name, p.name AS project FROM likes l JOIN users u ON u.id = l.user_id JOIN projects p ON p.slug = l.slug
+    WHERE l.created_at > ?1 AND p.hidden = 0 AND u.deleted_at IS NULL ORDER BY l.created_at`).bind(now - DAY).all();
+  const bySlug = new Map();
+  likes.forEach(l => bySlug.set(l.slug, [...(bySlug.get(l.slug) || []), l]));
+  const date = new Date(now).toISOString().slice(0, 10);
+  for (const [slug, list] of bySlug) {
+    for (const u of await makers(env, slug)) {
+      const fans = list.filter(l => l.id !== u.id);
+      if (!fans.length) continue;
+      const name = list[0].project, page = `${ORIGIN}/p/${slug}`;
+      const title = fans.length === 1 ? L(u, `${fans[0].name || fans[0].login} liked ${name}`, `${fans[0].name || fans[0].login} đã thích ${name}`) : L(u, `${fans.length} people liked ${name}`, `${fans.length} người đã thích ${name}`);
+      const m = layout(u, { pre: fans.map(f => "@" + f.login).join(", "), title,
+        html: `<p style="margin:0">${L(u, "In the last day:", "Trong một ngày qua:")}</p>${li(fans.slice(0, 12).map(f => link(`${ORIGIN}/@${esc(f.login)}`, esc(f.name || f.login)) + ` <span style="color:#8b8b95">@${esc(f.login)}</span>`))}${fans.length > 12 ? `<p style="margin:6px 0 0;color:#6b6b73">${L(u, `and ${fans.length - 12} more`, `và ${fans.length - 12} người khác`)}</p>` : ""}`,
+        text: fans.map(f => `- ${f.name || f.login} (@${f.login})`).join("\n"),
+        button: [page, L(u, "See your page", "Xem trang dự án")], why: makerWhy(u, name) });
+      await enqueue(env, u, "likes", `likes:${slug}:${date}:${who_(u)}`, { subject: title, ...m });
+    }
+  }
+  const { results: fresh } = await env.DB.prepare(`SELECT slug, name, created_at FROM projects WHERE hidden = 0 AND team = 0 AND
+    ((created_at <= ?1 AND created_at > ?2) OR (created_at <= ?3 AND created_at > ?4))`).bind(now - 3 * DAY, now - 4 * DAY, now - 7 * DAY, now - 8 * DAY).all();
+  for (const p of fresh) await nurture(env, p, now - p.created_at < 5 * DAY ? 3 : 7, now);
+}
+
 // ---------- unsubscribe ----------
 export async function unsubscribe(req, env, url, site) {
   const t = url.searchParams.get("t") || "";
-  const u = /^[\w-]{20,64}$/.test(t) ? await env.DB.prepare("SELECT id, email_ok, lang FROM users WHERE unsub_token = ?1").bind(t).first() : null;
+  const ok = /^[\w-]{20,64}$/.test(t);
+  const acct = ok ? await env.DB.prepare("SELECT id, email_ok, lang FROM users WHERE unsub_token = ?1").bind(t).first() : null;
+  const proj = ok && !acct ? await env.DB.prepare("SELECT slug, contact_ok AS email_ok FROM projects WHERE contact_token = ?1").bind(t).first() : null;
+  const u = acct || proj;
   const H = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" };
-  if (req.method === "POST" && u) await env.DB.prepare("UPDATE users SET email_ok = 0, email_ok_at = ?2 WHERE id = ?1 AND email_ok = 1").bind(u.id, Date.now()).run();
+  if (req.method === "POST" && acct) await env.DB.prepare("UPDATE users SET email_ok = 0, email_ok_at = ?2 WHERE id = ?1 AND email_ok = 1").bind(acct.id, Date.now()).run();
+  if (req.method === "POST" && proj) await env.DB.prepare("UPDATE projects SET contact_ok = 0 WHERE slug = ?1").bind(proj.slug).run();
   const off = req.method === "POST" || (u && !u.email_ok);
   const txt = (e, v) => `<span data-vi="${esc(v)}">${esc(e)}</span>`;
   const body = `<header class="hero hub"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
