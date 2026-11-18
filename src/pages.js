@@ -359,6 +359,7 @@ footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;m
 .box{display:block;padding:18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
 .pacts{display:flex;flex-direction:column;gap:8px}.pacts .btn{width:100%}.pacts .row2{display:flex;gap:8px}.pacts .row2 .btn{flex:1}
 #like .lt{margin-right:auto}#like{justify-content:flex-start}
+.claim{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);padding:2px 6px;line-height:1.4}.claim:hover{color:var(--ink)}.claim .ar{width:13px;height:13px;flex:none}
 .mk{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
 .mk>div{min-width:0;flex:1}.mk small{display:block;font-size:12px;color:var(--muted)}.mk b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk a:hover b{text-decoration:underline}.mk span:not(.ring){display:block;font-size:12.5px;color:var(--muted)}
 .ring{flex:none;display:block;padding:2px;border-radius:50%;background:conic-gradient(from 200deg,#7c9cff,#b67cff,#ff7eb0,#ffc56b,#7c9cff)}
@@ -776,7 +777,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
     <div><small>${t("Made by", "Người làm")}</small>${p.team ? `<b>OpenYard team</b>` : mk ? `<a href="/@${esc(mk)}"><b>@${esc(mk)}</b></a>` : `<b>${t("A community member", "Một thành viên cộng đồng")}</b>`}
     <span>${p.team || mk ? t(`${mkCount} project${mkCount === 1 ? "" : "s"} in the yard`, `${mkCount} dự án trên OpenYard`) : ""}</span></div>
     ${mk ? `<a class="btn sm line" href="/@${esc(mk)}">${t("Profile", "Hồ sơ")}</a>` : ""}
-  </div>`;
+  </div>${!p.team && !p.owner ? `<a class="claim reveal" href="/claim/${esc(p.slug)}">${t("Is this yours? Claim it to edit it and hear about comments", "Đây là dự án của bạn? Nhận nó để sửa và nhận thông báo bình luận")} ${ARROW}</a>` : ""}`;
   const days = Math.max(0, Math.round((now - Date.parse(p.added)) / 86400000));
   // A short log of what happened to the project in the yard, newest first
   const log = [

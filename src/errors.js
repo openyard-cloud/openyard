@@ -59,6 +59,11 @@ const VI = {
   "The GitHub username looks wrong.": "Tên GitHub có vẻ chưa đúng.",
   "The link must start with https://": "Đường dẫn phải bắt đầu bằng https://",
   "Not found": "Không tìm thấy",
+  "This project already belongs to an account.": "Dự án này đã thuộc về một tài khoản.",
+  "Open the claim page first.": "Hãy mở trang nhận dự án trước.",
+  "Your GitHub account does not own this project's repository.": "Tài khoản GitHub của bạn không sở hữu repo của dự án này.",
+  "The TXT record is not there yet. DNS can take a few minutes; try again soon.": "Chưa thấy bản ghi TXT. DNS có thể mất vài phút để cập nhật; thử lại sau ít phút nhé.",
+  "The tag is not on the page yet. Publish it, then try again.": "Chưa thấy thẻ trên trang. Hãy đăng thẻ lên rồi thử lại.",
 };
 /** The Vietnamese for an API message, or undefined. */
 export function vi(msg) {

@@ -228,6 +228,46 @@ export function signinConfirmPage({ site, token }) {
   return page({ title: "Sign in · OpenYard", desc: "Finish signing in.", path: "/auth/email", color: "#8b7cff", site, noindex: true, body: `<div class="solo">${body}</div>`, css: ACC_CSS, jsonld: [] });
 }
 
+/** /claim/<slug>: prove a listing that came in without an account is yours. */
+export function claimPage({ p, user, token, github, mine, taken, site }) {
+  const host = (() => { try { return new URL(p.url).hostname; } catch { return ""; } })();
+  const meta = `<meta name="openyard-verify" content="${token}">`;
+  const way = (n, title, body) => `<div class="box reveal"><h2><span class="stepn">${n}</span>${title}</h2>${body}</div>`;
+  const copy = v => `<div class="snip"><code>${esc(v)}</code><button class="btn sm line" type="button" data-copy="${esc(v)}">${t("Copy", "Copy")}</button></div>`;
+  const check = how => `<div class="acts" style="margin-top:12px"><button class="btn dark" type="button" data-how="${how}">${t("Check", "Kiểm tra")}</button><span class="msg" role="status"></span></div>`;
+  const body = `${hero(t("Claim", "Nhận dự án"), esc(p.name), mine ? t("This project is yours.", "Dự án này là của bạn.") : taken ? t("This project already belongs to an account.", "Dự án này đã thuộc về một tài khoản.") : t(`Show that ${host} is yours. The listing then belongs to @${user.login}: you can edit it, and you hear about comments and likes.`, `Chứng minh ${host} là của bạn. Sau đó dự án thuộc về @${user.login}: bạn sửa được, và nhận thông báo khi có bình luận hay lượt thích.`))}
+<div class="wrap acc">
+  ${mine || taken ? `<div class="acts"><a class="btn dark" href="/p/${esc(p.slug)}">${t("Back to the project", "Về trang dự án")}</a>${mine ? `<a class="btn line" href="/submit?edit=${esc(p.slug)}">${t("Edit it", "Sửa dự án")}</a>` : ""}</div>` : `
+  ${github ? way("✓", t("Your GitHub account matches", "Tài khoản GitHub của bạn khớp"), `<p>${t("You own the project's repository or are its listed maker, so you can claim it right away.", "Bạn sở hữu repo của dự án hoặc là người làm được ghi tên, nên có thể nhận ngay.")}</p>${check("github")}`) : ""}
+  ${way(1, t("Add a tag to your page", "Thêm một thẻ vào trang của bạn"), `<p>${t(`Put this in the <head> of ${host}, publish, then check.`, `Đặt dòng này trong <head> của ${host}, đăng lên, rồi bấm kiểm tra.`)}</p>${copy(meta)}${check("meta")}`)}
+  ${way(2, t("Or add a DNS record", "Hoặc thêm một bản ghi DNS"), `<p>${t("No access to the HTML? Add a TXT record instead.", "Không sửa được HTML? Thêm bản ghi TXT thay thế.")}</p>
+    <dl class="dns"><dt>${t("Type", "Loại")}</dt><dd><code>TXT</code></dd><dt>${t("Name", "Tên")}</dt><dd>${copy(`_openyard.${host}`)}</dd><dt>${t("Value", "Giá trị")}</dt><dd>${copy(`openyard-verify=${token}`)}</dd></dl>${check("dns")}`)}
+  <div class="box reveal"><label class="tick"><input type="checkbox" id="emailOk" checked><span>${t("Email me when people comment on or like this project", "Gửi email cho mình khi có người bình luận hay thích dự án này")}<small>${user.email ? t(`To ${user.email}. One click to stop, in every email.`, `Tới ${user.email}. Dừng bằng một chạm, ngay trong email.`) : t("Your account has no email address, so there is nothing to send to.", "Tài khoản của bạn chưa có email, nên không có chỗ để gửi.")}</small></span></label></div>
+  <p class="fine">${t("You can remove the tag or record once the claim is done.", "Nhận xong thì có thể gỡ thẻ hoặc bản ghi đi.")}</p>`}
+</div>`;
+  const js = mine || taken ? "" : `<script>
+(() => {
+  const T = (e, v) => document.documentElement.lang === "vi" ? v : e;
+  document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = T("Copied", "Đã copy"); setTimeout(() => b.textContent = "Copy", 1500); } catch (e) {} }));
+  document.querySelectorAll("[data-how]").forEach(b => b.addEventListener("click", async () => {
+    const msg = b.parentElement.querySelector(".msg"); b.disabled = true; msg.className = "msg"; msg.textContent = T("Checking…", "Đang kiểm tra…");
+    try {
+      const r = await fetch("/api/claim/${esc(p.slug)}", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ how: b.dataset.how, emailOk: document.getElementById("emailOk").checked }) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(document.documentElement.lang === "vi" && d.error_vi || d.error);
+      msg.textContent = T("Done, it is yours.", "Xong, dự án là của bạn."); location.href = d.page;
+    } catch (x) { msg.className = "msg bad"; msg.textContent = x.message; b.disabled = false; }
+  }));
+})();
+</script>`;
+  return page({ title: `Claim ${p.name} · OpenYard`, desc: "Claim a listing on OpenYard.", path: `/claim/${p.slug}`, color: p.color || "#8b7cff", site, noindex: true, body, css: ACC_CSS + CLAIM_CSS, extra: js, jsonld: [] });
+}
+const CLAIM_CSS = `
+.stepn{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;margin-right:10px;font-size:13px;color:#fff;background:linear-gradient(135deg,#7c9cff,#b67cff,#ff7eb0);vertical-align:2px}
+.snip{display:flex;gap:8px;align-items:center;margin-top:8px}.snip code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;padding:10px 12px;border-radius:12px;background:var(--bg);border:1px solid var(--line2);font:13px ui-monospace,SFMono-Regular,Menlo,monospace}
+.dns{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 14px;align-items:center;margin:8px 0 0}.dns dt{font-size:13px;color:var(--muted)}.dns dd{margin:0}.dns dd .snip{margin:0}
+`;
+
 export function privacyPage({ site }) {
   const sec = (h, items) => `<h2>${t(...h)}</h2>${items.map(x => Array.isArray(x[0]) ? `<ul>${x.map(li => `<li>${t(...li)}</li>`).join("")}</ul>` : `<p>${t(...x)}</p>`).join("")}`;
   const body = `${hero(t("Privacy", "Quyền riêng tư"), t("What we keep, and why", "Chúng mình giữ gì, và vì sao"), t("Short version: as little as we can, never sold, and you can delete it yourself.", "Tóm tắt: giữ ít nhất có thể, không bao giờ bán, và bạn tự xoá được."))}

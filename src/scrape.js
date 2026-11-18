@@ -48,17 +48,27 @@ async function readCapped(r, max) {
 }
 
 /** What the page at `url` says about itself, with absolute picture URLs. */
+/** The TXT records at _openyard.<host>, through DNS over HTTPS. */
+export async function dnsTxt(host) {
+  try {
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=_openyard.${encodeURIComponent(host)}&type=TXT`, { headers: { Accept: "application/dns-json" } });
+    const d = await r.json();
+    return (d.Answer || []).filter(a => a.type === 16).map(a => String(a.data).replace(/^"|"$/g, "").replace(/" "/g, ""));
+  } catch { return []; }
+}
+
 export async function siteMeta(url) {
   const r = await get(url, "text/html,application/xhtml+xml");
   if (!r || !/html/i.test(r.headers.get("Content-Type") || "")) return null;
   const base = r.url || url, abs = h => { try { return new URL(h, base).href; } catch { return null; } };
-  const m = { title: "", name: "", description: "", image: null, icons: [] };
+  const m = { title: "", name: "", description: "", image: null, icons: [], verify: [] };
   let inTitle = false;
   const meta = el => {
     const k = (el.getAttribute("property") || el.getAttribute("name") || "").toLowerCase(), v = (el.getAttribute("content") || "").trim();
     if (!v) return;
     if ((k === "og:image" || k === "og:image:secure_url" || k === "twitter:image" || k === "twitter:image:src") && !m.image) m.image = abs(v);
     else if (k === "og:site_name" && !m.name) m.name = v;
+    else if (k === "openyard-verify") m.verify.push(v); // proof of ownership for a claim
     else if (k === "og:title" && !m.title) m.title = v;
     else if ((k === "og:description" || k === "description" || k === "twitter:description") && !m.description) m.description = v;
   };

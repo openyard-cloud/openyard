@@ -14,6 +14,7 @@
 //   GET  /a/<seed>/<letter>.svg   the generated picture of an account that has none
 //   GET  /discuss, /discuss/<category>, /discuss/t/<id>-<slug>, /discuss/new   discussions (discuss.js)
 //   POST /api/topics, DELETE /api/topics/<id>   start or remove a topic; replies go through /api/comments
+//   GET  /claim/<slug>, POST /api/claim/<slug>   take over a listing that has no account (meta tag, DNS TXT or GitHub)
 //   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
 //   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
@@ -28,9 +29,9 @@ import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import * as mail from "./email.js";
 import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
-import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage } from "./account.js";
+import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage, claimPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
-import { siteMeta, grabImage, publicHttps } from "./scrape.js";
+import { siteMeta, grabImage, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
@@ -111,6 +112,49 @@ async function sitePictures(env, f, now) {
 }
 
 // GET /api/site?url=: what the submit form fills in from a project's own site (signed in, 60 an hour).
+// ---------- claiming a listing that came in without an account ----------
+// A GitHub account that owns the project's repository (or is its listed maker) may claim at once.
+const ghClaim = (user, p) => user.provider !== "email" && (
+  JSON.parse(p.maintainers || "[]").some(m => m.toLowerCase() === user.login.toLowerCase())
+  || (parseRepo(p.repo || "")?.owner || "").toLowerCase() === user.login.toLowerCase());
+async function claimToken(env, slug, user) {
+  const row = await env.DB.prepare("SELECT token FROM claims WHERE slug = ?1 AND user_id = ?2").bind(slug, user.id).first();
+  if (row) return row.token;
+  const token = randomToken(12);
+  await env.DB.prepare("INSERT INTO claims (slug, user_id, token, created_at) VALUES (?1, ?2, ?3, ?4)").bind(slug, user.id, token, Date.now()).run();
+  return token;
+}
+// POST /api/claim/<slug> { how: meta | dns | github, emailOk }: check the proof, then the listing is theirs.
+async function claim(req, env, url, slug) {
+  const user = await currentUser(req, env);
+  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!user) return fail("Sign in first.", 401);
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const p = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
+  if (!p) return fail("No such project.", 404);
+  if (p.team || p.owner_id) return fail("This project already belongs to an account.", 409);
+  let ok = false;
+  if (b.how === "github") ok = ghClaim(user, p);
+  else {
+    const token = (await env.DB.prepare("SELECT token FROM claims WHERE slug = ?1 AND user_id = ?2").bind(slug, user.id).first())?.token;
+    if (!token) return fail("Open the claim page first.");
+    const host = publicHttps(p.url)?.hostname;
+    if (b.how === "meta") {
+      const pages = [...new Set([p.url, host && `https://${host}/`].filter(Boolean))];
+      for (const u of pages) { const m = await siteMeta(u).catch(() => null); if (m?.verify.includes(token)) { ok = true; break; } }
+    } else if (b.how === "dns" && host) {
+      const names = [host, host.split(".").slice(1).join(".")].filter(h => h.includes("."));
+      for (const h of names) if ((await dnsTxt(h)).includes(`openyard-verify=${token}`)) { ok = true; break; }
+    }
+  }
+  if (!ok) return fail(b.how === "github" ? "Your GitHub account does not own this project's repository." : b.how === "dns" ? "The TXT record is not there yet. DNS can take a few minutes; try again soon." : "The tag is not on the page yet. Publish it, then try again.", 400);
+  const r = await env.DB.prepare(`UPDATE projects SET owner_id = ?2, contact_email = COALESCE(contact_email, ?3), contact_ok = ?4, contact_lang = ?5, updated_at = ?6
+    WHERE slug = ?1 AND owner_id IS NULL RETURNING slug`).bind(slug, user.id, user.email, b.emailOk === false ? 0 : 1, user.lang || "en", Date.now()).first();
+  if (!r) return fail("This project already belongs to an account.", 409);
+  await env.DB.prepare("DELETE FROM claims WHERE slug = ?1").bind(slug).run();
+  return json({ page: `/p/${slug}` });
+}
+
 async function siteLookup(req, env, url) {
   const user = await currentUser(req, env), now = Date.now();
   if (!user) return fail("Sign in first.", 401);
@@ -737,6 +781,17 @@ export default {
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
       if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
       if (path === "/api/site" && req.method === "GET") return siteLookup(req, env, url);
+      const cl = /^\/(api\/)?claim\/([a-z0-9-]+)$/.exec(path);
+      if (cl && cl[1] && req.method === "POST") return claim(req, env, url, cl[2]);
+      if (cl && !cl[1] && req.method === "GET") {
+        const user = await currentUser(req, env);
+        if (!user) return Response.redirect(`${url.origin}/signin?return=${encodeURIComponent(path)}`, 302);
+        const p = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(cl[2]).first();
+        if (!p) return Response.redirect(`${url.origin}/projects`, 302);
+        const mine = p.owner_id === user.id, taken = !!(p.team || (p.owner_id && !mine));
+        const token = mine || taken ? null : await claimToken(env, p.slug, user);
+        return new Response(claimPage({ p: toApi(p, Date.now()), user, token, github: !mine && !taken && ghClaim(user, p), mine, taken, site: SITE }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
+      }
       let dm; // discussions
       if (path === "/api/topics" && req.method === "POST") return topics(req, env, url);
       if ((dm = /^\/api\/topics\/(\d+)$/.exec(path)) && req.method === "DELETE") return topics(req, env, url, +dm[1]);
