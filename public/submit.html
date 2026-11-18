@@ -128,7 +128,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     <h2 data-vi="Dự án">The project</h2>
     <p data-vi="Phần này hiện trên thẻ và trang dự án.">This shows on your card and your project page.</p>
     <div class="f"><label for="f-name"><span data-vi="Tên">Name</span></label><input type="text" name="name" id="f-name" maxlength="40" required placeholder="Rice Diary"></div>
-    <div class="f"><label for="f-url"><span data-vi="Đường dẫn để mở">Link people should open</span></label><input type="url" name="url" id="f-url" required placeholder="https://"></div>
+    <div class="f"><label for="f-url"><span data-vi="Đường dẫn để mở">Link people should open</span></label><input type="url" name="url" id="f-url" required placeholder="https://"><p class="note" id="url-note" aria-live="polite"></p></div>
     <div class="f"><span class="lbl"><span data-vi="Viết bằng">Written in</span></span>
       <div class="seg"><label><input type="radio" name="lang" value="en" checked>English</label><label><input type="radio" name="lang" value="vi">Tiếng Việt</label></div></div>
     <div class="f"><label for="f-tagline"><span data-vi="Một dòng giới thiệu">One-line tagline</span></label><input type="text" name="tagline" id="f-tagline" maxlength="80" required><div class="count" data-for="f-tagline"></div></div>
@@ -254,6 +254,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
       const first = (d.description || "").split(/(?<=[.!?])\s|:\s/)[0];
       set("f-tagline", first.length <= 80 ? first : first.slice(0, 79).replace(/\s+\S*$/, "") + "…"); set("f-desc", (d.description || "").slice(0, 300));
       set("f-maint", d.owner); set("f-tags", (d.topics || []).slice(0, 5).join(", "));
+      readSite();
       note.className = "note ok";
       note.textContent = T(`Filled in from GitHub · ★ ${d.stars}${d.license ? " · " + d.license : ""}`, `Đã điền từ GitHub · ★ ${d.stars}${d.license ? " · " + d.license : ""}`);
       preview(); counts();
@@ -262,13 +263,42 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
   $("fill").addEventListener("click", fill);
   $("f-repo").addEventListener("change", fill);
 
+  /* the project's own site: name, description, logo and banner, read as soon as the link is typed */
+  let site = null, siteFor = "", siteTimer = 0;
+  async function readSite() {
+    const v = $("f-url").value.trim(), note = $("url-note");
+    if (!/^https:\/\/[^\s/]+\.[^\s]+/.test(v) || v === siteFor) return;
+    if (/^https:\/\/(www\.)?github\.com\//i.test(v)) { site = null; return; } // a repository: GitHub fills it in
+    siteFor = v; note.className = "note"; note.textContent = T("Reading your site…", "Đang đọc trang của bạn…");
+    try {
+      const r = await fetch("/api/site?url=" + encodeURIComponent(v), { credentials: "same-origin" }), d = await r.json();
+      if (v !== siteFor) return; // a newer link was typed meanwhile
+      if (!r.ok) throw new Error(d.error);
+      site = d;
+      const set = (id, val) => { if (val && !$(id).value.trim()) $(id).value = val; };
+      const title = (d.title || "").split(/\s+[|·•–—-]\s+/)[0].trim();
+      set("f-name", (d.name || title).slice(0, 40));
+      const first = (d.description || "").split(/(?<=[.!?])\s/)[0];
+      set("f-tagline", first && first.length <= 80 ? first : (first.slice(0, 79).replace(/\s+\S*$/, "") + (first ? "…" : "")) || title.slice(0, 80));
+      set("f-desc", (d.description || "").slice(0, 300));
+      if (d.logo && !files.logo) $("t-logo").innerHTML = `<img src="${esc(d.logo)}" alt="">`;
+      if (d.image && !files.image) $("t-image").innerHTML = `<img src="${esc(d.image)}" alt="">`;
+      const got = [d.logo && T("logo", "logo"), d.image && T("banner", "ảnh banner"), (d.description || d.title) && T("description", "mô tả")].filter(Boolean);
+      note.className = got.length ? "note ok" : "note";
+      note.textContent = got.length ? T(`Took the ${got.join(", ")} from your site. Change anything below.`, `Đã lấy ${got.join(", ")} từ trang của bạn. Sửa gì cũng được bên dưới.`) : T("Your site does not say much about itself; fill in the rest below.", "Trang của bạn không có nhiều thông tin; hãy điền phần còn lại bên dưới.");
+      preview(); counts();
+    } catch (e) { if (v === siteFor) { note.className = "note"; note.textContent = ""; } }
+  }
+  $("f-url").addEventListener("input", () => { clearTimeout(siteTimer); siteTimer = setTimeout(readSite, 700); });
+  $("f-url").addEventListener("change", readSite);
+
   /* live preview */
   const KIND = { people: ["For people", "Cho mọi người"], wild: ["Wild idea", "Ý tưởng điên rồ"], dev: ["Dev tool", "Công cụ cho dev"] };
   function preview() {
     const name = $("f-name").value.trim() || T("Your project", "Dự án của bạn");
     const color = "#6d5bd0", ini = esc(name.split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase());
-    const logo = files.logo ? URL.createObjectURL(files.logo) : gh?.avatar || null;
-    const shot = files.image ? URL.createObjectURL(files.image) : null;
+    const logo = files.logo ? URL.createObjectURL(files.logo) : site?.logo || gh?.avatar || null;
+    const shot = files.image ? URL.createObjectURL(files.image) : site?.image || null;
     $("pv-name").textContent = name;
     $("pv-logo").outerHTML = logo ? `<img class="lg" id="pv-logo" src="${esc(logo)}" alt="">` : `<span class="lg" id="pv-logo" style="background:${color}">${ini}</span>`;
     $("pv-vis").innerHTML = shot ? `<img class="shot" src="${esc(shot)}" alt="">` : logo ? `<img class="lg" src="${esc(logo)}" alt="">` : `<span class="lg" style="background:#fff;color:${color}">${ini}</span>`;
@@ -331,6 +361,9 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     fd.delete("logo"); fd.delete("image");
     if (files.logo) fd.append("logo", files.logo, "logo." + files.logo.type.split("/")[1]);
     if (files.image) fd.append("image", files.image, "image." + files.image.type.split("/")[1]);
+    // pictures found on the site: the server copies them when nothing was uploaded
+    if (!files.logo && site?.logo) fd.append("logo_url", site.logo);
+    if (!files.image && site?.image) fd.append("image_url", site.image);
     for (const [k, v] of Object.entries(extra)) fd.append(k, v);
     const editing = !!editSlug;
     if (editing && editToken) fd.append("token", editToken);

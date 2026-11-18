@@ -1,6 +1,7 @@
 // openyard.cloud: static assets from public/, plus the project database (D1).
 //   GET  /api/projects        every visible project with its GitHub stats and trending score
 //   GET  /api/github?repo=     what the submit form fills in from a GitHub link
+//   GET  /api/site?url=        what it fills in from the project's own site: name, description, logo, banner (scrape.js)
 //   POST /api/submit           add a project (signed in with GitHub or email; a per-account and per-IP limit)
 //   GET/POST /api/edit/<slug>  change or remove a project with the edit token from submitting
 //   GET  /projects, /apps, /open-source, /for-people, /wild-ideas, /dev-tools, /tags/<tag>, /about, /community   (hub.js)
@@ -29,6 +30,7 @@ import * as mail from "./email.js";
 import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
+import { siteMeta, grabImage, publicHttps } from "./scrape.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
 
@@ -97,6 +99,49 @@ async function readImage(file, max) {
   return { type: file.type, buf };
 }
 
+// Copies the pictures found on a project's site into uploads. An apple-touch-icon or PNG fills
+// its square (tile); an SVG sits on white with some room around it.
+async function sitePictures(env, f, now) {
+  const out = { logo: null, image: null, logoStyle: null };
+  if (!f.logoFile && f.logoUrl) { const g = await grabImage(f.logoUrl, { logo: true }); if (g) { out.logo = await storeUpload(env, g, now); out.logoStyle = g.type === "image/svg+xml" ? null : "tile"; } }
+  if (!f.imageFile && f.imageUrl) { const g = await grabImage(f.imageUrl); if (g) out.image = await storeUpload(env, g, now); }
+  return out;
+}
+
+// GET /api/site?url=: what the submit form fills in from a project's own site (signed in, 60 an hour).
+async function siteLookup(req, env, url) {
+  const user = await currentUser(req, env), now = Date.now();
+  if (!user) return fail("Sign in first.", 401);
+  const target = publicHttps(url.searchParams.get("url"));
+  if (!target) return fail("Paste a link that starts with https://");
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM scrape_hits WHERE user_id = ?1 AND created_at > ?2").bind(user.id, now - 3600000).first();
+  if (n >= 60) return fail("Too many look-ups. Fill the form by hand.", 429);
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO scrape_hits (user_id, created_at) VALUES (?1, ?2)").bind(user.id, now),
+    env.DB.prepare("DELETE FROM scrape_hits WHERE created_at < ?1").bind(now - DAY),
+  ]);
+  const m = await siteMeta(target.href);
+  if (!m) return fail("Could not read that page.", 404);
+  // check the pictures now, so the form only shows ones that can be kept
+  const [logo, image] = await Promise.all([m.icon ? grabImage(m.icon, { logo: true }) : null, m.image ? grabImage(m.image) : null]);
+  return json({ name: m.name, title: m.title, description: m.description, logo: logo ? m.icon : null, image: image ? m.image : null }, 200, { "Cache-Control": "private, max-age=300" });
+}
+
+// Cron: listings without a logo or banner get them from their own site (six at a time, each at most weekly).
+async function fillPictures(env, now = Date.now()) {
+  const { results } = await env.DB.prepare(`SELECT slug, url, logo, image FROM projects WHERE hidden = 0 AND (logo IS NULL OR image IS NULL)
+    AND (scraped_at IS NULL OR scraped_at < ?1) ORDER BY COALESCE(scraped_at, 0) LIMIT 6`).bind(now - 7 * DAY).all();
+  for (const p of results) {
+    await env.DB.prepare("UPDATE projects SET scraped_at = ?2 WHERE slug = ?1").bind(p.slug, now).run();
+    const m = await siteMeta(p.url).catch(() => null);
+    if (!m) continue;
+    const site = await sitePictures(env, { logoUrl: p.logo ? null : m.icon, imageUrl: p.image ? null : m.image }, now);
+    if (site.logo) await env.DB.prepare("UPDATE projects SET logo = ?2, logo_style = ?3 WHERE slug = ?1 AND logo IS NULL").bind(p.slug, site.logo, site.logoStyle).run();
+    if (site.image) await env.DB.prepare("UPDATE projects SET image = ?2 WHERE slug = ?1 AND image IS NULL").bind(p.slug, site.image).run();
+    console.log("pictures", p.slug, !!site.logo, !!site.image);
+  }
+}
+
 async function storeUpload(env, img, now) {
   const id = token().slice(0, 20);
   await env.DB.prepare("INSERT INTO uploads (id, type, data, created_at) VALUES (?1, ?2, ?3, ?4)").bind(id, img.type, img.buf, now).run();
@@ -134,6 +179,8 @@ async function readForm(env, form) {
     tagline: { [lang]: tagline }, description: { [lang]: description },
     maintainers: owner ? [owner] : [],
     logoFile: await readImage(form.get("logo"), MAX_LOGO), imageFile: await readImage(form.get("image"), MAX_IMAGE),
+    // pictures the form found on the project's own site, kept only when nothing was uploaded
+    logoUrl: publicHttps(get("logo_url"))?.href || null, imageUrl: publicHttps(get("image_url"))?.href || null,
   };
 }
 
@@ -167,14 +214,15 @@ async function submit(req, env, ctx) {
 
   let slug = slugify(f.name);
   for (let i = 2; await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first(); i++) slug = `${slugify(f.name).slice(0, 36)}-${i}`;
-  const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null;
-  const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : null;
+  const site = await sitePictures(env, f, now);
+  const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : site.logo || (f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null);
+  const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : site.image;
   const edit = token();
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id, contact_email, contact_lang)
       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22)`)
       .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(f.tagline), JSON.stringify(f.description), f.url, f.repo, f.license,
-        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user.id, contactEmail, f.lang),
+        logo, f.logoFile ? "tile" : site.logoStyle, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user.id, contactEmail, f.lang),
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
@@ -208,14 +256,15 @@ async function edit(req, env, ctx, slug) {
     return json({ removed: slug });
   }
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
-  const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : row.logo || (f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null);
-  const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : row.image;
+  const site = await sitePictures(env, { ...f, logoUrl: row.logo ? null : f.logoUrl, imageUrl: row.image ? null : f.imageUrl }, now);
+  const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : row.logo || site.logo || (f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null);
+  const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : row.image || site.image;
   // keep the other language if the person only edited one
   const merge = (old, nu) => ({ ...JSON.parse(old), ...nu });
   await env.DB.prepare(`UPDATE projects SET name = ?2, type = ?3, kinds = ?4, status = ?5, tagline = ?6, description = ?7, url = ?8, repo = ?9, license = ?10,
       logo = ?11, logo_style = ?12, image = ?13, color = ?14, maintainers = ?15, tags = ?16, updated_at = ?17 WHERE slug = ?1`)
     .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(merge(row.tagline, f.tagline)), JSON.stringify(merge(row.description, f.description)),
-      f.url, f.repo, f.license, logo, f.logoFile ? "tile" : row.logo_style, image, f.color, JSON.stringify(f.maintainers.length ? f.maintainers : JSON.parse(row.maintainers)), JSON.stringify(f.tags), now).run();
+      f.url, f.repo, f.license, logo, f.logoFile ? "tile" : row.logo ? row.logo_style : site.logoStyle, image, f.color, JSON.stringify(f.maintainers.length ? f.maintainers : JSON.parse(row.maintainers)), JSON.stringify(f.tags), now).run();
   // a new address starts getting email again; the same one keeps its choice
   if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
@@ -682,6 +731,7 @@ export default {
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
       if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
+      if (path === "/api/site" && req.method === "GET") return siteLookup(req, env, url);
       let dm; // discussions
       if (path === "/api/topics" && req.method === "POST") return topics(req, env, url);
       if ((dm = /^\/api\/topics\/(\d+)$/.exec(path)) && req.method === "DELETE") return topics(req, env, url, +dm[1]);
@@ -706,7 +756,8 @@ export default {
       if ((m = /^\/u\/([A-Za-z0-9_-]+)$/.exec(path))) {
         const u = await env.DB.prepare("SELECT type, data FROM uploads WHERE id = ?1").bind(m[1]).first();
         if (!u) return new Response("Not found", { status: 404 });
-        return new Response(new Uint8Array(u.data), { headers: { "Content-Type": u.type, "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'" } });
+        // sandbox: an SVG logo opened on its own cannot run anything
+        return new Response(new Uint8Array(u.data), { headers: { "Content-Type": u.type, "Cache-Control": "public, max-age=31536000, immutable", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox" } });
       }
       if ((m = /^\/go\/([a-z0-9-]+)$/.exec(path))) {
         const p = await env.DB.prepare("SELECT url FROM projects WHERE slug = ?1 AND hidden = 0").bind(m[1]).first();
@@ -817,6 +868,7 @@ export default {
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(refreshStats(env));
+    ctx.waitUntil(fillPictures(env, event.scheduledTime).catch(e => console.error("pictures", e)));
     // Mondays at 01:17 UTC (08:17 in Vietnam) queue the weekly note; every hour send what is waiting.
     const at = new Date(event.scheduledTime);
     ctx.waitUntil((async () => {
