@@ -58,7 +58,7 @@ export const HUB_CSS = `
 .feed a:hover p{color:var(--ink)}.quiet{margin:6px 0 0;color:var(--muted);font-size:14px}
 .pc .new{position:absolute;top:12px;left:12px;z-index:1;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;color:#fff;background:linear-gradient(100deg,#7c9cff,#b67cff,#ff7eb0)}
 .pby{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}.pby .who2{font-weight:500;margin-right:4px}
-.ring.sm{padding:1.5px}.ring.sm img{width:20px;height:20px;border-width:1.5px}
+.ring.sm{padding:2px}.ring.sm img{width:20px;height:20px;border-width:2px}.ring.sm.plain{padding:0}.ring.sm.plain img{width:24px;height:24px}
 .pby .kd{font-size:12px;padding:2px 9px;border-radius:999px;border:1px solid color-mix(in srgb,var(--kc) 45%,var(--line));color:var(--ink)}
 .pm .on{color:var(--ink)}.pm .on .ic{color:#f43f5e}.pm span:nth-child(2).on .ic{color:var(--c)}
 .pc.yours{border:1.5px dashed var(--line2);background:transparent}.pc.yours:hover{border-color:#b67cff}
@@ -170,7 +170,7 @@ export function card(p, i, now) {
   <div class="pb">
     <div class="ph">${logoTag(p, 32)}<h3>${esc(p.name)}</h3><span class="ptag">${t(...TYPE(p))}</span></div>
     <p>${t(en(p.tagline), vi(p.tagline))}</p>
-    <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : own?.avatar ? esc(own.avatar) : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : own ? `@${esc(own.login)}` : t("a community member", "một thành viên")}</span>
+    <div class="pby"><span class="ring sm${p.team || (!mk && !own) ? " plain" : ""}"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : own?.avatar ? esc(own.avatar) : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : own ? `@${esc(own.login)}` : t("a community member", "một thành viên")}</span>
       ${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}</div>
     <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(VERDICT[p.vet.verdict][0])}" data-vi-title="${esc(VERDICT[p.vet.verdict][1])}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
