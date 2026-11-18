@@ -31,6 +31,7 @@ import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { siteMeta, grabImage, publicHttps } from "./scrape.js";
+import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
 
@@ -40,7 +41,8 @@ const IMAGE_TYPES = { "image/png": [0x89, 0x50], "image/jpeg": [0xff, 0xd8], "im
 const MAX_LOGO = 200 * 1024, MAX_IMAGE = 700 * 1024, SUBMITS_PER_DAY = 5, CHECKS_PER_DAY = 20;
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json; charset=utf-8", ...extra } });
-const fail = (error, status = 400) => json({ error }, status);
+// errors carry their Vietnamese (errors.js); pages pick the one for their language
+const fail = (error, status = 400) => json({ error, ...(errVi(error) ? { error_vi: errVi(error) } : {}) }, status);
 // Other OpenYard sites that may ask for a check from their own pages (CORS on the three public check endpoints).
 const CHECK_ORIGINS = ["https://vetcode.openyard.cloud"];
 const PUBLIC_CHECK = new Set(["/api/check", "/api/check/status", "/api/check/report"]);

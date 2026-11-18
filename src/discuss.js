@@ -50,7 +50,7 @@ const D_CSS = `
 
 // a person: account picture, or GitHub's when the account has none
 const face = u => esc(u.avatar || (u.login ? `https://github.com/${u.login}.png?size=76` : "/favicon.svg"));
-const catNav = (current, counts, signedHint = true) => `<div class="dnav reveal" role="navigation" aria-label="Categories">
+const catNav = (current, counts, signedHint = true) => `<div class="dnav reveal" role="navigation" aria-label="Categories" data-vi-aria-label="Chuyên mục">
   <a href="/discuss"${!current ? ' aria-current="page"' : ""} style="--k:linear-gradient(135deg,#7c9cff,#ff7eb0)"><i></i>${t("Everything", "Tất cả")}</a>
   ${DCATS.map(c => `<a href="/discuss/${c.slug}"${current === c.slug ? ' aria-current="page"' : ""} style="--k:${c.c}"><i></i>${t(...c.name)}<small>${counts?.[c.slug] ?? ""}</small></a>`).join("")}
   ${signedHint ? `<a class="btn dark" href="/discuss/new${current && current !== "showcase" ? `?cat=${current}` : ""}">${t("New topic", "Mở chủ đề")}</a>` : ""}
@@ -86,7 +86,7 @@ const linkify = s => esc(s).replace(/https?:\/\/[^\s<]+[^\s<.,:;!?)\]'"]/g, u =>
 export function topicPage({ tp, author, replies, site, now = Date.now(), canDelete }) {
   const C = DCAT[tp.cat], url = ORIGIN + topicPath(tp);
   const body = `<header class="hero hub dh"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
-  <div class="crumb up" role="navigation" aria-label="Breadcrumb"><a href="/discuss">${t("Discuss", "Thảo luận")}</a><span>/</span><a href="/discuss/${C.slug}">${t(...C.name)}</a></div>
+  <div class="crumb up" role="navigation" aria-label="Breadcrumb" data-vi-aria-label="Đường dẫn"><a href="/discuss">${t("Discuss", "Thảo luận")}</a><span>/</span><a href="/discuss/${C.slug}">${t(...C.name)}</a></div>
   <h1 class="up" style="--d:1">${esc(tp.title)}</h1>
 </div></header>
 <div class="wrap dcols">
@@ -127,9 +127,9 @@ export function newTopicPage({ site, cat }) {
 </div></header>
 <div class="wrap"><form class="newt reveal" id="newt" novalidate>
   <label for="nc">${t("Category", "Chuyên mục")}</label>
-  <select id="nc" name="cat">${cats.map(c => `<option value="${c.slug}"${c.slug === cat ? " selected" : ""}>${esc(c.name[0])} · ${esc(c.name[1])}</option>`).join("")}</select>
+  <select id="nc" name="cat">${cats.map(c => `<option value="${c.slug}"${c.slug === cat ? " selected" : ""} data-vi="${esc(c.name[1])}">${esc(c.name[0])}</option>`).join("")}</select>
   <label for="nt">${t("Title", "Tiêu đề")}</label>
-  <input id="nt" name="title" maxlength="120" required placeholder="${esc("How do you get the first 10 users for a free app?")}">
+  <input id="nt" name="title" maxlength="120" required placeholder="How do you get the first 10 users for a free app?" data-vi-placeholder="Làm sao để có 10 người dùng đầu tiên cho app miễn phí?">
   <label for="nb">${t("What do you want to say?", "Bạn muốn nói gì?")}</label>
   <textarea id="nb" name="body" maxlength="5000" required></textarea>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn dark" type="submit">${t("Post", "Đăng")}</button><a class="btn line" href="/discuss">${t("Cancel", "Huỷ")}</a><span class="err" id="ne" role="alert"></span></div>
@@ -143,7 +143,7 @@ export function newTopicPage({ site, cat }) {
     const b = f.querySelector("button[type=submit]"); b.disabled = true;
     try {
       const r = await fetch("/api/topics", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cat: f.querySelector("#nc").value, title: f.querySelector("#nt").value, body: f.querySelector("#nb").value }) });
-      const d = await r.json(); if (!r.ok) throw new Error(d.error);
+      const d = await r.json(); if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       location.href = d.url;
     } catch (x) { err.textContent = x.message; b.disabled = false; }
   });

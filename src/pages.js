@@ -414,7 +414,7 @@ export const siteNav = (site, current = "", extra = "") => `<nav><div class="wra
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
   <div class="nlinks">${NAV.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${t(...label)}</a>`).join("")}</div>
   <div class="right">${extra}
-    <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
+    <button class="chip" id="lang" type="button" aria-label="Switch language" data-vi-aria-label="Đổi ngôn ngữ">VI</button>
     <a class="btn sm line" id="me" href="/signin">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script>
   </div>
 </div></nav>`;
@@ -437,8 +437,12 @@ export const LANG_JS = `<script>
 (() => {
   const els = [...document.querySelectorAll("[data-vi]")];
   els.forEach(e => e.dataset.en = e.textContent);
+  // attributes: data-vi-placeholder, data-vi-aria-label, data-vi-title hold the Vietnamese
+  const ATTRS = ["placeholder", "aria-label", "title"];
+  const attrs = ATTRS.flatMap(a => [...document.querySelectorAll("[data-vi-" + a + "]")].map(e => (e.setAttribute("data-en-" + a, e.getAttribute(a) || ""), [e, a])));
   const set = l => {
     els.forEach(e => e.textContent = l === "vi" ? e.dataset.vi : e.dataset.en);
+    attrs.forEach(([e, a]) => e.setAttribute(a, e.getAttribute("data-" + (l === "vi" ? "vi" : "en") + "-" + a)));
     document.documentElement.lang = l; document.getElementById("lang").textContent = l === "vi" ? "EN" : "VI";
     window.OY_LANG = l; dispatchEvent(new Event("oy-lang"));
     try { localStorage.setItem("oy-lang", l); } catch (e) {}
@@ -567,7 +571,7 @@ export const commentsJs = key => `<script>
     try {
       const r = await fetch("/api/comments", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: SLUG, body: ta.value, parent: f.dataset.parent || null }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       items.push(d); replyTo = null; render();
     } catch (x) { err.textContent = x.message; btn.disabled = false; }
   });
@@ -653,7 +657,7 @@ function checkSection(V, { repoUrl, badgeMd, badgeSrc, now, sub = "" }) {
     ${vnotes.length ? `<div class="list reveal"><h3>${t("Findings to look at", "Phát hiện nên xem")}<span class="n">${vnotes.length}</span></h3>${vnotes.map(n => `<a class="it" href="${esc(at(V.commit_sha) ? `${at(V.commit_sha)}/${n.file}#L${n.line}` : "#")}" target="_blank" rel="noopener"><span class="sev ${esc(n.severity)}">${esc(n.severity)}</span><div>${esc(n.title)}<small>${esc(n.file)}${n.line ? `:${n.line}` : ""} · ${esc(n.rule)}</small></div>${ARROW.replace('class="ar"', 'class="go"')}</a>`).join("")}</div>` : ""}
     ${vskip.patterns?.length || vskip.lines ? `<p class="fine skip">${ic(I.eye)}${t("The project asks vetcode to skip", "Dự án yêu cầu vetcode bỏ qua")}: ${(vskip.patterns || []).map(x => `<code>${esc(x)}</code>`).join(" ")}${vskip.lines ? ` ${t(`and ${vskip.lines} marked line${vskip.lines === 1 ? "" : "s"}`, `và ${vskip.lines} dòng được đánh dấu`)}` : ""}. ${t("Shown so nothing can be hidden quietly.", "Hiện ra đây để không gì bị giấu im lặng.")}</p>` : ""}
     <div class="vfoot reveal"><img src="${esc(badgeSrc)}" alt="OpenYard code check badge" height="20"><code>${esc(badgeMd)}</code>
-      <button class="copy lt" type="button" data-cmd="${esc(badgeMd)}" aria-label="Copy badge Markdown">${ic(I.copy)}<span>${t("Copy badge", "Copy huy hiệu")}</span></button></div>
+      <button class="copy lt" type="button" data-cmd="${esc(badgeMd)}" aria-label="Copy badge Markdown" data-vi-aria-label="Copy Markdown huy hiệu">${ic(I.copy)}<span>${t("Copy badge", "Copy huy hiệu")}</span></button></div>
     <p class="fine">${t("Patterns, not proof: a finding is a reason to read the code, not a verdict on the maker. Vulnerability candidates and leaked-secret locations are not published here.", "Đây là dấu hiệu, không phải bằng chứng: một phát hiện là lý do để đọc code, không phải kết luận về người làm. Các lỗ hổng tiềm năng và vị trí secret bị lộ không được công khai ở đây.")}</p>
   </section>`;
 }
@@ -690,7 +694,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   const near = o => 2 * (o.tags || []).filter(x => (p.tags || []).includes(x)).length + o.kinds.filter(k => p.kinds.includes(k)).length;
   const others = all.filter(o => o.slug !== p.slug).map((o, i) => [near(o), i, o]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 6).map(x => x[2]);
   const shot = p.image
-    ? `<button class="zoom" type="button" aria-label="Enlarge screenshot"><img src="${esc(p.image)}" alt="${esc(p.name)} screenshot"><span class="hint">${ic(I.expand)}${t("Click to enlarge", "Bấm để phóng to")}</span></button>`
+    ? `<button class="zoom" type="button" aria-label="Enlarge screenshot" data-vi-aria-label="Phóng to ảnh chụp"><img src="${esc(p.image)}" alt="${esc(p.name)} screenshot"><span class="hint">${ic(I.expand)}${t("Click to enlarge", "Bấm để phóng to")}</span></button>`
     : p.logo ? `<div class="gen"><img src="${esc(p.logo)}" alt=""></div>` : "";
   const visual = shot ? `<div class="stage reveal"><figure class="frame"><div class="bar"><span class="lights"><i></i><i></i><i></i></span><span class="url">${ic(I.lock)}${esc(host(p.url))}</span><span></span></div>${shot}</figure></div>` : "";
   const logo = (o, cls, size) => o.logo ? `<img class="${cls} ${logoClass(o)}" src="${esc(o.logo)}" alt="" width="${size}" height="${size}" loading="lazy">` : `<span class="${cls} ini" style="--c:${esc(o.color || "#6d5bd0")}">${initials(o.name)}</span>`;
@@ -721,13 +725,13 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   // Install commands in a terminal: the first thing an open-source landing needs.
   const inst = Array.isArray(p.install) ? p.install.filter(x => x && x.cmd) : [];
   const L = v => typeof v === "string" ? t(v, v) : t(en(v), vi(v));
-  const term = inst.length ? `<div class="term up" style="--d:4" role="region" aria-label="Install">
+  const term = inst.length ? `<div class="term up" style="--d:4" role="region" aria-label="Install" data-vi-aria-label="Cài đặt">
     <div class="tbar"><span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
-      <div class="tabs" role="tablist" aria-label="Install with">${inst.map((x, i) => `<button class="tab" type="button" role="tab" id="tab-${i}" aria-controls="pan-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${L(x.label)}</button>`).join("")}</div></div>
+      <div class="tabs" role="tablist" aria-label="Install with" data-vi-aria-label="Cài bằng">${inst.map((x, i) => `<button class="tab" type="button" role="tab" id="tab-${i}" aria-controls="pan-${i}" aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${L(x.label)}</button>`).join("")}</div></div>
     ${inst.map((x, i) => `<div class="panel" role="tabpanel" id="pan-${i}" aria-labelledby="tab-${i}"${i ? " hidden" : ""}>
       <pre><span class="ps" aria-hidden="true">$</span><code>${x.cmd.split(/( +)/).map(w => w.trim() ? `<span class="w">${esc(w)}</span>` : w).join("")}</code><span class="cur" aria-hidden="true"></span></pre>
       <div class="foot">${x.note ? `<p class="note">${L(x.note)}</p>` : "<span></span>"}
-      <button class="copy" type="button" data-cmd="${esc(x.cmd)}" aria-label="Copy command">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
+      <button class="copy" type="button" data-cmd="${esc(x.cmd)}" aria-label="Copy command" data-vi-aria-label="Copy lệnh">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
     </div>`).join("")}
   </div>` : "";
   // Which languages the code is in and who writes it, from the GitHub sync.
@@ -787,7 +791,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
 ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${logo(p, "nl", 28)}<b>${esc(p.name)}</b><span class="btn sm dark">${t("Open", "Mở")} ${ARROW}</span></a>`)}
 <main>
 <header class="hero ph"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
-  <div class="crumb up" role="navigation" aria-label="Breadcrumb"><a href="/projects">${t("Projects", "Dự án")}</a><span>/</span>${p.kinds[0] ? `<a href="/${KIND_PAGE[p.kinds[0]]}">${t(...KIND[p.kinds[0]])}</a><span>/</span>` : ""}<b>${esc(p.name)}</b></div>
+  <div class="crumb up" role="navigation" aria-label="Breadcrumb" data-vi-aria-label="Đường dẫn"><a href="/projects">${t("Projects", "Dự án")}</a><span>/</span>${p.kinds[0] ? `<a href="/${KIND_PAGE[p.kinds[0]]}">${t(...KIND[p.kinds[0]])}</a><span>/</span>` : ""}<b>${esc(p.name)}</b></div>
   <div class="idrow">${logo(p, "logo", 76)}
     <div><h1 class="up" style="--d:1">${esc(p.name)}</h1>
     <p class="tl up" style="--d:2">${t(en(p.tagline), vi(p.tagline))}</p></div></div>
@@ -873,7 +877,7 @@ const CHECK_JS = `<script>
     try {
       const r = await fetch("/api/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ repo: v, ts }) });
       const d = await r.json();
-      if (!r.ok) { b.disabled = false; if (key && window.turnstile) turnstile.reset(); return say(d.error, d.error); }
+      if (!r.ok) { b.disabled = false; if (key && window.turnstile) turnstile.reset(); return say(d.error, d.error_vi || d.error); }
       location.href = "/check/" + d.repo;
     } catch (x) { b.disabled = false; say("Could not reach OpenYard. Try again.", "Không kết nối được OpenYard. Thử lại nhé."); }
   });
@@ -911,7 +915,7 @@ function agentHandoff(full, verdict) {
         <span class="step">1 · ${t("Install once", "Cài một lần")}</span>
         <pre><span class="ps" aria-hidden="true">$</span><code>${cmd.split(/( +)/).map(w => w.trim() ? `<span class="w">${esc(w)}</span>` : w).join("")}</code></pre>
         <div class="foot"><p class="note">${t(...note)}</p>
-          <button class="copy" type="button" data-cmd="${esc(cmd)}" aria-label="Copy install command">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
+          <button class="copy" type="button" data-cmd="${esc(cmd)}" aria-label="Copy install command" data-vi-aria-label="Copy lệnh cài đặt">${ic(I.copy)}<span>${t("Copy", "Copy")}</span></button></div>
         <span class="step">2 · ${t("Then ask your agent", "Rồi hỏi agent")}</span>
         <div class="ask"><p>${esc(ask)}</p>
           <button class="copy" type="button" data-cmd="${esc(ask)}" aria-label="Copy prompt">${ic(I.copy)}<span>${t("Copy prompt", "Copy câu hỏi")}</span></button></div>

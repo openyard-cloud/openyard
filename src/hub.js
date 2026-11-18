@@ -172,7 +172,7 @@ export function card(p, i, now) {
     <p>${t(en(p.tagline), vi(p.tagline))}</p>
     <div class="pby"><span class="ring sm"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=48` : own?.avatar ? esc(own.avatar) : "/favicon.svg"}" alt="" loading="lazy" width="22" height="22"></span><span class="who2">${p.team ? "OpenYard team" : mk ? `@${esc(mk)}` : own ? `@${esc(own.login)}` : t("a community member", "một thành viên")}</span>
       ${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}</div>
-    <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(t(VERDICT[p.vet.verdict][0], VERDICT[p.vet.verdict][1]).replace(/<[^>]+>/g, ""))}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
+    <div class="pm"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span class="${p.comments ? "on" : ""}">${ic(I.talk)}${+p.comments || 0}</span>${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${v ? `<span class="vc ${esc(p.vet.verdict)}" title="${esc(VERDICT[p.vet.verdict][0])}" data-vi-title="${esc(VERDICT[p.vet.verdict][1])}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
 }
 
@@ -201,8 +201,8 @@ const yours = () => `<a class="pc yours reveal" href="/submit"><div class="pv"><
 
 function grid(list, now = Date.now()) {
   return `<div class="ptools reveal">
-    <label class="psearch">${ic('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}<input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search by name, tag or what it does" aria-label="Search projects"></label>
-    <div class="sorts" role="group" aria-label="Sort"><button type="button" data-s="trend" aria-pressed="true">${t("Trending", "Đang lên")}</button><button type="button" data-s="new" aria-pressed="false">${t("Newest", "Mới nhất")}</button></div>
+    <label class="psearch">${ic('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>')}<input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Search by name, tag or what it does" aria-label="Search projects" data-vi-aria-label="Tìm dự án"></label>
+    <div class="sorts" role="group" aria-label="Sort" data-vi-aria-label="Sắp xếp"><button type="button" data-s="trend" aria-pressed="true">${t("Trending", "Đang lên")}</button><button type="button" data-s="new" aria-pressed="false">${t("Newest", "Mới nhất")}</button></div>
   </div>
   <div class="pgrid" id="pgrid">${list.map((p, i) => card(p, i, now)).join("")}${yours()}</div>
   <p class="none2" id="none">${t("Nothing matches. Try another word, or browse all projects.", "Không có kết quả. Thử từ khác, hoặc xem tất cả dự án.")}</p>`;
@@ -240,7 +240,7 @@ export function listPage({ all, site, slug, pulse = null }) {
   const desc = `${cat.lead[0]} ${list.length} project${list.length === 1 ? "" : "s"}.`;
   const body = `${hero(slug === "projects" ? t("The yard", "OpenYard") : t(...cat.name), t(...cat.h1), t(...cat.lead), pulseBar(all, pulse))}
 <div class="wrap">
-  <div class="cats reveal" role="navigation" aria-label="Categories">${chips}</div>
+  <div class="cats reveal" role="navigation" aria-label="Categories" data-vi-aria-label="Chuyên mục">${chips}</div>
   <div class="lcols"><div>${grid(list)}</div>${rail(pulse)}</div>
   ${tags.length ? `<section class="tcloud"><h2 class="reveal">${t("Browse by tag", "Xem theo thẻ")}</h2><div class="reveal">${tags.map(([x, n]) => `<a href="/tags/${esc(x)}">${esc(x)}<small>${n}</small></a>`).join("")}</div></section>` : ""}
   ${band()}

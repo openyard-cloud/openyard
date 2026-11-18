@@ -44,7 +44,7 @@ const ACC_CSS = `
 const ACC_JS = `<script>
 (() => {
   const T = (en, vi) => document.documentElement.lang === "vi" ? vi : en;
-  const post = (url, body) => fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); return d; });
+  const post = (url, body) => fetch(url, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error)); return d; });
   const form = document.getElementById("acc");
   if (form) {
     const msg = form.querySelector(".msg");
@@ -194,7 +194,7 @@ export function signinPage({ site, back, expired, turnstile }) {
       try {
         const r = await fetch("/auth/email/code", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, code: v }) });
         const d = await r.json();
-        if (!r.ok) throw new Error(r.status === 400 ? T("That code is not right. Check the email and try again.", "Mã chưa đúng. Kiểm tra email rồi thử lại.") : r.status === 410 ? T("That code has expired. Send a new one.", "Mã đã hết hạn. Hãy gửi mã mới.") : r.status === 429 ? T("Too many wrong codes. Send a new one.", "Sai quá nhiều lần. Hãy gửi mã mới.") : d.error);
+        if (!r.ok) throw new Error(document.documentElement.lang === "vi" && d.error_vi ? d.error_vi : r.status === 400 ? T("That code is not right. Check the email and try again.", "Mã chưa đúng. Kiểm tra email rồi thử lại.") : r.status === 410 ? T("That code has expired. Send a new one.", "Mã đã hết hạn. Hãy gửi mã mới.") : r.status === 429 ? T("Too many wrong codes. Send a new one.", "Sai quá nhiều lần. Hãy gửi mã mới.") : d.error);
         location.href = d.go;
       } catch (x) { m.textContent = x.message; b.disabled = false; otp.select(); }
     };
@@ -212,7 +212,7 @@ export function signinPage({ site, back, expired, turnstile }) {
     try {
       const r = await fetch("/auth/email", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, back: f.dataset.back, ts, lang: document.documentElement.lang }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d.error);
+      if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
       code(email);
     } catch (x) { msg.textContent = x.message; b.disabled = false; if (key && window.turnstile) turnstile.reset(); }
   });
