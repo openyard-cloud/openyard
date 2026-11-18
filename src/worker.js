@@ -297,8 +297,9 @@ async function vetSave(req, env, slug) {
   return json({ slug, verdict: sum.verdict, changed });
 }
 
-// Posts each new submission to a Discord channel through the DISCORD_WEBHOOK_URL secret, so a
-// person sees it soon and can hide it if it is spam. Nothing is posted where the secret is unset (previews).
+// Posts each new submission to Discord through the DISCORD_WEBHOOK_URL secret: a new post in the
+// #showcase forum when DISCORD_FORUM is "true", otherwise a message in the webhook's text channel.
+// Nothing is posted where the secret is unset (previews).
 async function notifyDiscord(env, slug, f, logo, image) {
   if (!env.DISCORD_WEBHOOK_URL) return;
   const page = `https://openyard.cloud/p/${slug}`, abs = u => !u ? null : /^https?:/.test(u) ? u : `https://openyard.cloud${u}`;
@@ -315,8 +316,9 @@ async function notifyDiscord(env, slug, f, logo, image) {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       username: "OpenYard", allowed_mentions: { parse: [] }, // submitted text can never ping anyone
+      ...(env.DISCORD_FORUM === "true" ? { thread_name: clip(`${f.name} · ${f.tagline[f.lang]}`, 100) } : {}),
       embeds: [{
-        title: clip(`New project: ${f.name}`, 256), url: page, color: parseInt((f.color || "#6d5bd0").slice(1), 16),
+        title: clip(env.DISCORD_FORUM === "true" ? f.name : `New project: ${f.name}`, 256), url: page, color: parseInt((f.color || "#6d5bd0").slice(1), 16),
         description: clip(`**${f.tagline[f.lang]}**\n${f.description[f.lang]}`, 4000), fields,
         ...(abs(logo) ? { thumbnail: { url: abs(logo) } } : {}), ...(abs(image) ? { image: { url: abs(image) } } : {}),
         footer: { text: `openyard.cloud/p/${slug}` }, timestamp: new Date().toISOString(),
