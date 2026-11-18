@@ -26,7 +26,7 @@
 //   GET  /badge/gh/<owner>/<repo>.svg              badge for any checked repository
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
+import { FOOTER_CSS, siteFooter, projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import * as mail from "./email.js";
 import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage, claimPage } from "./account.js";
@@ -775,6 +775,13 @@ export default {
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
       const av = /^\/a\/([a-z0-9]{1,12})\/([^/]{1,12})\.svg$/.exec(path);
       if (av) return new Response(avatarSvg(av[1], (() => { try { return decodeURIComponent(av[2]); } catch { return "?"; } })()), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=31536000, immutable" } });
+      // the submit form is a static page; it gets the same footer as the pages rendered here
+      if (path === "/submit" || path === "/submit/" || path === "/submit.html") {
+        const a = await env.ASSETS.fetch(new Request(new URL("/submit", url), req)); // straight to the file, not back through here
+        if (!a.ok) return a;
+        const html = (await a.text()).replace("</style>", `${FOOTER_CSS}</style>`).replace("</main>", `</main>\n${siteFooter(SITE)}`);
+        return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=300" } });
+      }
       if (path === "/signin" && await currentUser(req, env)) return Response.redirect(url.origin + safeReturn(url.searchParams.get("return") || "/"), 302); // already in
       if (path === "/signin") return new Response(signinPage({ site: SITE, back: url.searchParams.get("return") || "/", expired: url.searchParams.has("expired"), turnstile: env.TURNSTILE_SITE_KEY }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
