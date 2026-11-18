@@ -150,6 +150,7 @@ async function submit(req, env, ctx) {
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
+  ctx.waitUntil(notifyDiscord(env, slug, f, logo, image).catch(e => console.error(e)));
   return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}` }, 201);
 }
 
@@ -294,6 +295,35 @@ async function vetSave(req, env, slug) {
         files = excluded.files, label = excluded.label, notes = excluded.notes, changed = excluded.changed, changed_at = excluded.changed_at, changed_from = excluded.changed_from, skipped = excluded.skipped`)
     .bind(slug, sum.commit, sum.version, now, sum.verdict, sum.files, JSON.stringify(label), JSON.stringify(notes), JSON.stringify(changed), changedAt, changedFrom, JSON.stringify(skipped)).run();
   return json({ slug, verdict: sum.verdict, changed });
+}
+
+// Posts each new submission to a Discord channel through the DISCORD_WEBHOOK_URL secret, so a
+// person sees it soon and can hide it if it is spam. Nothing is posted where the secret is unset (previews).
+async function notifyDiscord(env, slug, f, logo, image) {
+  if (!env.DISCORD_WEBHOOK_URL) return;
+  const page = `https://openyard.cloud/p/${slug}`, abs = u => !u ? null : /^https?:/.test(u) ? u : `https://openyard.cloud${u}`;
+  const fields = [
+    { name: "Link", value: clip(f.url, 1000), inline: false },
+    ...(f.repo ? [{ name: "Code", value: clip(f.repo, 1000), inline: false }] : []),
+    { name: "Type", value: f.type === "app" ? "Free app" : `Open source${f.license ? ` · ${f.license}` : ""}`, inline: true },
+    { name: "Kinds", value: f.kinds.join(", "), inline: true },
+    { name: "Status", value: f.status, inline: true },
+    ...(f.maintainers[0] ? [{ name: "Maker", value: `github.com/${f.maintainers[0]}`, inline: true }] : []),
+    ...(f.tags.length ? [{ name: "Tags", value: f.tags.join(", "), inline: true }] : []),
+  ];
+  const r = await fetch(env.DISCORD_WEBHOOK_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      username: "OpenYard", allowed_mentions: { parse: [] }, // submitted text can never ping anyone
+      embeds: [{
+        title: clip(`New project: ${f.name}`, 256), url: page, color: parseInt((f.color || "#6d5bd0").slice(1), 16),
+        description: clip(`**${f.tagline[f.lang]}**\n${f.description[f.lang]}`, 4000), fields,
+        ...(abs(logo) ? { thumbnail: { url: abs(logo) } } : {}), ...(abs(image) ? { image: { url: abs(image) } } : {}),
+        footer: { text: `openyard.cloud/p/${slug}` }, timestamp: new Date().toISOString(),
+      }],
+    }),
+  });
+  if (!r.ok) console.error("discord", r.status, await r.text());
 }
 
 // IndexNow: new project pages and new check results are announced to the search engines that
