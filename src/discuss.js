@@ -19,7 +19,7 @@ export const topicPath = tp => `/discuss/t/${tp.id}-${String(tp.title).normalize
 
 const D_CSS = `
 .dcols{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;align-items:start}
-@media (max-width:900px){.dcols{grid-template-columns:1fr}}
+@media (max-width:900px){.dcols{grid-template-columns:minmax(0,1fr)}.topicp .dnav{order:2}}
 .dnav{position:sticky;top:88px;display:flex;flex-direction:column;gap:4px}@media (max-width:900px){.dnav{position:static;flex-direction:row;flex-wrap:wrap}}
 .dnav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--muted);transition:background .2s,color .2s}
 .dnav a:hover{background:var(--bg2);color:var(--ink)}.dnav a[aria-current]{background:var(--bg2);color:var(--ink)}
@@ -89,7 +89,7 @@ export function topicPage({ tp, author, replies, site, now = Date.now(), canDele
   <div class="crumb up" role="navigation" aria-label="Breadcrumb"><a href="/discuss">${t("Discuss", "Thảo luận")}</a><span>/</span><a href="/discuss/${C.slug}">${t(...C.name)}</a></div>
   <h1 class="up" style="--d:1">${esc(tp.title)}</h1>
 </div></header>
-<div class="wrap dcols">
+<div class="wrap dcols topicp">
   ${catNav(tp.cat, null)}
   <div>
     <article class="topic reveal">

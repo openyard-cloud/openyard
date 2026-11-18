@@ -73,7 +73,7 @@ nav .links a:hover{color:var(--ink)}
 .btn.line{border:1px solid var(--line2)}
 .btn.line:hover{background:var(--bg2)}
 .btn.sm{height:34px;padding:0 14px;font-size:13px}
-@media (max-width:760px){nav .links{display:none}}
+@media (max-width:760px){nav .wrap{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:6px;row-gap:6px}nav .links{order:3;flex-basis:100%;gap:18px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}nav .links::-webkit-scrollbar{display:none}nav .links a{white-space:nowrap}}
 
 .navdc{background:#5865f2;color:#fff;gap:7px;box-shadow:0 0 0 0 rgba(88,101,242,.55);animation:dcp 2.8s ease-out infinite}
 .navdc:hover{background:#4752c4}

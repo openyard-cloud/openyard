@@ -50,7 +50,7 @@ export const HUB_CSS = `
 .pulse dl{display:flex;gap:22px;flex-wrap:wrap;margin:0}.pulse dl div{display:flex;flex-direction:column}
 .pulse dt{font-size:22px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}.pulse dd{margin:0;font-size:12.5px;color:var(--muted)}
 .lcols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
-@media (max-width:1060px){.lcols{grid-template-columns:1fr}}
+@media (max-width:1060px){.lcols{grid-template-columns:minmax(0,1fr)}}
 .lrail{position:sticky;top:88px;display:flex;flex-direction:column;gap:12px}@media (max-width:1060px){.lrail{position:static}}
 .feed{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column}
 .feed a{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.4}.feed li:first-child a{border-top:0}

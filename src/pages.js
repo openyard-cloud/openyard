@@ -80,6 +80,15 @@ const STATUS = { live: ["Live", "Đang chạy"], beta: ["Beta", "Thử nghiệm"
 export const KIND_PAGE = { people: "for-people", wild: "wild-ideas", dev: "dev-tools" };
 export const KIND = { people: ["For people", "Cho mọi người"], wild: ["Wild idea", "Ý tưởng điên rồ"], dev: ["Dev tool", "Công cụ cho dev"] };
 
+// The footer's rules, also injected into the static /submit page by the worker.
+export const FOOTER_CSS = `footer{margin-top:88px;padding:56px 0 36px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+footer .cols{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:28px}
+@media (max-width:760px){footer .cols{grid-template-columns:1fr 1fr}footer .cols>div:first-child{grid-column:1/-1}}
+footer h4{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink)}footer .cols a{display:block;padding:3px 0;transition:color .2s}footer a:hover{color:var(--ink)}
+footer .cols a.brand{display:flex;color:var(--ink);margin-bottom:10px;padding:0}footer .fp{margin:0;max-width:22em;line-height:1.5}
+footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px}
+footer .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:17px;letter-spacing:-.02em}footer .brand img{width:24px;height:24px}
+footer .brand em{font-style:normal;background:linear-gradient(100deg,#7c9cff 0%,#b67cff 35%,#ff7eb0 70%,#ffc56b 100%);-webkit-background-clip:text;background-clip:text;color:transparent}`;
 export const CSS = `:root{--bg:#fff;--bg2:#f6f6f7;--solid:#fff;--ink:#0d0d0f;--muted:#6b6b73;--line:rgba(13,13,15,.08);--line2:rgba(13,13,15,.14);--shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px -12px rgba(0,0,0,.12);--aura:.4;--ease:cubic-bezier(.16,1,.3,1)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--aura:.55}}
 :root[data-theme="dark"]{--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--aura:.55}
@@ -326,12 +335,7 @@ section.more{padding:80px 0 24px}
 .cm .replies .cm > img,.cm .replies .cm > .ph{width:28px;height:28px}
 .cm .compose{margin-top:10px}
 .none{color:var(--muted);font-size:14.5px}
-footer{margin-top:88px;padding:56px 0 36px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
-footer .cols{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:28px}
-@media (max-width:760px){footer .cols{grid-template-columns:1fr 1fr}footer .cols>div:first-child{grid-column:1/-1}}
-footer h4{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink)}footer .cols a{display:block;padding:3px 0;transition:color .2s}footer a:hover{color:var(--ink)}
-footer .cols a.brand{display:flex;color:var(--ink);margin-bottom:10px;padding:0}footer .fp{margin:0;max-width:22em;line-height:1.5}
-footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px}
+${FOOTER_CSS}
 .nlinks{display:flex;gap:2px;margin-left:6px}.nlinks a{font-size:14px;font-weight:500;color:var(--muted);padding:6px 10px;border-radius:9px;white-space:nowrap;transition:color .2s,background .2s}
 .nlinks a:hover{color:var(--ink)}.nlinks a[aria-current]{color:var(--ink);background:var(--bg2)}
 @media (min-width:821px) and (max-width:1060px){nav.pinned .nlinks{display:none}}
@@ -351,7 +355,7 @@ footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;m
 .stack{display:flex}.stack img{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);margin-left:-8px;background:var(--bg2)}.stack img:first-child{margin-left:0}
 .fans a{color:var(--ink);font-weight:500}.fans a:hover{text-decoration:underline}
 .pcols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;align-items:start}
-@media (max-width:980px){.pcols{grid-template-columns:1fr}.pside{order:-1}}
+@media (max-width:980px){.pcols{grid-template-columns:minmax(0,1fr)}.pside{order:-1}}
 .pmain>*+*{margin-top:56px}.pmain>.stage{margin-top:24px}.pmain>.stage:first-child{margin-top:0}.pmain .talk,.pmain .act,.pmain .chk,.pmain .hl{margin-top:56px}
 .about .desc{font-size:18px;line-height:1.65;color:var(--ink);max-width:none;margin:0}
 .pside{position:sticky;top:88px;display:flex;flex-direction:column;gap:12px}
