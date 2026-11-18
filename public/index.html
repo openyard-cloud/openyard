@@ -1117,7 +1117,8 @@ let SORT = "trend", HOT = new Set();
 const sorted = () => SORT === "new" ? [...PROJECTS].sort((a, b) => b.added.localeCompare(a.added)) : [...PROJECTS].sort((a, b) => b.trend - a.trend);
 function renderProjects(){
   const grid = document.getElementById("grid");
-  HOT = new Set([...PROJECTS].filter(p => p.stats && p.trend >= 3).sort((a, b) => b.trend - a.trend).slice(0, PROJECTS.length < 8 ? 1 : 3).map(p => p.slug));
+  // "Trending" badge: real activity this week (not the new-listing boost), apps and repositories alike
+  HOT = new Set([...PROJECTS].filter(p => p.buzz >= 3).sort((a, b) => b.buzz - a.buzz).slice(0, PROJECTS.length < 8 ? 1 : 3).map(p => p.slug));
   grid.innerHTML = sorted().map(cardHTML).join("") + `<a class="card yours rv" href="#submit">
     <div class="vis ghost"><div class="gw"><i></i><i></i><i></i><b></b><b></b><b></b><b class="s"></b></div>
       <span class="drop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>${T("Drop your screenshot here", "Ảnh chụp dự án của bạn ở đây")}</span></div>
