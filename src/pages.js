@@ -361,8 +361,9 @@ footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;m
 #like .lt{margin-right:auto}#like{justify-content:flex-start}
 .mk{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
 .mk>div{min-width:0;flex:1}.mk small{display:block;font-size:12px;color:var(--muted)}.mk b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk a:hover b{text-decoration:underline}.mk span:not(.ring){display:block;font-size:12.5px;color:var(--muted)}
-.ring{flex:none;display:block;padding:2.5px;border-radius:50%;background:conic-gradient(from 200deg,#7c9cff,#b67cff,#ff7eb0,#ffc56b,#7c9cff)}
-.ring img{display:block;width:44px;height:44px;border-radius:50%;border:2px solid var(--solid);background:var(--bg2)}
+.ring{flex:none;display:block;padding:2px;border-radius:50%;background:conic-gradient(from 200deg,#7c9cff,#b67cff,#ff7eb0,#ffc56b,#7c9cff)}
+.ring img{display:block;width:48px;height:48px;border-radius:50%;border:2px solid var(--solid);background:var(--bg2);box-sizing:border-box}
+.ring.plain{padding:0;background:none}.ring.plain img{border:0;background:none}
 .facts{display:grid;gap:14px}.facts dt{font-size:12px;color:var(--muted);margin-bottom:4px}.facts dd{margin:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
 .vmini,.dcard{display:flex;gap:12px;align-items:center;transition:border-color .2s,transform .5s var(--ease)}.vmini:hover,.dcard:hover{border-color:var(--c);transform:translateY(-2px)}
 .vmini>.ic{flex:none;width:30px;height:30px;padding:6px;border-radius:10px;color:#fff;background:#10b981}.vmini.review>.ic{background:#f59e0b}.vmini.warning>.ic{background:#ef4444}
@@ -771,7 +772,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   const mkPic = p.team ? "/favicon.svg" : p.maintainers[0] ? `https://github.com/${esc(p.maintainers[0])}.png?size=96` : p.owner?.avatar ? esc(p.owner.avatar) : "/favicon.svg";
   const mkCount = mk ? all.filter(o => o.maintainers.some(m => m.toLowerCase() === mk.toLowerCase()) || o.owner?.login === mk).length : all.filter(o => o.team).length;
   const makerCard = `<div class="mk reveal">
-    <span class="ring"><img src="${mkPic}" alt="" width="48" height="48"></span>
+    <span class="ring${p.team || !mk ? " plain" : ""}"><img src="${mkPic}" alt="" width="48" height="48"></span>
     <div><small>${t("Made by", "Người làm")}</small>${p.team ? `<b>OpenYard team</b>` : mk ? `<a href="/@${esc(mk)}"><b>@${esc(mk)}</b></a>` : `<b>${t("A community member", "Một thành viên cộng đồng")}</b>`}
     <span>${p.team || mk ? t(`${mkCount} project${mkCount === 1 ? "" : "s"} in the yard`, `${mkCount} dự án trên OpenYard`) : ""}</span></div>
     ${mk ? `<a class="btn sm line" href="/@${esc(mk)}">${t("Profile", "Hồ sơ")}</a>` : ""}
