@@ -3,6 +3,7 @@
 //   GET  /api/github?repo=     what the submit form fills in from a GitHub link
 //   POST /api/submit           add a project (no account; Turnstile and a per-IP limit)
 //   GET/POST /api/edit/<slug>  change or remove a project with the edit token from submitting
+//   GET  /projects, /apps, /open-source, /for-people, /wild-ideas, /dev-tools, /tags/<tag>, /about, /community   (hub.js)
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
@@ -15,6 +16,7 @@
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
+import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
 
@@ -499,6 +501,16 @@ export default {
         const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(m[1]).first();
         return new Response(projectMarkdown(toApi(row, now), stats, vet), { headers: MD });
       }
+      const HTML = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" };
+      if ((m = /^\/([a-z-]+)\/?$/.exec(path)) && (CAT[m[1]] || m[1] === "about" || m[1] === "community")) {
+        const all = await listProjects(env, now), args = { all, site: SITE, slug: m[1] };
+        return new Response(m[1] === "about" ? aboutPage(args) : m[1] === "community" ? communityPage(args) : listPage(args), { headers: HTML });
+      }
+      if ((m = /^\/tags\/([a-z0-9-]+)\/?$/.exec(path))) {
+        const html = tagPage({ all: await listProjects(env, now), site: SITE, tag: m[1] });
+        if (html) return new Response(html, { headers: HTML });
+        return new Response(listPage({ all: await listProjects(env, now), site: SITE, slug: "projects" }).replace("<head>", '<head>\n<meta name="robots" content="noindex">'), { status: 404, headers: HTML });
+      }
       if (path === "/llms.txt") {
         const checks = (await env.DB.prepare("SELECT repo, verdict FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 50").all()).results;
         return new Response(llmsTxt(await listProjects(env, now), checks), { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600" } });
@@ -515,7 +527,10 @@ export default {
         return new Response(badge(v?.verdict), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=3600", "Content-Security-Policy": "default-src 'none'" } });
       }
       if (env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) return new Response(env.INDEXNOW_KEY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
-      if (path === "/sitemap.xml") return new Response(sitemap(await listProjects(env, now), today(now), (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results), { headers: { "Content-Type": "application/xml" } });
+      if (path === "/sitemap.xml") {
+        const all = await listProjects(env, now), checks = (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results;
+        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, ...tagPages(all).map(x => `/tags/${x}`)]), { headers: { "Content-Type": "application/xml" } });
+      }
     } catch (e) {
       console.error(e);
       return fail("Something went wrong on our side.", 500);

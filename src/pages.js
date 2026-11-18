@@ -4,21 +4,21 @@
 
 export const ORIGIN = "https://openyard.cloud";
 
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-const en = v => (v && (v.en || v.vi)) || "";
-const vi = v => (v && (v.vi || v.en)) || "";
-const abs = u => !u ? u : /^https?:/.test(u) ? u : ORIGIN + u;
+export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+export const en = v => (v && (v.en || v.vi)) || "";
+export const vi = v => (v && (v.vi || v.en)) || "";
+export const abs = u => !u ? u : /^https?:/.test(u) ? u : ORIGIN + u;
 const ago = (iso, now) => { const d = Math.max(0, Math.round((now - Date.parse(iso)) / 86400000)); return d === 0 ? ["today", "hôm nay"] : d === 1 ? ["yesterday", "hôm qua"] : [`${d} days ago`, `${d} ngày trước`]; };
-const initials = n => esc(String(n).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase());
+export const initials = n => esc(String(n).split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase());
 // text with a Vietnamese twin, swapped in by the page script
-const t = (e, v) => `<span data-vi="${esc(v)}">${esc(e)}</span>`;
-const host = u => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ""); } catch { return u; } };
+export const t = (e, v) => `<span data-vi="${esc(v)}">${esc(e)}</span>`;
+export const host = u => { try { const x = new URL(u); return x.host + x.pathname.replace(/\/$/, ""); } catch { return u; } };
 
-const DISCORD = "M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z";
+export const DISCORD = "M20.3 4.4A19.6 19.6 0 0 0 15.4 3l-.6 1.3a18 18 0 0 0-5.5 0L8.7 3a19.6 19.6 0 0 0-4.9 1.5C.7 9.1-.2 13.6.3 18a19.8 19.8 0 0 0 6 3l1.3-2.1a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12 0l.5.4c-.6.4-1.3.7-2 1l1.3 2.1a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.5-3.6-13.6ZM8 15.3c-1.2 0-2.1-1.1-2.1-2.4S6.8 10.5 8 10.5s2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm8 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z";
 const GITHUB = "M12 .5a11.5 11.5 0 0 0-3.6 22.4c.6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.3 4.6 18.3 5 18.3 5c.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6A11.5 11.5 0 0 0 12 .5Z";
-const ARROW = `<svg class="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>`;
-const ic = (d, cls = "ic") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-const I = {
+export const ARROW = `<svg class="ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>`;
+export const ic = (d, cls = "ic") => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+export const I = {
   star: '<path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.2-6.2 3.2L7 14.2 2 9.3l6.9-1z"/>',
   pr: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/>',
   merged: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/>',
@@ -52,7 +52,7 @@ const CAP = {
   "writes into home or startup folders": [I.folder, ["Writes to home or startup folders", "Ghi vào thư mục home hoặc khởi động"]],
   "decodes or builds code at runtime": [I.code, ["Builds or decodes code while running", "Tạo hoặc giải mã code khi chạy"]],
 };
-const VERDICT = {
+export const VERDICT = {
   clear: ["No signs of malware or supply-chain tricks", "Không thấy dấu hiệu mã độc hay thủ đoạn chuỗi cung ứng", "vetted", "#10b981"],
   review: ["Some things are worth a look", "Có vài chỗ nên xem lại", "review", "#f59e0b"],
   warning: ["Signs of malicious code", "Có dấu hiệu mã độc", "warning", "#ef4444"],
@@ -67,17 +67,19 @@ export function badge(verdict) {
 <g clip-path="url(#r)"><rect width="${lw}" height="20" fill="#14141a"/><rect x="${lw}" width="${rw}" height="20" fill="${color}"/><rect width="${w}" height="20" fill="url(#s)"/></g>
 <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" font-size="11"><text x="${lw / 2}" y="14">${left}</text><text x="${lw + rw / 2}" y="14">${word}</text></g></svg>`;
 }
-const since = (ms, now) => {
+export const since = (ms, now) => {
   const m = Math.max(0, Math.round((now - ms) / 60000)), h = Math.round(m / 60), d = Math.round(m / 1440);
   return m < 1 ? ["just now", "vừa xong"] : m < 60 ? [`${m} min ago`, `${m} phút trước`] : m < 1440 ? [`${h} h ago`, `${h} giờ trước`] : [`${d} d ago`, `${d} ngày trước`];
 };
-const svg = d => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${d}"/></svg>`;
+export const svg = d => `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="${d}"/></svg>`;
 
-const TYPE = p => p.status === "soon" ? ["Coming soon", "Sắp ra mắt"] : p.type === "app" ? ["Free app", "App miễn phí"] : ["Open source", "Mã nguồn mở"];
+export const TYPE = p => p.status === "soon" ? ["Coming soon", "Sắp ra mắt"] : p.type === "app" ? ["Free app", "App miễn phí"] : ["Open source", "Mã nguồn mở"];
 const STATUS = { live: ["Live", "Đang chạy"], beta: ["Beta", "Thử nghiệm"], soon: ["Coming soon", "Sắp ra mắt"] };
-const KIND = { people: ["For people", "Cho mọi người"], wild: ["Wild idea", "Ý tưởng điên rồ"], dev: ["Dev tool", "Công cụ cho dev"] };
+// the page that lists each kind
+export const KIND_PAGE = { people: "for-people", wild: "wild-ideas", dev: "dev-tools" };
+export const KIND = { people: ["For people", "Cho mọi người"], wild: ["Wild idea", "Ý tưởng điên rồ"], dev: ["Dev tool", "Công cụ cho dev"] };
 
-const CSS = `:root{--bg:#fff;--bg2:#f6f6f7;--solid:#fff;--ink:#0d0d0f;--muted:#6b6b73;--line:rgba(13,13,15,.08);--line2:rgba(13,13,15,.14);--shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px -12px rgba(0,0,0,.12);--aura:.4;--ease:cubic-bezier(.16,1,.3,1)}
+export const CSS = `:root{--bg:#fff;--bg2:#f6f6f7;--solid:#fff;--ink:#0d0d0f;--muted:#6b6b73;--line:rgba(13,13,15,.08);--line2:rgba(13,13,15,.14);--shadow:0 1px 2px rgba(0,0,0,.04),0 12px 40px -12px rgba(0,0,0,.12);--aura:.4;--ease:cubic-bezier(.16,1,.3,1)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--aura:.55}}
 :root[data-theme="dark"]{--bg:#0a0a0c;--bg2:#111114;--solid:#141417;--ink:#f4f4f5;--muted:#9a9aa3;--line:rgba(255,255,255,.08);--line2:rgba(255,255,255,.14);--shadow:0 1px 2px rgba(0,0,0,.4),0 20px 60px -20px rgba(0,0,0,.7);--aura:.55}
 *{box-sizing:border-box}html{overflow-x:clip}
@@ -194,7 +196,7 @@ dialog.lb[open]{animation:zin .5s var(--ease)}@keyframes zin{from{opacity:0;tran
 @media (max-width:760px){.specs{grid-template-columns:repeat(2,minmax(0,1fr))}.specs>div:last-child:nth-child(odd){grid-column:1/-1}}
 .who{display:inline-flex;align-items:center;gap:8px}.who img{width:24px;height:24px;border-radius:50%;background:var(--bg)}
 .who a:hover{text-decoration:underline}
-.tg{font-size:13px;padding:2px 9px;border-radius:999px;background:var(--solid);border:1px solid var(--line)}
+.tg{font-size:13px;padding:2px 9px;border-radius:999px;background:var(--solid);border:1px solid var(--line);transition:border-color .2s}a.tg:hover{border-color:var(--line2);color:var(--ink)}
 section.more{padding:80px 0 24px}
 .more h2{font-size:clamp(26px,3vw,34px);margin-bottom:22px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
@@ -321,14 +323,21 @@ section.more{padding:80px 0 24px}
 .cm .replies .cm > img,.cm .replies .cm > .ph{width:28px;height:28px}
 .cm .compose{margin-top:10px}
 .none{color:var(--muted);font-size:14.5px}
-footer{padding:56px 0 40px;color:var(--muted);font-size:13.5px}
-footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-top:1px solid var(--line);padding-top:22px}
-footer a:hover{color:var(--ink)}
+footer{margin-top:88px;padding:56px 0 36px;border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+footer .cols{display:grid;grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(0,1fr));gap:28px}
+@media (max-width:760px){footer .cols{grid-template-columns:1fr 1fr}footer .cols>div:first-child{grid-column:1/-1}}
+footer h4{margin:0 0 12px;font-size:13px;font-weight:600;color:var(--ink)}footer .cols a{display:block;padding:3px 0;transition:color .2s}footer a:hover{color:var(--ink)}
+footer .cols a.brand{display:flex;color:var(--ink);margin-bottom:10px;padding:0}footer .fp{margin:0;max-width:22em;line-height:1.5}
+footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:13px}
+.nlinks{display:flex;gap:2px;margin-left:6px}.nlinks a{font-size:14px;font-weight:500;color:var(--muted);padding:6px 10px;border-radius:9px;white-space:nowrap;transition:color .2s,background .2s}
+.nlinks a:hover{color:var(--ink)}.nlinks a[aria-current]{color:var(--ink);background:var(--bg2)}
+@media (min-width:821px) and (max-width:1060px){nav.pinned .nlinks{display:none}}
+@media (max-width:820px){nav .wrap{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:6px;row-gap:6px}.nlinks{order:3;flex-basis:100%;margin:0 0 0 -10px;overflow-x:auto;scrollbar-width:none}.nlinks::-webkit-scrollbar{display:none}}
 .js .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform 1.1s var(--ease);transition-delay:calc(var(--d,0) * 70ms)}
 .js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.frame{transform:none;opacity:1}}`;
 
-const head = ({ title, desc, url, image, jsonld, noindex = false, md = null }) => `<!doctype html>
+export const head = ({ title, desc, url, image, jsonld, noindex = false, md = null }) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -357,9 +366,32 @@ const head = ({ title, desc, url, image, jsonld, noindex = false, md = null }) =
 <script>document.documentElement.classList.add("js")</script>
 </head>`;
 
+// The same top bar and footer on every page the Worker renders; the home page (public/index.html) mirrors them.
+const NAV = [["/projects", ["Projects", "Dự án"]], ["/check", ["Check a repo", "Kiểm tra repo"]], ["/submit", ["Submit", "Gửi dự án"]], ["/community", ["Community", "Cộng đồng"]]];
+export const siteNav = (site, current = "", extra = "") => `<nav><div class="wrap">
+  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
+  <div class="nlinks">${NAV.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${t(...label)}</a>`).join("")}</div>
+  <div class="right">${extra}
+    <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
+    <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}<span>${t("Join Discord", "Vào Discord")}</span></a>
+  </div>
+</div></nav>`;
+export const siteFooter = (site, note = "") => {
+  const col = (title, links) => `<div><h4>${t(...title)}</h4>${links.map(([href, label, ext]) => `<a href="${esc(href)}"${ext ? ' target="_blank" rel="noopener"' : ""}>${t(...label)}</a>`).join("")}</div>`;
+  return `<footer><div class="wrap">
+  <div class="cols">
+    <div><a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a><p class="fp">${t("A community for people who make free apps, wild ideas and open tools.", "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.")}</p></div>
+    ${col(["Explore", "Khám phá"], [["/projects", ["All projects", "Tất cả dự án"]], ["/apps", ["Free apps", "App miễn phí"]], ["/open-source", ["Open source", "Mã nguồn mở"]], ["/dev-tools", ["Dev tools", "Công cụ cho dev"]], ["/wild-ideas", ["Wild ideas", "Ý tưởng điên rồ"]], ["/check", ["Check a repo", "Kiểm tra repo"]]])}
+    ${col(["Community", "Cộng đồng"], [["/submit", ["Submit a project", "Gửi dự án"]], ["/community", ["Join the community", "Tham gia cộng đồng"]], ["/about", ["About OpenYard", "Về OpenYard"]], [site.discord, ["Discord", "Discord"], 1]])}
+    ${col(["Open source", "Mã nguồn mở"], [[site.repo, ["Site source code", "Mã nguồn trang web"], 1], [`${site.repo}/blob/main/CONTRIBUTING.md`, ["Contributing guide", "Hướng dẫn đóng góp"], 1], ["https://github.com/openyard-cloud/vetcode", ["vetcode", "vetcode"], 1], [`${site.repo}/blob/main/LICENSE`, ["MIT license", "Giấy phép MIT"], 1]])}
+  </div>
+  <div class="bot"><span>© ${new Date().getFullYear()} OpenYard · openyard.cloud</span><span>${note || t("Free for everyone. Made in Vietnam.", "Miễn phí cho tất cả. Làm tại Việt Nam.")}</span></div>
+</div></footer>`;
+};
+
 // Swaps every [data-vi] to Vietnamese when the visitor picked VI on the site (same storage key)
 // or their browser is Vietnamese, and wires the VI/EN toggle.
-const LANG_JS = `<script>
+export const LANG_JS = `<script>
 (() => {
   const els = [...document.querySelectorAll("[data-vi]")];
   els.forEach(e => e.dataset.en = e.textContent);
@@ -451,7 +483,7 @@ const FX_JS = `<script>
 })();
 </script>`;
 
-const logoClass = p => p.logoStyle === "tile" ? "full" : "";
+export const logoClass = p => p.logoStyle === "tile" ? "full" : "";
 
 /** The code-check block shared by project pages and /check pages. V is a row of vets or repo_checks. */
 function checkSection(V, { repoUrl, badgeMd, badgeSrc, now, sub = "" }) {
@@ -493,7 +525,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   }, {
     "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
       { "@type": "ListItem", position: 1, name: "OpenYard", item: ORIGIN },
-      { "@type": "ListItem", position: 2, name: "Projects", item: `${ORIGIN}/#projects` },
+      { "@type": "ListItem", position: 2, name: "Projects", item: `${ORIGIN}/projects` },
       { "@type": "ListItem", position: 3, name: p.name, item: url },
     ],
   }];
@@ -504,11 +536,13 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   const facts = [
     [["Made by", "Người làm"], people],
     [["Status", "Trạng thái"], p.status === "live" ? `<span class="pill on"><i class="dot"></i>${t(...STATUS.live)}</span>` : t(...STATUS[p.status])],
-    [["Kind", "Thể loại"], p.kinds.map(k => `<span class="tg">${t(...KIND[k])}</span>`).join("")],
+    [["Kind", "Thể loại"], p.kinds.map(k => `<a class="tg" href="/${KIND_PAGE[k]}">${t(...KIND[k])}</a>`).join("")],
     p.license ? [["License", "Giấy phép"], esc(p.license)] : null,
-    p.tags?.length ? [["Tags", "Thẻ"], p.tags.map(x => `<span class="tg">${esc(x)}</span>`).join("")] : null,
+    p.tags?.length ? [["Tags", "Thẻ"], p.tags.map(x => `<a class="tg" href="/tags/${esc(x)}">${esc(x)}</a>`).join("")] : null,
   ].filter(Boolean);
-  const others = all.filter(o => o.slug !== p.slug).slice(0, 6);
+  // related first: shared tags count double, then shared kinds; ties keep the trending order
+  const near = o => 2 * (o.tags || []).filter(x => (p.tags || []).includes(x)).length + o.kinds.filter(k => p.kinds.includes(k)).length;
+  const others = all.filter(o => o.slug !== p.slug).map((o, i) => [near(o), i, o]).sort((a, b) => b[0] - a[0] || a[1] - b[1]).slice(0, 6).map(x => x[2]);
   const shot = p.image
     ? `<button class="zoom" type="button" aria-label="Enlarge screenshot"><img src="${esc(p.image)}" alt="${esc(p.name)} screenshot"><span class="hint">${ic(I.expand)}${t("Click to enlarge", "Bấm để phóng to")}</span></button>`
     : p.logo ? `<div class="gen"><img src="${esc(p.logo)}" alt=""></div>` : "";
@@ -584,15 +618,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   </section>` : "";
   return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld, md: `${url}.md` })}
 <body style="--c:${esc(p.color || "#6d5bd0")}">
-<nav><div class="wrap">
-  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
-  <a class="back" href="/#projects">← ${t("All projects", "Tất cả dự án")}</a>
-  <div class="right">
-    <a class="np" href="/go/${esc(p.slug)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${logo(p, "nl", 28)}<b>${esc(p.name)}</b><span class="btn sm dark">${t("Open", "Mở")} ${ARROW}</span></a>
-    <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
-    <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}${t("Join Discord", "Vào Discord")}</a>
-  </div>
-</div></nav>
+${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${logo(p, "nl", 28)}<b>${esc(p.name)}</b><span class="btn sm dark">${t("Open", "Mở")} ${ARROW}</span></a>`)}
 <main>
 <header class="hero${term ? " two" : ""}"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">${term ? `<div class="cols"><div>` : ""}
   <div class="id">${logo(p, "logo", 72)}
@@ -620,14 +646,14 @@ ${term ? `</div>${term}</div>` : ""}</div></header>
   </section>
 </div>
 ${others.length ? `<section class="more"><div class="wrap">
-  <h2 class="reveal">${t("More from the yard", "Thêm từ OpenYard")}</h2>
+  <div class="hd2 reveal"><h2 style="margin:0">${t("More from the yard", "Thêm từ OpenYard")}</h2><a class="btn sm line" href="/projects">${t("All projects", "Tất cả dự án")} ${ARROW}</a></div>
   <div class="grid">${others.map((o, i) => `<a class="mini reveal" style="--d:${i};--c:${esc(o.color || "#6d5bd0")}" href="/p/${esc(o.slug)}">${logo(o, "", 44)}<div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div>${ARROW}</a>`).join("")}</div>
   <div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản.")}</p></div>
     <div class="cta"><a class="btn dark" href="/submit">${t("Add your project", "Đưa dự án lên")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}Discord</a></div></div>
 </div></section>` : ""}
 </main>
 ${p.image ? `<dialog class="lb" id="lb"><img src="${esc(p.image)}" alt="${esc(p.name)} screenshot"></dialog>` : ""}
-<footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Free apps, wild ideas, open tools.", "App miễn phí, ý tưởng điên rồ, công cụ mở.")}</span><a href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Something wrong with this listing? Tell us on Discord", "Trang này có vấn đề? Báo trên Discord")}</a></div></footer>
+${siteFooter(site, `<a href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Something wrong with this listing? Tell us on Discord", "Trang này có vấn đề? Báo trên Discord")}</a>`)}
 ${LANG_JS}
 ${FX_JS}
 <script>
@@ -812,14 +838,7 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
   const how = [[I.globe, ["Paste a public GitHub link", "Dán link repo GitHub công khai"]], [I.eye, ["vetcode reads the code. Nothing is installed, built or run", "vetcode đọc code. Không cài, không build, không chạy gì"]], [I.shield, ["Get a label of what it can do, findings, and a badge", "Nhận nhãn khả năng, các phát hiện và một huy hiệu"]]];
   return `${head({ title, desc: summary, url, image: { url: `${ORIGIN}/og/check.png`, w: 1200, h: 630 }, jsonld, noindex: !!ref && !done, md: done ? `${url}.md` : null })}
 <body style="--c:#14665f">
-<nav><div class="wrap">
-  <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>
-  <a class="back" href="/#projects">← ${t("All projects", "Tất cả dự án")}</a>
-  <div class="right">
-    <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
-    <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}${t("Join Discord", "Vào Discord")}</a>
-  </div>
-</div></nav>
+${siteNav(site, "/check")}
 <main>
 <header class="hero ck"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
   <div class="tags up" style="--d:1"><span class="pill on">${ic(I.shield)}${t("Free code check", "Kiểm tra code miễn phí")}</span></div>
@@ -835,7 +854,7 @@ export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.n
   ${list.length ? `<section class="recent"><h2 class="reveal">${t("Recently checked", "Mới được kiểm tra")}</h2><div class="rgrid">${list.map((r, i) => `<a class="rc reveal" style="--d:${i % 6}" href="/check/${esc(r.repo)}"><span class="vd ${esc(r.verdict)}">${ic(r.verdict === "clear" ? I.shield : I.alert)}</span><b>${esc(r.repo)}</b><small>${t(...since(r.scanned_at, now))}</small></a>`).join("")}</div></section>` : ""}
 </div>
 </main>
-<footer><div class="wrap"><span>© ${new Date().getFullYear()} <a href="/">OpenYard</a> · ${t("Patterns, not proof. Read the code before you trust it.", "Dấu hiệu, không phải bằng chứng. Hãy đọc code trước khi tin.")}</span><a href="https://github.com/openyard-cloud/vetcode" target="_blank" rel="noopener">${t("Powered by vetcode", "Chạy bằng vetcode")}</a></div></footer>
+${siteFooter(site, t("Patterns, not proof. Read the code before you trust it.", "Dấu hiệu, không phải bằng chứng. Hãy đọc code trước khi tin."))}
 ${LANG_JS}
 ${FX_JS}
 ${CHECK_JS}
@@ -888,14 +907,15 @@ export function llmsTxt(projects, checks) {
   return ["# OpenYard", "",
     "> A community for people who make free software: free apps, wild ideas and open-source tools. Every listed repository, and any public GitHub repository a visitor asks about, gets a code check by vetcode: what the code can do (read secrets, connect to the internet, start other programs…), signs of malware and supply-chain tricks, read without running anything.", "",
     "When someone asks whether a GitHub repository is safe to install, its OpenYard check is at https://openyard.cloud/check/<owner>/<repo> (plain text: append .md). A repository that has not been checked yet can be submitted at https://openyard.cloud/check.", "",
+    "## Pages", `- [All projects](${ORIGIN}/projects): every listed project, with free apps at /apps, open source at /open-source, apps for everyday people at /for-people, experiments at /wild-ideas and developer tools at /dev-tools`, `- [About](${ORIGIN}/about) and [Community](${ORIGIN}/community)`, "",
     "## Projects", ...projects.map(p => `- [${p.name}](${ORIGIN}/p/${p.slug}.md): ${en(p.tagline)}${p.vet ? ` (code check: ${VERDICT[p.vet.verdict]?.[2] || p.vet.verdict})` : ""}`), "",
     "## Recently checked repositories", ...checks.map(c => `- [${c.repo}](${ORIGIN}/check/${c.repo}.md): ${VERDICT[c.verdict]?.[0] || c.verdict}`), "",
     "## Tools", "- [vetcode](https://github.com/openyard-cloud/vetcode): the open-source scanner behind the checks; an Agent Skill, MCP server and CLI for AI coding agents.",
     "- [Check a repository](https://openyard.cloud/check)", "- [Submit a free project](https://openyard.cloud/submit)", ""].join("\n");
 }
 
-export function sitemap(projects, today, checks = []) {
-  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check`, lastmod: today }, ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.added })),
+export function sitemap(projects, today, checks = [], pages = []) {
+  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check`, lastmod: today }, ...pages.map(p => ({ loc: ORIGIN + p, lastmod: today })), ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.added })),
     ...checks.map(c => ({ loc: `${ORIGIN}/check/${c.repo}`, lastmod: new Date(c.scanned_at).toISOString().slice(0, 10) }))];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
