@@ -7,6 +7,7 @@
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
+//   GET/POST /api/likes        like a project (signed in); its makers hear about it once a day
 //   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
 //   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
@@ -44,10 +45,10 @@ const token = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8
 const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "project";
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
-function trend(p, s, clicks, talk, now) {
+function trend(p, s, clicks, talk, now, likes = 0) {
   const age = (now - Date.parse(p.added)) / DAY;
   const gh = s ? s.stars_7d * 3 + s.prs_7d * 2 + s.issues_7d + s.discussions_7d * 2 + Math.min(s.commits_7d, 30) * 0.3 : 0;
-  return Math.round((gh + clicks * 0.5 + talk * 2 + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
+  return Math.round((gh + clicks * 0.5 + talk * 2 + likes * 2 + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
 }
 
 function toApi(row, now) {
@@ -61,7 +62,7 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now) };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
 }
 
 const rank = p => [p.featured ? 0 : 1, p.type === "app" ? 0 : 1, p.status === "soon" ? 1 : 0];
@@ -70,7 +71,9 @@ async function listProjects(env, now = Date.now()) {
   const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated, v.verdict AS v_verdict, v.scanned_at AS v_scanned,
       (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks,
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
-      (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk
+      (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk,
+      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug) AS likes,
+      (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug AND k.created_at > ?2) AS likes_7d
     FROM projects p LEFT JOIN stats s ON s.slug = p.slug LEFT JOIN vets v ON v.slug = p.slug WHERE p.hidden = 0`).bind(since, now - 7 * DAY).all();
   return results.map(r => toApi(r, now)).sort((a, b) => {
     const ra = rank(a), rb = rank(b);
@@ -107,6 +110,8 @@ async function readForm(env, form) {
   if (!description || description.length > 300) throw new Error("Add a description of at most 300 characters.");
   if (!kinds.length) throw new Error("Pick at least one kind.");
   if (get("free") !== "yes") throw new Error("OpenYard lists free projects only.");
+  const email = get("email").toLowerCase();
+  if (email && (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) throw new Error("That email address looks wrong.");
   const maintainer = get("maintainer").replace(/^@/, "");
   if (maintainer && !/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(maintainer)) throw new Error("The GitHub username looks wrong.");
   const tags = get("tags").split(/[,\s]+/).map(t => t.toLowerCase().replace(/[^a-z0-9-]/g, "")).filter(Boolean).slice(0, 5);
@@ -117,7 +122,7 @@ async function readForm(env, form) {
     try { const info = await repoInfo(env, ref); if (info) { license = info.license; owner = owner || info.owner; } } catch (e) { if (!(e instanceof RateLimited)) throw e; }
   }
   return {
-    name, url, repo: repo || null, license, kinds, status, color, tags, lang, ref,
+    name, url, repo: repo || null, license, kinds, status, color, tags, lang, ref, email: email || null,
     type: ref && license ? "open-source" : "app",
     tagline: { [lang]: tagline }, description: { [lang]: description },
     maintainers: owner ? [owner] : [],
@@ -145,6 +150,9 @@ async function submit(req, env, ctx) {
   // signed in: the project is theirs to edit from their profile, and they are its maker unless they named someone
   const user = await currentUser(req, env);
   if (user && !f.maintainers.length) f.maintainers = [user.login];
+  // where we tell them about their listing; a signed-in person's account email will do
+  const contactEmail = f.email || user?.email || null;
+  if (!contactEmail) return fail("Add your email so we can send you the edit link and tell you when people comment.");
 
   let slug = slugify(f.name);
   for (let i = 2; await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first(); i++) slug = `${slugify(f.name).slice(0, 36)}-${i}`;
@@ -152,15 +160,16 @@ async function submit(req, env, ctx) {
   const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : null;
   const edit = token();
   await env.DB.batch([
-    env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20)`)
+    env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id, contact_email, contact_lang)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20, ?21, ?22)`)
       .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(f.tagline), JSON.stringify(f.description), f.url, f.repo, f.license,
-        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user ? user.id : null),
+        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user ? user.id : null, contactEmail, f.lang),
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   ctx.waitUntil(notifyDiscord(env, slug, f, logo, image).catch(e => console.error(e)));
+  ctx.waitUntil(mail.live(env, slug, `/submit?edit=${slug}#${edit}`).then(() => mail.drain(env, 3)).catch(e => console.error("live mail", e)));
   return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user ? user.login : null }, 201);
 }
 
@@ -178,7 +187,7 @@ async function edit(req, env, ctx, slug) {
   const now = Date.now();
   if (req.method === "GET") {
     const row = await authorize(env, slug, req.headers.get("X-Edit-Token"), await currentUser(req, env));
-    return row ? json(toApi(row, now), 200, { "Cache-Control": "private, no-store" }) : fail("Open your private edit link, or sign in as the person who submitted it.", 403);
+    return row ? json({ ...toApi(row, now), contactEmail: row.contact_email }, 200, { "Cache-Control": "private, no-store" }) : fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   }
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
   const row = await authorize(env, slug, String(form.get("token") || ""), await currentUser(req, env));
@@ -196,6 +205,8 @@ async function edit(req, env, ctx, slug) {
       logo = ?11, logo_style = ?12, image = ?13, color = ?14, maintainers = ?15, tags = ?16, updated_at = ?17 WHERE slug = ?1`)
     .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(merge(row.tagline, f.tagline)), JSON.stringify(merge(row.description, f.description)),
       f.url, f.repo, f.license, logo, f.logoFile ? "tile" : row.logo_style, image, f.color, JSON.stringify(f.maintainers.length ? f.maintainers : JSON.parse(row.maintainers)), JSON.stringify(f.tags), now).run();
+  // a new address starts getting email again; the same one keeps its choice
+  if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   return json({ slug, page: `/p/${slug}` });
 }
@@ -246,6 +257,7 @@ async function me(req, env, path, ctx) {
     await env.DB.batch([
       env.DB.prepare("UPDATE comments SET deleted = 1, body = '' WHERE user_id = ?1").bind(user.id),
       env.DB.prepare("UPDATE projects SET owner_id = NULL WHERE owner_id = ?1").bind(user.id),
+      env.DB.prepare("DELETE FROM likes WHERE user_id = ?1").bind(user.id),
       env.DB.prepare(`UPDATE users SET login = 'deleted-' || id, name = NULL, avatar = NULL, bio = NULL, email = NULL, email_ok = 0, email_ok_at = ?2,
         interests = '[]', onboarded_at = NULL, deleted_at = ?2 WHERE id = ?1`).bind(user.id, now),
       env.DB.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(user.id),
@@ -266,6 +278,27 @@ async function me(req, env, path, ctx) {
     await mail.drain(env, 3);
   })().catch(e => console.error("welcome", e)));
   return json(meJson(await currentUser(req, env), env), 200, priv);
+}
+
+// GET how many people like a project and whether you do; POST toggles your like (signed in).
+async function likes(req, env, url) {
+  const user = await currentUser(req, env), priv = { "Cache-Control": "private, no-store" };
+  if (req.method === "GET") {
+    const slug = url.searchParams.get("slug") || "";
+    const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1").bind(slug).first();
+    const mine = user ? !!(await env.DB.prepare("SELECT 1 FROM likes WHERE slug = ?1 AND user_id = ?2").bind(slug, user.id).first()) : false;
+    return json({ count: n, liked: mine, signedIn: !!user }, 200, priv);
+  }
+  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!user) return fail("Sign in to like projects.", 401);
+  if (user.banned) return fail("Not allowed.", 403);
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  const slug = String(b.slug || "");
+  if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first())) return fail("No such project.", 404);
+  const had = await env.DB.prepare("DELETE FROM likes WHERE slug = ?1 AND user_id = ?2 RETURNING slug").bind(slug, user.id).first();
+  if (!had) await env.DB.prepare("INSERT INTO likes (slug, user_id, created_at) VALUES (?1, ?2, ?3) ON CONFLICT DO NOTHING").bind(slug, user.id, Date.now()).run();
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1").bind(slug).first();
+  return json({ count: n, liked: !had, signedIn: true }, 200, priv);
 }
 
 async function comments(req, env, url, id, ctx) {
@@ -478,7 +511,8 @@ async function page(env, slug) {
   const now = Date.now(), all = await listProjects(env, now);
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
   const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
-  return projectPage(toApi(row, now), all, SITE, stats, now, vet);
+  const liked = all.find(p => p.slug === slug)?.likes || 0;
+  return projectPage({ ...toApi(row, now), likes: liked }, all, SITE, stats, now, vet);
 }
 
 export default {
@@ -498,6 +532,7 @@ export default {
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
+      if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
       let m = /^\/api\/comments\/(\d+)$/.exec(path);
       if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]), ctx);
       m = /^\/api\/edit\/([a-z0-9-]+)$/.exec(path);
@@ -618,6 +653,7 @@ export default {
     const at = new Date(event.scheduledTime);
     ctx.waitUntil((async () => {
       if (at.getUTCDay() === 1 && at.getUTCHours() === 1) await mail.digest(env, await listProjects(env, event.scheduledTime), event.scheduledTime);
+      if (at.getUTCHours() === 1) await mail.daily(env, event.scheduledTime); // likes of the day, day-3 and day-7 notes
       await mail.drain(env, 40);
     })().catch(e => console.error("mail cron", e)));
   },

@@ -45,7 +45,8 @@ form{display:flex;flex-direction:column;gap:22px}
 .f{display:flex;flex-direction:column;gap:6px;margin-top:14px}.f:first-of-type{margin-top:0}
 label,.lbl{font-size:14px;font-weight:500}
 .lbl small,label small{font-weight:400;color:var(--muted);margin-left:4px}
-input[type=text],input[type=url],textarea,select{width:100%;font:15px Inter,system-ui,sans-serif;color:var(--ink);background:var(--solid);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
+[hidden]{display:none!important}
+input[type=text],input[type=url],input[type=email],textarea,select{width:100%;font:15px Inter,system-ui,sans-serif;color:var(--ink);background:var(--solid);border:1px solid var(--line2);border-radius:12px;padding:11px 14px;outline:none;transition:border-color .2s,box-shadow .2s}
 textarea{resize:vertical;min-height:96px;line-height:1.5}
 input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4px rgba(139,124,255,.18)}
 .count{font-size:12px;color:var(--muted);text-align:right;margin-top:-2px}.count.over{color:var(--bad)}
@@ -143,8 +144,9 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
 
   <div class="box">
     <h2 data-vi="Về bạn">About you</h2>
-    <p data-vi="Không bắt buộc.">Optional.</p>
-    <div class="f"><label for="f-maint"><span data-vi="Tên GitHub của bạn">Your GitHub username</span><small data-vi="để hiện avatar">shows your avatar</small></label><input type="text" name="maintainer" id="f-maint" placeholder="@you"></div>
+    <p data-vi="Email không bao giờ hiện công khai. Chúng mình gửi link sửa tới đây, báo khi có người bình luận hay thích dự án, và vài mẹo trong tuần đầu. Dừng bằng một chạm.">Your email is never shown. We send your edit link there, tell you when people comment on or like your project, and share a few tips in the first week. One click to stop.</p>
+    <div class="f"><label for="f-email"><span data-vi="Email của bạn">Your email</span></label><input type="email" name="email" id="f-email" maxlength="200" autocomplete="email" required placeholder="you@example.com"></div>
+    <div class="f"><label for="f-maint"><span data-vi="Tên GitHub của bạn">Your GitHub username</span><small data-vi="không bắt buộc, để hiện avatar">optional, shows your avatar</small></label><input type="text" name="maintainer" id="f-maint" placeholder="@you"></div>
   </div>
 
   <label class="check"><input type="checkbox" name="free" value="yes" id="f-free"><span data-vi="Ai cũng dùng được dự án này mà không phải trả tiền.">People can use this project without paying.</span></label>
@@ -167,7 +169,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
       <div class="tags" id="pv-tags"></div>
     </div>
   </div>
-  <p class="hint" data-vi="Sau khi gửi, bạn nhận một link riêng để sửa hay gỡ dự án. Nhớ lưu lại nhé.">After sending you get a private link to edit or remove your listing. Keep it somewhere safe.</p>
+  <p class="hint" data-vi="Sau khi gửi, bạn nhận một link riêng để sửa hay gỡ dự án, trên màn hình và qua email.">After sending you get a private link to edit or remove your listing, on screen and by email.</p>
 </aside>
 </div>
 
@@ -177,7 +179,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
   <div class="actions" style="margin-top:22px"><a class="btn dark" id="done-page" href="/" data-vi="Xem trang dự án">See your page</a><a class="btn line" href="https://discord.gg/TFKsfh6tMk" target="_blank" rel="noopener" data-vi="Khoe trên Discord">Share on Discord</a></div>
   <div class="box">
     <h2 data-vi="Link sửa riêng của bạn">Your private edit link</h2>
-    <p data-vi="Ai có link này đều sửa hay gỡ được dự án. Mình không gửi lại được, nên hãy lưu ngay.">Anyone with this link can change or remove the listing. We cannot send it again, so save it now.</p>
+    <p data-vi="Ai có link này đều sửa hay gỡ được dự án. Chúng mình cũng vừa gửi link này tới email của bạn.">Anyone with this link can change or remove the listing. We also sent it to your email.</p>
     <div class="link"><input type="text" id="edit-link" readonly><button class="btn line sm" type="button" id="copy" data-vi="Chép">Copy</button></div>
     <p id="owned" hidden data-vi="Bạn đang đăng nhập, nên cũng sửa được dự án từ trang Cài đặt mà không cần link này.">You are signed in, so you can also edit it from Settings without this link.</p>
   </div>
@@ -288,6 +290,13 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     const s = document.createElement("script"); s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTs&render=explicit"; s.async = true; document.head.appendChild(s);
   }).catch(() => {});
 
+  /* signed in: fill in the account's email and GitHub name */
+  fetch("/api/me", { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(u => {
+    if (!u) return;
+    if (u.email && !$("f-email").value) $("f-email").value = u.email;
+    if (!editSlug && !$("f-maint").value) $("f-maint").value = u.login;
+  }).catch(() => {});
+
   /* edit mode: /submit?edit=<slug>#<token>, or /submit?edit=<slug> when signed in as its owner */
   const editSlug = new URLSearchParams(location.search).get("edit"), editToken = location.hash.slice(1);
   if (editSlug) {
@@ -303,6 +312,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
       form.querySelector(`[name=lang][value=${lang}]`).checked = true;
       $("f-repo").value = p.repo || ""; $("f-name").value = p.name; $("f-url").value = p.url;
       $("f-tagline").value = p.tagline[lang] || ""; $("f-desc").value = p.description[lang] || "";
+      if (p.contactEmail) $("f-email").value = p.contactEmail;
       $("f-status").value = p.status; $("f-tags").value = (p.tags || []).join(", "); $("f-maint").value = p.maintainers[0] || "";
       form.querySelectorAll("[name=kinds]").forEach(k => k.checked = p.kinds.includes(k.value));
       $("f-free").checked = true;
@@ -342,6 +352,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
     e.preventDefault();
     const need = [["f-name", T("Add a name.", "Thêm tên dự án.")], ["f-url", T("Add the link people should open.", "Thêm đường dẫn để mở dự án.")], ["f-tagline", T("Add a one-line tagline.", "Thêm một dòng giới thiệu.")], ["f-desc", T("Add a description.", "Thêm phần mô tả.")]];
     for (const [id, msg] of need) if (!$(id).value.trim()) { $("err").textContent = msg; $(id).focus(); return; }
+    if (!editSlug && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($("f-email").value.trim())) { $("err").textContent = T("Add your email so we can send you the edit link.", "Thêm email để chúng mình gửi link sửa cho bạn."); $("f-email").focus(); return; }
     if (!/^https:\/\//.test($("f-url").value.trim())) { $("err").textContent = T("The link must start with https://", "Đường dẫn phải bắt đầu bằng https://"); return; }
     if (!form.querySelector("[name=kinds]:checked")) { $("err").textContent = T("Pick at least one kind.", "Chọn ít nhất một loại."); return; }
     if (!$("f-free").checked) { $("err").textContent = T("OpenYard lists free projects only.", "OpenYard chỉ nhận dự án miễn phí."); return; }

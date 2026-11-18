@@ -40,6 +40,7 @@ export const I = {
   folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"/>',
   code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
   eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  heart: '<path d="M19 14c1.5-1.5 3-3.2 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.8 0-3 .5-4.5 2-1.5-1.5-2.7-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4 3 5.5l7 7z"/>',
   alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>',
 };
 
@@ -105,6 +106,8 @@ nav.pinned .np{opacity:1;transform:none;pointer-events:auto}
 .btn.dark:hover::after{transform:translateX(120%)}
 .btn.sm{height:34px;padding:0 14px;font-size:13px}.btn svg{width:17px;height:17px}.btn .ar{width:15px;height:15px;transition:transform .4s var(--ease)}.btn:hover .ar{transform:translate(2px,-2px)}
 .btn.ok{border-color:#34d399;color:#34d399}
+#like .lk{font-variant-numeric:tabular-nums;font-weight:600;margin-left:2px}#like .ic{width:17px;height:17px;transition:transform .4s var(--ease),fill .2s}
+#like[aria-pressed="true"]{border-color:#f43f5e;color:#f43f5e}#like[aria-pressed="true"] .ic{fill:#f43f5e;transform:scale(1.12)}
 .dc{background:#5865f2;color:#fff}.dc:hover{background:#4752c4}
 @media (max-width:560px){.back{display:none}.dc span{display:none}.np b{display:none}}
 .hero{position:relative;padding:84px 0 44px;isolation:isolate}
@@ -484,6 +487,22 @@ const FX_JS = `<script>
 })();
 </script>`;
 
+// The Like button: counts come from the server, the click needs a GitHub sign-in.
+const LIKE_JS = `<script>
+(() => {
+  const b = document.getElementById("like"); if (!b) return;
+  const n = b.querySelector(".lk"), slug = b.dataset.slug;
+  const show = d => { n.textContent = d.count; b.setAttribute("aria-pressed", d.liked); b.dataset.in = d.signedIn ? 1 : ""; };
+  fetch("/api/likes?slug=" + encodeURIComponent(slug), { credentials: "same-origin" }).then(r => r.json()).then(show).catch(() => {});
+  b.addEventListener("click", async () => {
+    if (!b.dataset.in) { location.href = "/auth/github?return=" + encodeURIComponent(location.pathname + "#like"); return; }
+    const was = b.getAttribute("aria-pressed") === "true";
+    show({ count: +n.textContent + (was ? -1 : 1), liked: !was, signedIn: true });
+    try { const r = await fetch("/api/likes", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) }); if (r.ok) show(await r.json()); } catch (e) {}
+  });
+})();
+</script>`;
+
 export const logoClass = p => p.logoStyle === "tile" ? "full" : "";
 
 /** The code-check block shared by project pages and /check pages. V is a row of vets or repo_checks. */
@@ -630,6 +649,7 @@ ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_b
   <div class="cta up" style="--d:5">
     <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${/^https:\/\/github\.com\//.test(p.url) ? `${svg(GITHUB)}${t("View on GitHub", "Xem trên GitHub")}${st && st.stars >= 10 ? `<span class="sc">${ic(I.star)}${+st.stars}</span>` : ""}` : `${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}`}</a>
     ${p.repo && p.repo !== p.url ? `<a class="btn line" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Source code", "Mã nguồn")}</a>` : ""}
+    <button class="btn line" id="like" type="button" aria-pressed="false" data-slug="${esc(p.slug)}">${ic(I.heart)}${t("Like", "Thích")}<b class="lk">${+p.likes || 0}</b></button>
     <button class="btn line" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button>
   </div>
 ${term ? `</div>${term}</div>` : ""}</div></header>
@@ -657,6 +677,7 @@ ${p.image ? `<dialog class="lb" id="lb"><img src="${esc(p.image)}" alt="${esc(p.
 ${siteFooter(site, `<a href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Something wrong with this listing? Tell us on Discord", "Trang này có vấn đề? Báo trên Discord")}</a>`)}
 ${LANG_JS}
 ${FX_JS}
+${LIKE_JS}
 <script>
 (() => {
   const SLUG = ${JSON.stringify(p.slug)}, box = document.getElementById("cbox"), list = document.getElementById("clist");
@@ -858,6 +879,7 @@ ${siteNav(site, "/check")}
 ${siteFooter(site, t("Patterns, not proof. Read the code before you trust it.", "Dấu hiệu, không phải bằng chứng. Hãy đọc code trước khi tin."))}
 ${LANG_JS}
 ${FX_JS}
+${LIKE_JS}
 ${CHECK_JS}
 </body></html>`;
 }

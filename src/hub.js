@@ -143,7 +143,7 @@ export function card(p, i) {
     <div class="ph">${logoTag(p, 32)}<h3>${esc(p.name)}</h3><span class="ptag">${t(...TYPE(p))}</span></div>
     <p>${t(en(p.description), vi(p.description))}</p>
     <div class="pk">${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}${(p.tags || []).slice(0, 3).map(x => `<span>${esc(x)}</span>`).join("")}</div>
-    <div class="pm">${v ? `<span class="vc ${esc(p.vet.verdict)}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}${t(p.vet.verdict === "clear" ? "Code checked" : p.vet.verdict === "review" ? "Worth a look" : "Warning", p.vet.verdict === "clear" ? "Đã kiểm tra code" : p.vet.verdict === "review" ? "Nên xem lại" : "Cảnh báo")}</span>` : ""}${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${p.comments ? `<span>${ic(I.talk)}${+p.comments}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
+    <div class="pm">${v ? `<span class="vc ${esc(p.vet.verdict)}">${ic(p.vet.verdict === "clear" ? I.shield : I.alert)}${t(p.vet.verdict === "clear" ? "Code checked" : p.vet.verdict === "review" ? "Worth a look" : "Warning", p.vet.verdict === "clear" ? "Đã kiểm tra code" : p.vet.verdict === "review" ? "Nên xem lại" : "Cảnh báo")}</span>` : ""}${p.stats?.stars != null ? `<span>${ic(I.star)}${+p.stats.stars}</span>` : ""}${p.likes ? `<span>${ic(I.heart)}${+p.likes}</span>` : ""}${p.comments ? `<span>${ic(I.talk)}${+p.comments}</span>` : ""}<span class="h">${esc(host(p.url))}</span></div>
   </div></a>`;
 }
 
