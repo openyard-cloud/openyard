@@ -415,7 +415,7 @@ export const siteNav = (site, current = "", extra = "") => `<nav><div class="wra
   <div class="nlinks">${NAV.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${t(...label)}</a>`).join("")}</div>
   <div class="right">${extra}
     <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
-    <a class="btn sm line" id="me" href="/auth/github">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script>
+    <a class="btn sm line" id="me" href="/signin">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script>
     <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}<span>${t("Join Discord", "Vào Discord")}</span></a>
   </div>
 </div></nav>`;
@@ -554,7 +554,7 @@ const LIKE_JS = `<script>
   fetch("/api/likes?slug=" + encodeURIComponent(slug), { credentials: "same-origin" }).then(r => r.json()).then(show).catch(() => {});
   addEventListener("oy-lang", () => last && fans(last));
   b.addEventListener("click", async () => {
-    if (!b.dataset.in) { location.href = "/auth/github?return=" + encodeURIComponent(location.pathname + "#like"); return; }
+    if (!b.dataset.in) { location.href = "/signin?return=" + encodeURIComponent(location.pathname + "#like"); return; }
     const was = b.getAttribute("aria-pressed") === "true";
     show({ ...last, count: (last?.count || 0) + (was ? -1 : 1), liked: !was, signedIn: true });
     try { const r = await fetch("/api/likes", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) }); if (r.ok) show(await r.json()); } catch (e) {}
@@ -792,7 +792,7 @@ ${LIKE_JS}
   const back = encodeURIComponent(location.pathname + "#comments");
   const compose = (parent, ph) => \`<form class="compose" data-parent="\${parent || ""}"><textarea maxlength="2000" placeholder="\${esc(ph)}" required></textarea><div class="row"><small>\${T("Plain text, links work.", "Chữ thường, có thể dán link.")}</small><span class="err"></span><button class="btn sm dark" type="submit">\${parent ? T("Reply", "Trả lời") : T("Post", "Gửi")}</button></div></form>\`;
   const one = c => \`<div class="cm" id="c\${c.id}">\${c.user ? \`<img src="\${esc(c.user.avatar)}" alt="">\` : '<span class="ph"></span>'}<div class="bd">
-      <div class="hd">\${c.user ? \`<a href="https://github.com/\${esc(c.user.login)}" target="_blank" rel="noopener">\${esc(c.user.name || c.user.login)}</a><span>@\${esc(c.user.login)}</span>\` : ""}<span>\${ago(c.at)}</span></div>
+      <div class="hd">\${c.user ? \`<a href="/@\${esc(c.user.login)}">\${esc(c.user.name || c.user.login)}</a><span>@\${esc(c.user.login)}</span>\` : ""}<span>\${ago(c.at)}</span></div>
       <div class="tx\${c.deleted ? " gone" : ""}">\${c.deleted ? T("This comment was removed.", "Bình luận này đã bị xoá.") : linkify(c.body)}</div>
       <div class="acts">\${me && !c.parent && !c.deleted ? \`<button data-reply="\${c.id}">\${T("Reply", "Trả lời")}</button>\` : ""}\${(c.mine || me?.admin) && !c.deleted ? \`<button data-del="\${c.id}">\${T("Delete", "Xoá")}</button>\` : ""}</div>
       \${c.parent ? "" : \`<div class="replies">\${items.filter(r => r.parent === c.id).map(one).join("")}\${replyTo === c.id ? compose(c.id, T("Write a reply…", "Viết trả lời…")) : ""}</div>\`}
@@ -800,7 +800,7 @@ ${LIKE_JS}
   function render() {
     box.innerHTML = me
       ? \`<div class="me"><img src="\${esc(me.avatar)}" alt="">\${T("Signed in as", "Đang đăng nhập:")} @\${esc(me.login)} · <button id="out">\${T("Sign out", "Đăng xuất")}</button></div>\${compose(null, T("Say something nice, ask a question, share an idea…", "Khen một câu, hỏi một câu, góp một ý…"))}\`
-      : \`<div class="signin"><p>\${T("Sign in with GitHub to comment. We read your public profile and email, nothing else.", "Đăng nhập bằng GitHub để bình luận. Chỉ đọc hồ sơ công khai và email của bạn.")}</p><a class="btn dark" href="/auth/github?return=\${back}">${svg(GITHUB)}\${T("Sign in with GitHub", "Đăng nhập bằng GitHub")}</a></div>\`;
+      : \`<div class="signin"><p>\${T("Sign in to comment: with GitHub, or with a link sent to your email. No password.", "Đăng nhập để bình luận: bằng GitHub, hoặc bằng link gửi qua email. Không cần mật khẩu.")}</p><a class="btn dark" href="/signin?return=\${back}">\${T("Sign in", "Đăng nhập")}</a></div>\`;
     const top = items.filter(c => !c.parent);
     list.innerHTML = top.length ? top.slice().reverse().map(one).join("") : \`<p class="none">\${T("No comments yet. Be the first.", "Chưa có bình luận nào. Bạn là người đầu tiên nhé.")}</p>\`;
     const h = document.querySelector("#comments h2"); if (h) h.dataset.count = items.filter(c => !c.deleted).length;

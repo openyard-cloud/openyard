@@ -4,7 +4,7 @@
   const el = document.getElementById("me");
   if (!el) return;
   const here = location.pathname + location.search + location.hash;
-  el.href = "/auth/github?return=" + encodeURIComponent(here);
+  el.href = "/signin?return=" + encodeURIComponent(here);
   const vi = () => document.documentElement.lang === "vi";
   const T = (en, v) => vi() ? v : en;
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
