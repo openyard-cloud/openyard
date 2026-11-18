@@ -33,7 +33,7 @@ import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signin
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { siteMeta, grabImage, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
-import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
+import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
 
 const DAY = 86400000;
@@ -173,6 +173,23 @@ async function siteLookup(req, env, url) {
   // check the pictures now, so the form only shows ones that can be kept
   const [logo, image] = await Promise.all([m.icon ? grabImage(m.icon, { logo: true }) : null, m.image ? grabImage(m.image) : null]);
   return json({ name: m.name, title: m.title, description: m.description, logo: logo ? m.icon : null, image: image ? m.image : null }, 200, { "Cache-Control": "private, max-age=300" });
+}
+
+// Cron, once a day: the people of the OpenYard GitHub organization (site.config.json repo).
+async function syncCrew(env, now = Date.now()) {
+  const last = (await env.DB.prepare("SELECT MAX(synced_at) AS at FROM crew").first())?.at || 0;
+  if (now - last < 20 * 3600000) return;
+  const org = parseRepo(SITE.repo)?.owner;
+  if (!org) return;
+  const people = await orgPeople(env, org);
+  if (!people.length) return; // GitHub said nothing: keep what we had
+  await env.DB.batch([
+    ...people.map(p => env.DB.prepare(`INSERT INTO crew (login, avatar, kind, contributions, synced_at) VALUES (?1, ?2, ?3, ?4, ?5)
+      ON CONFLICT (login) DO UPDATE SET avatar = excluded.avatar, kind = excluded.kind, contributions = excluded.contributions, synced_at = excluded.synced_at`)
+      .bind(p.login, p.avatar, p.kind, p.contributions, now)),
+    env.DB.prepare("DELETE FROM crew WHERE synced_at < ?1").bind(now),
+  ]);
+  console.log("crew", people.map(p => p.login).join(" "));
 }
 
 // Cron: listings without a logo or banner get them from their own site (six at a time, each at most weekly).
@@ -746,7 +763,8 @@ async function pulse(env, now) {
   // the members: everyone with an account, the most recently seen first (their profiles are public)
   const { results: people } = await env.DB.prepare("SELECT login, avatar, provider FROM users WHERE deleted_at IS NULL AND banned = 0 ORDER BY seen_at DESC LIMIT 12").all();
   const { results: accounts } = await env.DB.prepare("SELECT login, avatar FROM users WHERE deleted_at IS NULL AND banned = 0").all();
-  return { recent, likes, talk, people, accounts };
+  const { results: crew } = await env.DB.prepare("SELECT login, avatar FROM crew ORDER BY kind = 'member' DESC, contributions DESC").all();
+  return { recent, likes, talk, people, accounts, crew };
 }
 
 async function page(env, slug) {
@@ -938,6 +956,7 @@ export default {
   async scheduled(event, env, ctx) {
     ctx.waitUntil(refreshStats(env));
     ctx.waitUntil(fillPictures(env, event.scheduledTime).catch(e => console.error("pictures", e)));
+    ctx.waitUntil(syncCrew(env, event.scheduledTime).catch(e => console.error("crew", e)));
     // Mondays at 01:17 UTC (08:17 in Vietnam) queue the weekly note; every hour send what is waiting.
     const at = new Date(event.scheduledTime);
     ctx.waitUntil((async () => {
