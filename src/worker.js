@@ -287,7 +287,10 @@ async function likes(req, env, url) {
     const slug = url.searchParams.get("slug") || "";
     const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1").bind(slug).first();
     const mine = user ? !!(await env.DB.prepare("SELECT 1 FROM likes WHERE slug = ?1 AND user_id = ?2").bind(slug, user.id).first()) : false;
-    return json({ count: n, liked: mine, signedIn: !!user }, 200, priv);
+    // the latest few people, shown on the page as "liked by"
+    const { results: people } = await env.DB.prepare(`SELECT u.login, u.avatar FROM likes l JOIN users u ON u.id = l.user_id
+      WHERE l.slug = ?1 AND u.deleted_at IS NULL AND u.banned = 0 ORDER BY l.created_at DESC LIMIT 8`).bind(slug).all();
+    return json({ count: n, liked: mine, signedIn: !!user, people }, 200, priv);
   }
   if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in to like projects.", 401);
@@ -298,7 +301,9 @@ async function likes(req, env, url) {
   const had = await env.DB.prepare("DELETE FROM likes WHERE slug = ?1 AND user_id = ?2 RETURNING slug").bind(slug, user.id).first();
   if (!had) await env.DB.prepare("INSERT INTO likes (slug, user_id, created_at) VALUES (?1, ?2, ?3) ON CONFLICT DO NOTHING").bind(slug, user.id, Date.now()).run();
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1").bind(slug).first();
-  return json({ count: n, liked: !had, signedIn: true }, 200, priv);
+  const { results: people } = await env.DB.prepare(`SELECT u.login, u.avatar FROM likes l JOIN users u ON u.id = l.user_id
+    WHERE l.slug = ?1 AND u.deleted_at IS NULL AND u.banned = 0 ORDER BY l.created_at DESC LIMIT 8`).bind(slug).all();
+  return json({ count: n, liked: !had, signedIn: true, people }, 200, priv);
 }
 
 async function comments(req, env, url, id, ctx) {
@@ -505,14 +510,25 @@ async function checkResult(req, env, ctx) {
 
 const recentChecks = env => env.DB.prepare("SELECT repo, verdict, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 13").all().then(r => r.results);
 
+// What the yard is talking about: the latest comments and this week's likes and comments.
+async function pulse(env, now) {
+  const { results: recent } = await env.DB.prepare(`SELECT c.id, c.slug, c.body, c.created_at, u.login, u.avatar, p.name FROM comments c
+    JOIN users u ON u.id = c.user_id JOIN projects p ON p.slug = c.slug
+    WHERE c.deleted = 0 AND p.hidden = 0 AND u.banned = 0 AND u.deleted_at IS NULL ORDER BY c.created_at DESC LIMIT 6`).all();
+  const week = now - 7 * DAY;
+  const { likes } = await env.DB.prepare("SELECT COUNT(*) AS likes FROM likes WHERE created_at > ?1").bind(week).first();
+  const { talk } = await env.DB.prepare("SELECT COUNT(*) AS talk FROM comments WHERE created_at > ?1 AND deleted = 0").bind(week).first();
+  return { recent, likes, talk };
+}
+
 async function page(env, slug) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
   const now = Date.now(), all = await listProjects(env, now);
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
   const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
-  const liked = all.find(p => p.slug === slug)?.likes || 0;
-  return projectPage({ ...toApi(row, now), likes: liked }, all, SITE, stats, now, vet);
+  const here = all.find(p => p.slug === slug);
+  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0 }, all, SITE, stats, now, vet);
 }
 
 export default {
@@ -613,11 +629,11 @@ export default {
         return new Response(profilePage({ login: person ? person.login : made[0].maintainers.find(x => x.toLowerCase() === m[1].toLowerCase()), person, made, talk, site: SITE, now }), { headers: HTML });
       }
       if ((m = /^\/([a-z-]+)\/?$/.exec(path)) && (CAT[m[1]] || m[1] === "about" || m[1] === "community")) {
-        const all = await listProjects(env, now), args = { all, site: SITE, slug: m[1] };
+        const all = await listProjects(env, now), args = { all, site: SITE, slug: m[1], pulse: CAT[m[1]] ? await pulse(env, now) : null };
         return new Response(m[1] === "about" ? aboutPage(args) : m[1] === "community" ? communityPage(args) : listPage(args), { headers: HTML });
       }
       if ((m = /^\/tags\/([a-z0-9-]+)\/?$/.exec(path))) {
-        const html = tagPage({ all: await listProjects(env, now), site: SITE, tag: m[1] });
+        const html = tagPage({ all: await listProjects(env, now), site: SITE, tag: m[1], pulse: await pulse(env, now) });
         if (html) return new Response(html, { headers: HTML });
         return new Response(listPage({ all: await listProjects(env, now), site: SITE, slug: "projects" }).replace("<head>", '<head>\n<meta name="robots" content="noindex">'), { status: 404, headers: HTML });
       }

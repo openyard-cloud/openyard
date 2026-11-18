@@ -98,7 +98,7 @@ nav .wrap{display:flex;align-items:center;gap:20px;height:64px}
 .np{display:flex;align-items:center;gap:10px;margin-right:6px;opacity:0;transform:translateY(10px);pointer-events:none;transition:opacity .35s,transform .6s var(--ease)}
 nav.pinned .np{opacity:1;transform:none;pointer-events:auto}
 .np .nl{width:28px;height:28px;border-radius:8px;object-fit:contain;background:#fff;padding:3px}.np .nl.full{padding:0;object-fit:cover}.np .ini.nl{font-size:11px;padding:0}
-.np b{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+.np .ini.nl{background:var(--c)}.np b{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
 .chip{border:1px solid var(--line2);background:transparent;color:var(--ink);border-radius:999px;height:34px;padding:0 14px;font:500 13px Inter,sans-serif;cursor:pointer}.chip:hover{background:var(--bg2)}
 .btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:46px;padding:0 22px;border-radius:999px;border:0;font:500 15px Inter,system-ui,sans-serif;color:inherit;background:none;cursor:pointer;white-space:nowrap;transition:transform .5s var(--ease),background .2s,opacity .2s,box-shadow .4s}
 .btn:active{transform:scale(.97)}.btn.dark{background:var(--ink);color:var(--bg)}.btn.dark:hover{opacity:.92}.btn.line{border:1px solid var(--line2)}.btn.line:hover{background:var(--bg2)}
@@ -109,7 +109,7 @@ nav.pinned .np{opacity:1;transform:none;pointer-events:auto}
 #like .lk{font-variant-numeric:tabular-nums;font-weight:600;margin-left:2px}#like .ic{width:17px;height:17px;transition:transform .4s var(--ease),fill .2s}
 #like[aria-pressed="true"]{border-color:#f43f5e;color:#f43f5e}#like[aria-pressed="true"] .ic{fill:#f43f5e;transform:scale(1.12)}
 .dc{background:#5865f2;color:#fff}.dc:hover{background:#4752c4}
-@media (max-width:560px){.back{display:none}.dc span{display:none}.np b{display:none}}
+@media (max-width:560px){.back{display:none}.dc span{display:none}.np b{display:none}nav:not(.pinned) .np{display:none}}
 .hero{position:relative;padding:84px 0 44px;isolation:isolate}
 .aura{position:absolute;inset:-64px 0 auto;height:780px;z-index:-1;pointer-events:none;overflow:hidden;-webkit-mask-image:linear-gradient(#000 50%,transparent);mask-image:linear-gradient(#000 50%,transparent)}
 .aura::before{content:"";position:absolute;inset:0;background-image:radial-gradient(var(--line2) 1px,transparent 1.3px);background-size:22px 22px;-webkit-mask-image:radial-gradient(60% 55% at 28% 35%,#000,transparent 75%);mask-image:radial-gradient(60% 55% at 28% 35%,#000,transparent 75%)}
@@ -336,6 +336,45 @@ footer .bot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;m
 .nlinks a:hover{color:var(--ink)}.nlinks a[aria-current]{color:var(--ink);background:var(--bg2)}
 @media (min-width:821px) and (max-width:1060px){nav.pinned .nlinks{display:none}}
 @media (max-width:820px){nav .wrap{flex-wrap:wrap;height:auto;padding-top:12px;padding-bottom:6px;row-gap:6px}.nlinks{order:3;flex-basis:100%;margin:0 0 0 -10px;overflow-x:auto;scrollbar-width:none}.nlinks::-webkit-scrollbar{display:none}}
+/* project page: two columns, the sidebar stays in view */
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#7c9cff,#b67cff,#ff7eb0,#ffc56b)}
+.hero.ph{padding:40px 0 34px}
+.crumb{display:flex;gap:8px;align-items:center;font-size:13.5px;color:var(--muted);margin-bottom:26px;flex-wrap:wrap}.crumb a:hover{color:var(--ink)}.crumb b{color:var(--ink);font-weight:500}
+.idrow{display:flex;gap:20px;align-items:center}.idrow .logo{width:76px;height:76px}
+.idrow h1{font-size:clamp(36px,5.6vw,64px)}.idrow .tl{margin:8px 0 0;max-width:34em}
+@media (max-width:560px){.idrow{flex-direction:column;align-items:flex-start;gap:14px}}
+.social{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:22px;font-size:14px;color:var(--muted)}
+.social .stat{display:inline-flex;align-items:center;gap:6px}.social .stat .ic{width:16px;height:16px}.social .stat b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.social a.stat:hover b{text-decoration:underline}
+.fans{display:flex;align-items:center;gap:12px;margin-top:18px;font-size:14px;color:var(--muted)}.fans[hidden]{display:none}
+.stack{display:flex}.stack img{width:28px;height:28px;border-radius:50%;border:2px solid var(--bg);margin-left:-8px;background:var(--bg2)}.stack img:first-child{margin-left:0}
+.fans a{color:var(--ink);font-weight:500}.fans a:hover{text-decoration:underline}
+.pcols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;align-items:start}
+@media (max-width:980px){.pcols{grid-template-columns:1fr}.pside{order:-1}}
+.pmain>*+*{margin-top:56px}.pmain>.stage{margin-top:24px}.pmain>.stage:first-child{margin-top:0}.pmain .talk,.pmain .act,.pmain .chk,.pmain .hl{margin-top:56px}
+.about .desc{font-size:18px;line-height:1.65;color:var(--ink);max-width:none;margin:0}
+.pside{position:sticky;top:88px;display:flex;flex-direction:column;gap:12px}
+@media (max-width:980px){.pside{position:static}}
+.box{display:block;padding:18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
+.acts{display:flex;flex-direction:column;gap:8px}.acts .btn{width:100%}.acts .row2{display:flex;gap:8px}.acts .row2 .btn{flex:1}
+#like .lt{margin-right:auto}#like{justify-content:flex-start}
+.mk{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:20px;border:1px solid var(--line2);background:var(--solid)}
+.mk>div{min-width:0;flex:1}.mk small{display:block;font-size:12px;color:var(--muted)}.mk b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk a:hover b{text-decoration:underline}.mk span:not(.ring){display:block;font-size:12.5px;color:var(--muted)}
+.ring{flex:none;display:block;padding:2.5px;border-radius:50%;background:conic-gradient(from 200deg,#7c9cff,#b67cff,#ff7eb0,#ffc56b,#7c9cff)}
+.ring img{display:block;width:44px;height:44px;border-radius:50%;border:2px solid var(--solid);background:var(--bg2)}
+.facts{display:grid;gap:14px}.facts dt{font-size:12px;color:var(--muted);margin-bottom:4px}.facts dd{margin:0;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:14px}
+.vmini,.dcard{display:flex;gap:12px;align-items:center;transition:border-color .2s,transform .5s var(--ease)}.vmini:hover,.dcard:hover{border-color:var(--c);transform:translateY(-2px)}
+.vmini>.ic{flex:none;width:30px;height:30px;padding:6px;border-radius:10px;color:#fff;background:#10b981}.vmini.review>.ic{background:#f59e0b}.vmini.warning>.ic{background:#ef4444}
+.vmini b,.dcard b{display:block;font-size:14px;font-weight:600;line-height:1.3}.vmini small,.dcard small{display:block;font-size:12.5px;color:var(--muted)}
+.dcard svg{flex:none;width:30px;height:30px;padding:6px;border-radius:10px;background:#5865f2;color:#fff}
+.prompts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.ylog ol{list-style:none;margin:16px 0 0;padding:0;position:relative}
+.ylog ol::before{content:"";position:absolute;left:15px;top:8px;bottom:8px;width:2px;background:linear-gradient(#b67cff,#ff7eb0,transparent)}
+.ylog li{position:relative;display:flex;gap:14px;align-items:flex-start;padding:8px 0}
+.ylog li>.ic{flex:none;width:32px;height:32px;padding:7px;border-radius:50%;background:var(--solid);border:1px solid var(--line2);color:var(--c)}
+.ylog li div{padding-top:5px;font-size:15px}.ylog li a:hover{text-decoration:underline}.ylog small{display:block;color:var(--muted);font-size:12.5px}
+.ylog h2,.talk h2{font-size:clamp(24px,2.8vw,32px)}
 .js .reveal{opacity:0;transform:translateY(28px);transition:opacity .9s var(--ease),transform 1.1s var(--ease);transition-delay:calc(var(--d,0) * 70ms)}
 .js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.frame{transform:none;opacity:1}}`;
@@ -430,8 +469,8 @@ const FX_JS = `<script>
     }), { threshold: .6 });
     document.querySelectorAll(".cnt").forEach(el => { if (+el.dataset.n) { el.textContent = "0"; count.observe(el); } });
   }
-  const nav = document.querySelector("nav"), frame = document.querySelector(".frame"), cta = document.querySelector(".hero .cta");
-  new IntersectionObserver(([e]) => nav.classList.toggle("pinned", !e.isIntersecting && e.boundingClientRect.top < 0)).observe(cta);
+  const nav = document.querySelector("nav"), frame = document.querySelector(".frame"), cta = document.querySelector(".hero .cta, .pside .acts");
+  if (cta) new IntersectionObserver(([e]) => nav.classList.toggle("pinned", !e.isIntersecting && e.boundingClientRect.top < 0)).observe(cta);
   let queued = false;
   const paint = () => {
     queued = false;
@@ -491,15 +530,42 @@ const FX_JS = `<script>
 const LIKE_JS = `<script>
 (() => {
   const b = document.getElementById("like"); if (!b) return;
-  const n = b.querySelector(".lk"), slug = b.dataset.slug;
-  const show = d => { n.textContent = d.count; b.setAttribute("aria-pressed", d.liked); b.dataset.in = d.signedIn ? 1 : ""; };
+  const slug = b.dataset.slug, T = (en, vi) => window.OY_LANG === "vi" ? vi : en;
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  let last = null;
+  // "Liked by @a, @b and 5 others", with their pictures
+  const fans = d => {
+    const box = document.getElementById("fans"); if (!box) return;
+    const ppl = d.people || [];
+    box.hidden = !d.count;
+    if (!d.count) return;
+    document.getElementById("fanpics").innerHTML = ppl.slice(0, 6).map(u => \`<img src="\${esc(u.avatar || "https://github.com/" + u.login + ".png?size=56")}" alt="" title="@\${esc(u.login)}">\`).join("");
+    const names = ppl.slice(0, 2).map(u => \`<a href="/@\${esc(u.login)}">@\${esc(u.login)}</a>\`), more = d.count - names.length;
+    document.getElementById("fantext").innerHTML = names.length
+      ? T("Liked by ", "") + names.join(", ") + (more > 0 ? T(\` and \${more} other\${more === 1 ? "" : "s"}\`, \` và \${more} người khác\`) : "") + T("", " đã thích")
+      : T(\`\${d.count} like\${d.count === 1 ? "" : "s"}\`, \`\${d.count} lượt thích\`);
+  };
+  const show = d => {
+    last = d;
+    document.querySelectorAll(".lk").forEach(n => n.textContent = d.count);
+    b.setAttribute("aria-pressed", d.liked); b.dataset.in = d.signedIn ? 1 : "";
+    fans(d);
+  };
   fetch("/api/likes?slug=" + encodeURIComponent(slug), { credentials: "same-origin" }).then(r => r.json()).then(show).catch(() => {});
+  addEventListener("oy-lang", () => last && fans(last));
   b.addEventListener("click", async () => {
     if (!b.dataset.in) { location.href = "/auth/github?return=" + encodeURIComponent(location.pathname + "#like"); return; }
     const was = b.getAttribute("aria-pressed") === "true";
-    show({ count: +n.textContent + (was ? -1 : 1), liked: !was, signedIn: true });
+    show({ ...last, count: (last?.count || 0) + (was ? -1 : 1), liked: !was, signedIn: true });
     try { const r = await fetch("/api/likes", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) }); if (r.ok) show(await r.json()); } catch (e) {}
   });
+  // Comment starters: put the words in the box, or send people to sign in first
+  document.querySelectorAll(".prompts .chip").forEach(c => c.addEventListener("click", () => {
+    const ta = document.querySelector("#cbox textarea");
+    if (!ta) { const a = document.querySelector("#cbox a"); if (a) location.href = a.href; return; }
+    ta.value = (document.documentElement.lang === "vi" ? c.dataset.pv : c.dataset.pe) + ta.value.replace(/^(Tried it|Idea|Found a bug|Question|Đã dùng thử|Ý tưởng|Gặp lỗi|Hỏi): /, "");
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  }));
 })();
 </script>`;
 
@@ -636,40 +702,77 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
       ${act.discussions ? list(["Discussions", "Thảo luận"], act.discussions, repoUrl + "/discussions", "talk", 2) : ""}
     </div>
   </section>` : "";
+  // The maker card in the sidebar: a person with a GitHub login, the OpenYard team, or nobody named
+  const mk = p.team ? null : p.maintainers[0] || null;
+  const mkCount = mk ? all.filter(o => o.maintainers.some(m => m.toLowerCase() === mk.toLowerCase())).length : all.filter(o => o.team).length;
+  const makerCard = `<div class="mk reveal">
+    <span class="ring"><img src="${p.team ? "/favicon.svg" : mk ? `https://github.com/${esc(mk)}.png?size=96` : "/favicon.svg"}" alt="" width="48" height="48"></span>
+    <div><small>${t("Made by", "Người làm")}</small>${p.team ? `<b>OpenYard team</b>` : mk ? `<a href="/@${esc(mk)}"><b>@${esc(mk)}</b></a>` : `<b>${t("A community member", "Một thành viên cộng đồng")}</b>`}
+    <span>${p.team || mk ? t(`${mkCount} project${mkCount === 1 ? "" : "s"} in the yard`, `${mkCount} dự án trên OpenYard`) : ""}</span></div>
+    ${mk ? `<a class="btn sm line" href="/@${esc(mk)}">${t("Profile", "Hồ sơ")}</a>` : ""}
+  </div>`;
+  const days = Math.max(0, Math.round((now - Date.parse(p.added)) / 86400000));
+  // A short log of what happened to the project in the yard, newest first
+  const log = [
+    st?.pushed_at ? [Date.parse(st.pushed_at), I.commit, ["New code pushed to GitHub", "Có code mới trên GitHub"]] : null,
+    V ? [V.scanned_at, I.shield, [`Code checked: ${VERDICT[V.verdict][2]}`, `Đã kiểm tra code: ${VERDICT[V.verdict][1].toLowerCase()}`], "#check"] : null,
+    p.comments ? [null, I.talk, [`${p.comments} comment${p.comments === 1 ? "" : "s"} so far`, `${p.comments} bình luận đến giờ`], "#comments"] : null,
+    [Date.parse(p.added), I.folder, ["Joined the yard", "Lên OpenYard"]],
+  ].filter(Boolean);
+  const prompts = [["Tried it: ", "Đã dùng thử: "], ["Idea: ", "Ý tưởng: "], ["Found a bug: ", "Gặp lỗi: "], ["Question: ", "Hỏi: "]];
+  const facts2 = facts.filter(([[e]]) => e !== "Made by");
   return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld, md: `${url}.md` })}
 <body style="--c:${esc(p.color || "#6d5bd0")}">
 ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${logo(p, "nl", 28)}<b>${esc(p.name)}</b><span class="btn sm dark">${t("Open", "Mở")} ${ARROW}</span></a>`)}
 <main>
-<header class="hero${term ? " two" : ""}"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">${term ? `<div class="cols"><div>` : ""}
-  <div class="id">${logo(p, "logo", 72)}
-    <div class="tags up" style="--d:1"><span class="pill on">${t(...type)}</span>${p.team ? `<span class="pill">OpenYard team</span>` : `<span class="pill">${t("Community", "Cộng đồng")}</span>`}</div></div>
-  <h1 class="up" style="--d:2">${esc(p.name)}</h1>
-  <p class="tl up" style="--d:3">${t(en(p.tagline), vi(p.tagline))}</p>
-  <p class="desc up" style="--d:4">${t(en(p.description), vi(p.description))}</p>
-  <div class="cta up" style="--d:5">
-    <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${/^https:\/\/github\.com\//.test(p.url) ? `${svg(GITHUB)}${t("View on GitHub", "Xem trên GitHub")}${st && st.stars >= 10 ? `<span class="sc">${ic(I.star)}${+st.stars}</span>` : ""}` : `${t("Open", "Mở")} ${esc(host(p.url))} ${ARROW}`}</a>
-    ${p.repo && p.repo !== p.url ? `<a class="btn line" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Source code", "Mã nguồn")}</a>` : ""}
-    <button class="btn line" id="like" type="button" aria-pressed="false" data-slug="${esc(p.slug)}">${ic(I.heart)}${t("Like", "Thích")}<b class="lk">${+p.likes || 0}</b></button>
-    <button class="btn line" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button>
+<header class="hero ph"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
+  <div class="crumb up" role="navigation" aria-label="Breadcrumb"><a href="/projects">${t("Projects", "Dự án")}</a><span>/</span>${p.kinds[0] ? `<a href="/${KIND_PAGE[p.kinds[0]]}">${t(...KIND[p.kinds[0]])}</a><span>/</span>` : ""}<b>${esc(p.name)}</b></div>
+  <div class="idrow">${logo(p, "logo", 76)}
+    <div><h1 class="up" style="--d:1">${esc(p.name)}</h1>
+    <p class="tl up" style="--d:2">${t(en(p.tagline), vi(p.tagline))}</p></div></div>
+  <div class="social up" style="--d:3">
+    <span class="pill on">${t(...type)}</span>${p.status !== "live" ? `<span class="pill">${t(...STATUS[p.status])}</span>` : ""}
+    <span class="stat">${ic(I.heart)}<b class="lk">${+p.likes || 0}</b></span>
+    <a class="stat" href="#comments">${ic(I.talk)}<b>${+p.comments || 0}</b></a>
+    ${st?.stars != null ? `<span class="stat">${ic(I.star)}<b>${+st.stars}</b></span>` : ""}
+    <span class="stat">${t(days === 0 ? "Joined today" : `Joined ${days} day${days === 1 ? "" : "s"} ago`, days === 0 ? "Lên hôm nay" : `Lên ${days} ngày trước`)}</span>
   </div>
-${term ? `</div>${term}</div>` : ""}</div></header>
-<div class="wrap">
-  ${visual}
-  <dl class="specs reveal" style="--n:${facts.length}">${facts.map(([[e, v], html]) => `<div><dt>${t(e, v)}</dt><dd>${html}</dd></div>`).join("")}</dl>
-  ${highlights}
-  ${check}
-  ${activity}
-  <section class="talk" id="comments">
-    <div class="reveal"><h2>${t("Comments", "Bình luận")}</h2>
-    <p class="sub">${t("Questions, feedback, ideas for the maker. Sign in with GitHub to join in.", "Hỏi, góp ý hay gợi ý cho người làm. Đăng nhập bằng GitHub để tham gia.")}</p></div>
-    <div id="cbox" class="reveal" style="--d:1"></div>
-    <div class="cms" id="clist"></div>
-  </section>
+  <div class="fans up" style="--d:4" id="fans" hidden><span class="stack" id="fanpics"></span><span id="fantext"></span></div>
+</div></header>
+<div class="wrap pcols">
+  <div class="pmain">
+    ${term ? `<div class="reveal">${term}</div>` : ""}
+    ${visual}
+    <section class="about reveal"><p class="desc">${t(en(p.description), vi(p.description))}</p></section>
+    ${highlights}
+    <section class="talk" id="comments">
+      <div class="reveal"><span class="eyebrow">${t("Talk with the maker", "Trò chuyện với người làm")}</span><h2>${t("What do you think?", "Bạn thấy thế nào?")}</h2>
+      <p class="sub">${t("Makers rarely hear from the people who use their work. A line or two helps more than you think.", "Người làm hiếm khi được nghe người dùng nói. Một hai dòng của bạn giúp nhiều hơn bạn nghĩ.")}</p></div>
+      <div class="prompts reveal">${prompts.map(([e, v]) => `<button type="button" class="chip" data-pe="${esc(e)}" data-pv="${esc(v)}">${t(e.replace(/: $/, ""), v.replace(/: $/, ""))}</button>`).join("")}</div>
+      <div id="cbox" class="reveal" style="--d:1"></div>
+      <div class="cms" id="clist"></div>
+    </section>
+    <section class="ylog reveal"><span class="eyebrow">${t("Yard log", "Nhật ký")}</span><h2>${t("What happened here", "Những gì đã diễn ra")}</h2>
+      <ol>${log.map(([at, icon, text, href]) => `<li>${ic(icon)}<div>${href ? `<a href="${href}">${t(...text)}</a>` : t(...text)}${at ? `<small>${t(...since(at, now))}</small>` : ""}</div></li>`).join("")}</ol></section>
+    ${check}
+    ${activity}
+  </div>
+  <aside class="pside">
+    <div class="box acts reveal">
+      <a class="btn dark" href="/go/${esc(p.slug)}" target="_blank" rel="noopener">${/^https:\/\/github\.com\//.test(p.url) ? `${svg(GITHUB)}${t("View on GitHub", "Xem trên GitHub")}` : `${t("Open", "Mở")} ${esc(host(p.url).split("/")[0])} ${ARROW}`}</a>
+      <button class="btn line" id="like" type="button" aria-pressed="false" data-slug="${esc(p.slug)}">${ic(I.heart)}<span class="lt">${t("Like", "Thích")}</span><b class="lk">${+p.likes || 0}</b></button>
+      <div class="row2">${p.repo && p.repo !== p.url ? `<a class="btn line sm" href="${esc(p.repo)}" target="_blank" rel="noopener">${svg(GITHUB)}${t("Code", "Mã nguồn")}</a>` : ""}<button class="btn line sm" id="share" type="button">${ic(I.share)}${t("Share", "Chia sẻ")}</button></div>
+    </div>
+    ${makerCard}
+    <dl class="box facts reveal">${facts2.map(([[e, v], html]) => `<div><dt>${t(e, v)}</dt><dd>${html}</dd></div>`).join("")}</dl>
+    ${V ? `<a class="box vmini ${esc(V.verdict)} reveal" href="#check">${ic(V.verdict === "clear" ? I.shield : I.alert)}<div><b>${t(VERDICT[V.verdict][0], VERDICT[V.verdict][1])}</b><small>${t("Code check by vetcode", "Kiểm tra code bằng vetcode")}</small></div></a>` : ""}
+    <a class="box dcard reveal" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}<div><b>${t("Also in #showcase", "Cũng có trong #showcase")}</b><small>${t("Talk about it on the OpenYard Discord", "Bàn về nó trên Discord OpenYard")}</small></div></a>
+  </aside>
 </div>
 ${others.length ? `<section class="more"><div class="wrap">
-  <div class="hd2 reveal"><h2 style="margin:0">${t("More from the yard", "Thêm từ OpenYard")}</h2><a class="btn sm line" href="/projects">${t("All projects", "Tất cả dự án")} ${ARROW}</a></div>
+  <div class="hd2 reveal"><div><span class="eyebrow">${t("Neighbors", "Hàng xóm")}</span><h2 style="margin:0">${t("Nearby in the yard", "Gần đây trong OpenYard")}</h2></div><a class="btn sm line" href="/projects">${t("All projects", "Tất cả dự án")} ${ARROW}</a></div>
   <div class="grid">${others.map((o, i) => `<a class="mini reveal" style="--d:${i};--c:${esc(o.color || "#6d5bd0")}" href="/p/${esc(o.slug)}">${logo(o, "", 44)}<div><h3>${esc(o.name)}</h3><p>${t(en(o.tagline), vi(o.tagline))}</p></div>${ARROW}</a>`).join("")}</div>
-  <div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản.")}</p></div>
+  <div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes. It gets a page like this one and a post in #showcase.", "Đưa lên OpenYard chỉ mất năm phút. Dự án có một trang như thế này và một bài trong #showcase.")}</p></div>
     <div class="cta"><a class="btn dark" href="/submit">${t("Add your project", "Đưa dự án lên")}</a><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}Discord</a></div></div>
 </div></section>` : ""}
 </main>
