@@ -8,6 +8,8 @@
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 //   GET/POST /api/likes        like a project (signed in); its makers hear about it once a day
+//   POST /auth/email, GET /auth/email?t=, POST /auth/email/confirm   sign in with a one-time email link (no GitHub needed)
+//   GET  /a/<seed>/<letter>.svg   the generated picture of an account that has none
 //   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
 //   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
@@ -21,10 +23,10 @@
 import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import * as mail from "./email.js";
-import { welcomePage, settingsPage, profilePage, privacyPage } from "./account.js";
+import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
-import { handleAuth, currentUser, isAdmin } from "./auth.js";
+import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
 
 const DAY = 86400000;
 const TYPES = ["app", "open-source"], STATUSES = ["live", "beta", "soon"], KINDS = ["people", "wild", "dev"];
@@ -149,7 +151,7 @@ async function submit(req, env, ctx) {
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
   // signed in: the project is theirs to edit from their profile, and they are its maker unless they named someone
   const user = await currentUser(req, env);
-  if (user && !f.maintainers.length) f.maintainers = [user.login];
+  if (user && user.provider !== "email" && !f.maintainers.length) f.maintainers = [user.login];
   // where we tell them about their listing; a signed-in person's account email will do
   const contactEmail = f.email || user?.email || null;
   if (!contactEmail) return fail("Add your email so we can send you the edit link and tell you when people comment.");
@@ -174,7 +176,8 @@ async function submit(req, env, ctx) {
 }
 
 // Who may change a project: the private edit link, or a signed-in person who submitted it or is listed as its maker.
-const owns = (user, row) => !!user && (row.owner_id === user.id || JSON.parse(row.maintainers || "[]").some(m => m.toLowerCase() === user.login.toLowerCase()));
+// maintainers are GitHub usernames, so only a GitHub account can match one
+const owns = (user, row) => !!user && (row.owner_id === user.id || (user.provider !== "email" && JSON.parse(row.maintainers || "[]").some(m => m.toLowerCase() === user.login.toLowerCase())));
 async function authorize(env, slug, tok, user) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
@@ -241,6 +244,68 @@ async function refreshStats(env, now = Date.now()) {
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
 const KIND_LIST = ["people", "wild", "dev"];
+// ---------- accounts without GitHub ----------
+const HANDLE = /^[a-z0-9](?:[a-z0-9-]{1,22})[a-z0-9]$/;
+const RESERVED = new Set(["admin", "openyard", "team", "deleted", "settings", "welcome", "signin", "support", "help", "discuss", "api", "root", "system", "null", "undefined"]);
+// a generated picture: one of the OpenYard gradients, picked by the account, with an initial
+const pic = (id, name) => `/a/${Math.abs(id).toString(36)}/${encodeURIComponent((String(name).trim()[0] || "?").toUpperCase())}.svg`;
+const GRADS = [["#7c9cff", "#b67cff"], ["#b67cff", "#ff7eb0"], ["#ff7eb0", "#ffc56b"], ["#34d399", "#7c9cff"], ["#38c6d9", "#b67cff"], ["#ffc56b", "#ff7eb0"], ["#6d5bd0", "#38c6d9"], ["#10b981", "#a3e635"]];
+function avatarSvg(seed, letter) {
+  let h = 0; for (const c of seed) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  const [a, b] = GRADS[h % GRADS.length], L = [...letter][0] || "?";
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="96" height="96" fill="url(#g)"/><circle cx="${20 + h % 56}" cy="${16 + (h >> 4) % 30}" r="34" fill="#fff" opacity=".14"/><text x="48" y="50" dy=".35em" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="44" font-weight="600" fill="#fff">${L.replace(/[<&>"']/g, "")}</text></svg>`;
+}
+async function freeHandle(env, email) {
+  let base = email.split("@")[0].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 20);
+  if (base.length < 3 || RESERVED.has(base)) base = "maker";
+  for (let i = 0; i < 50; i++) {
+    const h = i ? `${base}-${i + 1}` : base;
+    if (HANDLE.test(h) && !(await env.DB.prepare("SELECT 1 FROM users WHERE login = ?1 COLLATE NOCASE").bind(h).first())) return h;
+  }
+  return `maker-${Math.random().toString(36).slice(2, 8)}`;
+}
+async function tsOk(env, token, ip) {
+  if (!env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY) return true;
+  const body = new FormData(); body.append("secret", env.TURNSTILE_SECRET); body.append("response", String(token || "")); body.append("remoteip", ip);
+  return (await (await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", { method: "POST", body })).json()).success === true;
+}
+// POST /auth/email: send a one-time link. GET shows a button (mail scanners open links, they do not
+// press buttons); POST /auth/email/confirm signs in, making the account on first use.
+async function emailSignin(req, env, url) {
+  const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0", path = url.pathname, secure = url.protocol === "https:";
+  if (path === "/auth/email" && req.method === "POST") {
+    let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+    const email = String(b.email || "").trim().toLowerCase();
+    if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email address looks wrong.");
+    if (!(await tsOk(env, b.ts, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
+    const ipHash = await sha256(ip + "|signin|" + today(now));
+    const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - 3600000).first();
+    const { e } = await env.DB.prepare("SELECT COUNT(*) AS e FROM login_tokens WHERE email = ?1 AND created_at > ?2").bind(email, now - 3600000).first();
+    if (a >= 6 || e >= 3) return fail("Too many sign-in emails. Wait an hour, or sign in with GitHub.", 429);
+    const tok = randomToken(24);
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO login_tokens (token_hash, email, back, ip_hash, created_at, expires_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)").bind(await sha256(tok), email, safeReturn(b.back), ipHash, now, now + 20 * 60000),
+      env.DB.prepare("DELETE FROM login_tokens WHERE created_at < ?1").bind(now - 2 * DAY),
+    ]);
+    const sent = await mail.signin(env, email, `${url.origin}/auth/email?t=${tok}`, b.lang === "vi" ? "vi" : "en");
+    return sent ? json({ sent: true }) : fail("Email sign-in is busy right now. Try again later, or sign in with GitHub.", 503);
+  }
+  if (path === "/auth/email" && req.method === "GET") return new Response(signinConfirmPage({ site: SITE, token: url.searchParams.get("t") || "" }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" } });
+  if (path === "/auth/email/confirm" && req.method === "POST") {
+    let form; try { form = await req.formData(); } catch { return fail("Bad request."); }
+    const row = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL AND expires_at > ?2 RETURNING email, back").bind(await sha256(String(form.get("t") || "")), now).first();
+    if (!row) return Response.redirect(`${url.origin}/signin?expired=1`, 303);
+    let u = await env.DB.prepare("SELECT id FROM users WHERE email = ?1 COLLATE NOCASE AND deleted_at IS NULL ORDER BY provider = 'github' DESC LIMIT 1").bind(row.email).first();
+    if (!u) {
+      const id = -(Math.floor(Math.random() * 2 ** 46) + 1), login = await freeHandle(env, row.email);
+      await env.DB.prepare(`INSERT INTO users (id, login, name, avatar, email, provider, created_at, seen_at) VALUES (?1, ?2, NULL, ?3, ?4, 'email', ?5, ?5)`).bind(id, login, pic(id, login), row.email, now).run();
+      u = { id };
+    }
+    const sess = await sessionFor(env, u.id, secure);
+    return new Response(null, { status: 303, headers: { Location: landing(sess, row.back), "Set-Cookie": sess.set } });
+  }
+  return null;
+}
 const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
 // Writes need a JSON body, which another site cannot send with the cookie without a CORS preflight.
@@ -252,7 +317,7 @@ async function me(req, env, path, ctx) {
   if (!(req.headers.get("Content-Type") || "").startsWith("application/json")) return fail("Send JSON.", 415);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   if (path === "/api/me/delete") {
-    if (String(b.confirm || "").toLowerCase() !== user.login.toLowerCase()) return fail("Type your GitHub username to confirm.");
+    if (String(b.confirm || "").toLowerCase() !== user.login.toLowerCase()) return fail("Type your nickname to confirm.");
     // Comments are emptied rather than removed so replies keep their place; the profile disappears.
     await env.DB.batch([
       env.DB.prepare("UPDATE comments SET deleted = 1, body = '' WHERE user_id = ?1").bind(user.id),
@@ -267,6 +332,15 @@ async function me(req, env, path, ctx) {
   const interests = Array.isArray(b.interests) ? [...new Set(b.interests.filter(k => KIND_LIST.includes(k)))] : JSON.parse(user.interests || "[]");
   const emailOk = typeof b.emailOk === "boolean" ? (b.emailOk && !!user.email) : !!user.email_ok;
   const lang = b.lang === "vi" || b.lang === "en" ? b.lang : user.lang || "en";
+  // email accounts choose their nickname, name and bio; GitHub accounts take them from GitHub
+  if (user.provider === "email" && (b.login !== undefined || b.name !== undefined || b.bio !== undefined)) {
+    const login = b.login !== undefined ? String(b.login).trim().toLowerCase() : user.login;
+    if (!HANDLE.test(login) || RESERVED.has(login)) return fail("A nickname is 3 to 24 letters, numbers or dashes, starting and ending with a letter or number.");
+    if (login !== user.login.toLowerCase() && await env.DB.prepare("SELECT 1 FROM users WHERE login = ?1 COLLATE NOCASE AND id != ?2").bind(login, user.id).first()) return fail("That nickname is taken.");
+    const name = b.name !== undefined ? clip(String(b.name).trim(), 40) || null : user.name;
+    const bio = b.bio !== undefined ? clip(String(b.bio).trim(), 200) || null : user.bio;
+    await env.DB.prepare("UPDATE users SET login = ?2, name = ?3, bio = ?4, avatar = ?5 WHERE id = ?1").bind(user.id, login, name, bio, pic(user.id, name || login)).run();
+  }
   await env.DB.prepare(`UPDATE users SET interests = ?2, email_ok = ?3, email_ok_at = CASE WHEN email_ok = ?3 THEN email_ok_at ELSE ?4 END,
       onboarded_at = COALESCE(onboarded_at, CASE WHEN ?5 THEN ?4 END), lang = ?6 WHERE id = ?1`)
     .bind(user.id, JSON.stringify(interests), emailOk ? 1 : 0, now, b.onboarded ? 1 : 0, lang).run();
@@ -545,7 +619,11 @@ export default {
         catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
+      if (path.startsWith("/auth/email")) { const r = await emailSignin(req, env, url); if (r) return r; }
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
+      const av = /^\/a\/([a-z0-9]{1,12})\/([^/]{1,12})\.svg$/.exec(path);
+      if (av) return new Response(avatarSvg(av[1], (() => { try { return decodeURIComponent(av[2]); } catch { return "?"; } })()), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=31536000, immutable" } });
+      if (path === "/signin") return new Response(signinPage({ site: SITE, back: url.searchParams.get("return") || "/", expired: url.searchParams.has("expired"), turnstile: env.TURNSTILE_SITE_KEY }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
       if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
@@ -611,7 +689,7 @@ export default {
       const PRIVATE = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" };
       if (path === "/welcome" || path === "/settings") {
         const user = await currentUser(req, env);
-        if (!user) return Response.redirect(`${url.origin}/auth/github?return=${encodeURIComponent(path + url.search)}`, 302);
+        if (!user) return Response.redirect(`${url.origin}/signin?return=${encodeURIComponent(path + url.search)}`, 302);
         if (path === "/welcome") return new Response(welcomePage({ user, site: SITE, back: url.searchParams.get("return") || "/" }), { headers: PRIVATE });
         const { results } = await env.DB.prepare("SELECT * FROM projects WHERE hidden = 0 ORDER BY created_at DESC").all();
         return new Response(settingsPage({ user, site: SITE, mine: results.filter(r => owns(user, r)).map(r => toApi(r, now)) }), { headers: PRIVATE });
@@ -619,10 +697,11 @@ export default {
       if (path === "/unsubscribe" && (req.method === "GET" || req.method === "POST")) return mail.unsubscribe(req, env, url, SITE);
       if (path === "/privacy") return new Response(privacyPage({ site: SITE }), { headers: HTML });
       if ((m = /^\/@([A-Za-z0-9-]{1,39})\/?$/.exec(path))) {
-        const person = await env.DB.prepare("SELECT id, login, name, avatar, bio, created_at FROM users WHERE login = ?1 COLLATE NOCASE AND deleted_at IS NULL AND banned = 0").bind(m[1]).first();
+        const person = await env.DB.prepare("SELECT id, login, name, avatar, bio, created_at, provider FROM users WHERE login = ?1 COLLATE NOCASE AND deleted_at IS NULL AND banned = 0").bind(m[1]).first();
         const all = await listProjects(env, now);
         const owned = person ? new Set((await env.DB.prepare("SELECT slug FROM projects WHERE owner_id = ?1").bind(person.id).all()).results.map(r => r.slug)) : new Set();
-        const made = all.filter(p => owned.has(p.slug) || p.maintainers.some(x => x.toLowerCase() === m[1].toLowerCase()));
+        // maintainers are GitHub usernames: they belong to this page unless it is an email account's nickname
+        const made = all.filter(p => owned.has(p.slug) || (person?.provider !== "email" && p.maintainers.some(x => x.toLowerCase() === m[1].toLowerCase())));
         if (!person && !made.length) return new Response(listPage({ all, site: SITE, slug: "projects" }).replace("<head>", '<head>\n<meta name="robots" content="noindex">'), { status: 404, headers: HTML });
         const talk = person ? (await env.DB.prepare(`SELECT c.slug, c.body, c.created_at, p.name FROM comments c JOIN projects p ON p.slug = c.slug
           WHERE c.user_id = ?1 AND c.deleted = 0 AND p.hidden = 0 ORDER BY c.created_at DESC LIMIT 8`).bind(person.id).all()).results : [];

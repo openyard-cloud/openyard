@@ -1,6 +1,8 @@
 // Sign in with GitHub (OAuth App). We read the public profile and the primary verified email
 // (user:email scope) and keep no GitHub token: after the callback the person gets our own
 // session cookie, and the database stores its hash. A first sign-in goes to /welcome.
+// People without GitHub sign in with a one-time email link instead (worker.js, /auth/email);
+// they share the session code here through sessionFor().
 //   GET  /auth/github?return=/p/x   start      GET /auth/callback   finish
 //   POST /auth/logout                sign out    GET /api/me          who is signed in
 // Needs GITHUB_CLIENT_ID (var) and GITHUB_CLIENT_SECRET (secret). For local work only,
@@ -15,7 +17,7 @@ export const randomToken = (n = 32) => btoa(String.fromCharCode(...crypto.getRan
 const cookies = req => Object.fromEntries((req.headers.get("Cookie") || "").split(/;\s*/).filter(Boolean).map(c => { const i = c.indexOf("="); return [c.slice(0, i), decodeURIComponent(c.slice(i + 1))]; }));
 const cookie = (name, value, maxAge, secure) => `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure ? "; Secure" : ""}`;
 // only send people back to a page on this site
-const safeReturn = r => (typeof r === "string" && /^\/(?!\/)[\w\-./?=&#%@]*$/.test(r) ? r : "/");
+export const safeReturn = r => (typeof r === "string" && /^\/(?!\/)[\w\-./?=&#%@]*$/.test(r) ? r : "/");
 // back to the page with ?signin=failed so it can say so
 const failed = back => { const [path, hash = ""] = safeReturn(back).split("#"); return path + (path.includes("?") ? "&" : "?") + "signin=failed" + (hash ? "#" + hash : ""); };
 const redirect = (to, headers = []) => { const h = new Headers({ Location: to }); headers.forEach(c => h.append("Set-Cookie", c)); return new Response(null, { status: 302, headers: h }); };
@@ -23,7 +25,7 @@ const redirect = (to, headers = []) => { const h = new Headers({ Location: to })
 export async function currentUser(req, env) {
   const tok = cookies(req)[COOKIE];
   if (!tok) return null;
-  return env.DB.prepare(`SELECT u.id, u.login, u.name, u.avatar, u.banned, u.email, u.email_ok, u.interests, u.bio, u.onboarded_at, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id
+  return env.DB.prepare(`SELECT u.id, u.login, u.name, u.avatar, u.banned, u.provider, u.email, u.email_ok, u.interests, u.bio, u.onboarded_at, u.created_at FROM sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND u.deleted_at IS NULL`).bind(await sha256(tok), Date.now()).first();
 }
 
@@ -32,8 +34,10 @@ export const isAdmin = (env, user) => !!user && String(env.ADMIN_LOGINS || "").t
 // Returns the session cookie and whether the person still has to see /welcome.
 // A deleted account that signs in again starts over as a new one.
 async function startSession(env, profile, email, secure) {
-  const now = Date.now(), tok = randomToken();
+  const now = Date.now();
   await env.DB.batch([
+    // a GitHub login always belongs to its GitHub owner: an email account that picked the same nickname moves aside
+    env.DB.prepare("UPDATE users SET login = login || '-' || (abs(id) % 10000) WHERE login = ?1 COLLATE NOCASE AND id != ?2 AND provider = 'email'").bind(profile.login, profile.id),
     env.DB.prepare(`INSERT INTO users (id, login, name, avatar, bio, email, created_at, seen_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)
       ON CONFLICT (id) DO UPDATE SET login = excluded.login, name = excluded.name, avatar = excluded.avatar, bio = excluded.bio,
         email = COALESCE(excluded.email, users.email), seen_at = excluded.seen_at,
@@ -41,14 +45,23 @@ async function startSession(env, profile, email, secure) {
         email_ok = CASE WHEN users.deleted_at IS NULL THEN users.email_ok ELSE 0 END,
         created_at = CASE WHEN users.deleted_at IS NULL THEN users.created_at ELSE excluded.created_at END, deleted_at = NULL`)
       .bind(profile.id, profile.login, profile.name || null, profile.avatar_url || null, profile.bio ? String(profile.bio).slice(0, 300) : null, email, now),
-    env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?1, ?2, ?3)").bind(await sha256(tok), profile.id, now + SESSION_DAYS * DAY),
-    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?1").bind(now),
   ]);
-  const u = await env.DB.prepare("SELECT onboarded_at FROM users WHERE id = ?1").bind(profile.id).first();
+  return sessionFor(env, profile.id, secure);
+}
+
+/** A new session for an existing account: the cookie, and whether /welcome is still to come. */
+export async function sessionFor(env, userId, secure) {
+  const now = Date.now(), tok = randomToken();
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?1, ?2, ?3)").bind(await sha256(tok), userId, now + SESSION_DAYS * DAY),
+    env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?1").bind(now),
+    env.DB.prepare("UPDATE users SET seen_at = ?2 WHERE id = ?1").bind(userId, now),
+  ]);
+  const u = await env.DB.prepare("SELECT onboarded_at FROM users WHERE id = ?1").bind(userId).first();
   return { set: cookie(COOKIE, tok, SESSION_DAYS * 86400, secure), fresh: !u?.onboarded_at };
 }
 // After sign-in: the page they came from, or /welcome first if they have not been through it.
-const landing = (s, back) => s.fresh ? `/welcome?return=${encodeURIComponent(safeReturn(back))}` : safeReturn(back);
+export const landing = (s, back) => s.fresh ? `/welcome?return=${encodeURIComponent(safeReturn(back))}` : safeReturn(back);
 
 // The primary verified address, or null (GitHub may withhold it if the person declined the scope).
 async function primaryEmail(token) {

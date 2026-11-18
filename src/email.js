@@ -83,7 +83,7 @@ async function makers(env, slug, skip = null) {
   const p = await env.DB.prepare("SELECT owner_id, maintainers FROM projects WHERE slug = ?1").bind(slug).first();
   if (!p) return [];
   const names = JSON.parse(p.maintainers || "[]").map(x => x.toLowerCase());
-  const ids = names.length ? (await env.DB.prepare(`SELECT id FROM users WHERE lower(login) IN (${names.map(() => "?").join(",")}) AND deleted_at IS NULL`).bind(...names).all()).results.map(r => r.id) : [];
+  const ids = names.length ? (await env.DB.prepare(`SELECT id FROM users WHERE lower(login) IN (${names.map(() => "?").join(",")}) AND deleted_at IS NULL AND provider = 'github'`).bind(...names).all()).results.map(r => r.id) : [];
   const people = (await recipients(env, [p.owner_id, ...ids])).filter(u => u.id !== skip?.id);
   const c = await contact(env, slug), seen = new Set(people.map(u => u.email.toLowerCase()));
   if (skip?.email) seen.add(skip.email.toLowerCase());
@@ -208,6 +208,37 @@ export async function digest(env, all, now = Date.now()) {
       why: L(u, "You get this weekly because you turned on email at openyard.cloud.", "Bạn nhận email này hằng tuần vì đã bật nhận email trên openyard.cloud.") });
     await enqueue(env, u, "digest", `digest:${u.id}:${week}`, { subject: title, ...m });
   }
+}
+
+// ---------- sign-in links ----------
+/** The one-time sign-in link, sent at once (it is what the person is waiting for), within the daily budget. */
+export async function signin(env, email, link, lang) {
+  if (!ready(env)) return false;
+  const now = Date.now(), budget = +env.EMAIL_DAILY_LIMIT || 90;
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM outbox WHERE sent_at > ?1").bind(now - DAY).first();
+  if (n >= budget + 8) return false; // a few over the budget for sign-ins, never the provider's limit
+  const u = { lang, contact: "signin", unsub_token: "" };
+  const title = L(u, "Your OpenYard sign-in link", "Link đăng nhập OpenYard");
+  const html = `<p style="margin:0">${L(u, "Press the button to sign in. The link works once, for 20 minutes.", "Bấm nút để đăng nhập. Link chỉ dùng được một lần, trong 20 phút.")}</p><p style="margin:14px 0 0;color:#6b6b73;font-size:14px">${L(u, "If you did not ask for it, ignore this email: nobody can sign in without it.", "Nếu bạn không yêu cầu, cứ bỏ qua email này: không ai đăng nhập được nếu không có nó.")}</p>`;
+  const body = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;background:#f6f6f7;font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0d0d0f">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#fff;border:1px solid #e7e7ea;border-radius:20px">
+<tr><td style="padding:28px 32px 8px;font-weight:600;font-size:17px"><img src="${ORIGIN}/og/mark.png" width="22" height="22" alt="" style="vertical-align:-5px;margin-right:8px">Open<span style="color:#8b5cf6">Yard</span></td></tr>
+<tr><td style="padding:12px 32px 0"><h1 style="margin:0;font-size:22px;font-weight:600">${esc(title)}</h1></td></tr>
+<tr><td style="padding:8px 32px 0;font-size:15.5px;line-height:1.6;color:#33333a">${html}</td></tr>
+<tr><td style="padding:22px 32px 30px"><a href="${esc(link)}" style="display:inline-block;background:#0d0d0f;color:#fff;text-decoration:none;font-weight:500;font-size:15px;padding:12px 22px;border-radius:999px">${L(u, "Sign in to OpenYard", "Đăng nhập OpenYard")}</a></td></tr>
+</table></td></tr></table></body></html>`;
+  const r = await fetch(`${env.RESEND_URL || "https://api.resend.com"}/emails`, {
+    method: "POST", headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from: env.EMAIL_FROM, to: [email], subject: title, html: body, text: `${title}
+
+${link}
+
+${L(u, "The link works once, for 20 minutes.", "Link chỉ dùng được một lần, trong 20 phút.")}` }),
+  });
+  if (!r.ok) { console.error("signin mail", r.status, (await r.text()).slice(0, 200)); return false; }
+  // counted with the rest so the daily budget stays honest
+  await env.DB.prepare("INSERT INTO outbox (dedupe, user_id, kind, subject, html, text, created_at, sent_at, tries) VALUES (?1, 0, 'signin', ?2, '', '', ?3, ?3, 1)").bind(`signin:${now}:${Math.random()}`, title, now).run();
+  return true;
 }
 
 // ---------- looking after makers ----------
