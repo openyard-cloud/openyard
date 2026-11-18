@@ -44,7 +44,7 @@ const tagCounts = list => { const m = new Map(); list.forEach(p => (p.tags || []
 export const tagPages = all => tagCounts(all).filter(([, n]) => n >= 2).map(([x]) => x);
 export const HUB_PATHS = ["/projects", ...CATS.map(c => `/${c.slug}`), "/about", "/community"];
 
-const HUB_CSS = `
+export const HUB_CSS = `
 .hero.hub{padding:76px 0 36px}.hero.hub h1{font-size:clamp(40px,6vw,68px)}.hero.hub .desc{margin-bottom:0;max-width:44em}
 .count{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
 .cats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
@@ -133,7 +133,7 @@ const logoTag = (p, size) => p.logo
   : `<span class="ini" style="--c:${esc(p.color || "#6d5bd0")}">${initials(p.name)}</span>`;
 
 /** A project card. Links inside a link are not allowed, so tags are plain text here and links in the tag cloud. */
-function card(p, i) {
+export function card(p, i) {
   const kc = { people: "#10b981", wild: "#b67cff", dev: "#7c9cff" };
   const v = p.vet && VERDICT[p.vet.verdict];
   const q = fold([p.name, en(p.tagline), vi(p.tagline), en(p.description), vi(p.description), ...(p.tags || []), ...p.kinds.flatMap(k => KIND[k] || [])].join(" "));
@@ -147,26 +147,26 @@ function card(p, i) {
   </div></a>`;
 }
 
-const crumbs = items => ({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name, item], i) => ({ "@type": "ListItem", position: i + 1, name, item })) });
+export const crumbs = items => ({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: items.map(([name, item], i) => ({ "@type": "ListItem", position: i + 1, name, item })) });
 const collection = (name, url, desc, list) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name, url, description: desc, isPartOf: { "@type": "WebSite", name: "OpenYard", url: ORIGIN },
   mainEntity: { "@type": "ItemList", numberOfItems: list.length, itemListElement: list.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${ORIGIN}/p/${p.slug}`, name: p.name })) } });
 
-const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "" }) => `${head({ title, desc, url: ORIGIN + path, image: IMG, jsonld, noindex }).replace("</style>", `${HUB_CSS}</style>`)}
+export const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "", extra = "", css = "" }) => `${head({ title, desc, url: ORIGIN + path, image: IMG, jsonld, noindex }).replace("</style>", `${HUB_CSS}${css}</style>`)}
 <body style="--c:${esc(color)}">
 ${siteNav(site, current)}
 <main>${body}</main>
 ${siteFooter(site)}
 ${LANG_JS}
-${HUB_JS}
+${HUB_JS}${extra}
 </body></html>`;
 
-const hero = (pill, h1, lead, extra = "") => `<header class="hero hub"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
+export const hero = (pill, h1, lead, extra = "") => `<header class="hero hub"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
   <div class="tags up" style="--d:1"><span class="pill on">${pill}</span></div>
   <h1 class="up" style="--d:2">${h1}</h1>
   <p class="desc up" style="--d:3">${lead}</p>${extra}
 </div></header>`;
 
-const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed. It also gets its own post in #showcase on Discord.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản. Dự án còn được đăng riêng trong #showcase trên Discord.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
+export const band = () => `<div class="band reveal"><div><h2>${t("Built something free?", "Bạn cũng làm ra thứ gì đó miễn phí?")}</h2><p>${t("Put it in the yard in five minutes, no account needed. It also gets its own post in #showcase on Discord.", "Đưa lên OpenYard chỉ mất năm phút, không cần tài khoản. Dự án còn được đăng riêng trong #showcase trên Discord.")}</p></div><a class="btn dark" href="/submit">${t("Submit a project", "Gửi dự án")} ${ARROW}</a></div>`;
 
 function grid(list) {
   return `<div class="ptools reveal">
