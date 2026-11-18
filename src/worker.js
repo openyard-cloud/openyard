@@ -677,6 +677,7 @@ export default {
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
       const av = /^\/a\/([a-z0-9]{1,12})\/([^/]{1,12})\.svg$/.exec(path);
       if (av) return new Response(avatarSvg(av[1], (() => { try { return decodeURIComponent(av[2]); } catch { return "?"; } })()), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=31536000, immutable" } });
+      if (path === "/signin" && await currentUser(req, env)) return Response.redirect(url.origin + safeReturn(url.searchParams.get("return") || "/"), 302); // already in
       if (path === "/signin") return new Response(signinPage({ site: SITE, back: url.searchParams.get("return") || "/", expired: url.searchParams.has("expired"), turnstile: env.TURNSTILE_SITE_KEY }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);

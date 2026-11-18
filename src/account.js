@@ -26,7 +26,11 @@ const ACC_CSS = `
 .fld input,.fld textarea,.sgn input{height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);font:15px Inter,system-ui,sans-serif;outline:0}
 .fld textarea{height:auto;padding:10px 14px;resize:vertical}.fld input:focus,.fld textarea:focus,.sgn input:focus{border-color:#8b7cff;box-shadow:0 0 0 4px rgba(139,124,255,.16)}
 .sgn{display:flex;flex-direction:column;gap:10px}.sgn .btn{width:100%}.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:6px 0}.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line2)}
-.btn.gh{background:#24292f;color:#fff}.otp{font:600 26px ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.4em;text-align:center;height:56px!important}.btn.gh svg{width:18px;height:18px}
+.btn.gh svg{width:18px;height:18px}
+.solo .hero.hub{padding:72px 0 30px}.solo .hero .wrap{max-width:520px;text-align:center}.solo .hero .tags{justify-content:center}
+.solo .hero h1{font-size:clamp(38px,5vw,54px)}.solo .hero .desc{margin:12px auto 0;max-width:30em}
+.solo .acc{max-width:520px;padding-bottom:24px}.solo .acc>*{max-width:none}.solo .acc>.fine{text-align:center;margin-top:16px}
+.solo .sgn .box,.solo .sgn>p{text-align:left}.otp{font:600 26px ui-monospace,SFMono-Regular,Menlo,monospace!important;letter-spacing:.4em;text-align:center;height:56px!important}.btn.gh svg{width:18px;height:18px}
 .danger{border-color:color-mix(in srgb,#ef4444 40%,var(--line2))!important}.danger h2{color:#ef4444}
 .danger input{height:42px;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:var(--bg);color:var(--ink);font:15px ui-monospace,Menlo,monospace;min-width:0;flex:1}
 .btn.red{background:#ef4444;color:#fff}.btn.red:disabled{opacity:.45;cursor:default}
@@ -159,7 +163,7 @@ export function signinPage({ site, back, expired, turnstile }) {
 <div class="wrap acc">
   ${expired ? `<p class="box" style="border-color:#f59e0b">${t("That link has expired or was already used. Ask for a new one below.", "Link đó đã hết hạn hoặc đã được dùng. Hãy lấy link mới bên dưới.")}</p>` : ""}
   <div class="box reveal sgn">
-    <a class="btn gh" href="/auth/github?return=${encodeURIComponent(go)}">${svg(GH)}${t("Continue with GitHub", "Tiếp tục với GitHub")}</a>
+    <a class="btn line gh" href="/auth/github?return=${encodeURIComponent(go)}">${svg(GH)}${t("Continue with GitHub", "Tiếp tục với GitHub")}</a>
     <div class="or">${t("or", "hoặc")}</div>
     <form id="mail" class="sgn" data-ts="${esc(turnstile || "")}" data-back="${esc(go)}" novalidate>
       <label class="sr" for="em">Email</label><input id="em" type="email" autocomplete="email" required placeholder="you@example.com">
@@ -214,14 +218,14 @@ export function signinPage({ site, back, expired, turnstile }) {
   });
 })();
 </script>`;
-  return page({ title: "Sign in · OpenYard", desc: "Sign in to OpenYard with GitHub or by email.", path: "/signin", color: "#8b7cff", site, noindex: true, body, css: ACC_CSS, extra: js, jsonld: [] });
+  return page({ title: "Sign in · OpenYard", desc: "Sign in to OpenYard with GitHub or by email.", path: "/signin", color: "#8b7cff", site, noindex: true, body: `<div class="solo">${body}</div>`, css: ACC_CSS, extra: js, jsonld: [] });
 }
 
 /** What the emailed link opens: a button, so link scanners in mail apps cannot use it up. */
 export function signinConfirmPage({ site, token }) {
   const body = `${hero(t("Sign in", "Đăng nhập"), t("One more click", "Bấm thêm một lần"), t("Press the button to finish signing in to OpenYard.", "Bấm nút để hoàn tất đăng nhập OpenYard."))}
 <div class="wrap acc"><form class="box sgn" method="post" action="/auth/email/confirm"><input type="hidden" name="t" value="${esc(token)}"><button class="btn dark" type="submit">${t("Sign in to OpenYard", "Đăng nhập OpenYard")}</button></form></div>`;
-  return page({ title: "Sign in · OpenYard", desc: "Finish signing in.", path: "/auth/email", color: "#8b7cff", site, noindex: true, body, css: ACC_CSS, jsonld: [] });
+  return page({ title: "Sign in · OpenYard", desc: "Finish signing in.", path: "/auth/email", color: "#8b7cff", site, noindex: true, body: `<div class="solo">${body}</div>`, css: ACC_CSS, jsonld: [] });
 }
 
 export function privacyPage({ site }) {
