@@ -7,6 +7,8 @@
 //   GET  /p/<slug>             project page      GET /go/<slug>  counted redirect to the project
 //   GET  /u/<id>               uploaded logo or screenshot     GET /sitemap.xml
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
+//   GET/POST /api/me, POST /api/me/delete   the signed-in person: profile, email consent, interests; delete the account
+//   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
 //   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
 //   GET  /badge/<slug>.svg     README badge with the latest code check
 //   GET  /check, /check/<owner>/<repo>   check any public GitHub repository (POST /api/check, GET /api/check/status,
@@ -16,6 +18,7 @@
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
 import { projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
+import { welcomePage, settingsPage, profilePage, privacyPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited } from "./github.js";
 import { handleAuth, currentUser, isAdmin } from "./auth.js";
@@ -137,6 +140,9 @@ async function submit(req, env, ctx) {
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
   if (n >= SUBMITS_PER_DAY) return fail("Too many projects from this connection today. Try again tomorrow.", 429);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
+  // signed in: the project is theirs to edit from their profile, and they are its maker unless they named someone
+  const user = await currentUser(req, env);
+  if (user && !f.maintainers.length) f.maintainers = [user.login];
 
   let slug = slugify(f.name);
   for (let i = 2; await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1").bind(slug).first(); i++) slug = `${slugify(f.name).slice(0, 36)}-${i}`;
@@ -144,33 +150,37 @@ async function submit(req, env, ctx) {
   const image = f.imageFile ? await storeUpload(env, f.imageFile, now) : null;
   const edit = token();
   await env.DB.batch([
-    env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at)
-      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19)`)
+    env.DB.prepare(`INSERT INTO projects (slug, name, type, kinds, status, tagline, description, url, repo, license, logo, logo_style, image, color, maintainers, tags, added, edit_hash, created_at, updated_at, owner_id)
+      VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?19, ?20)`)
       .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(f.tagline), JSON.stringify(f.description), f.url, f.repo, f.license,
-        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now),
+        logo, f.logoFile ? "tile" : null, image, f.color, JSON.stringify(f.maintainers), JSON.stringify(f.tags), today(now), await sha256(edit), now, user ? user.id : null),
     env.DB.prepare("INSERT INTO submits (ip_hash, created_at) VALUES (?1, ?2)").bind(ipHash, now),
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   ctx.waitUntil(notifyDiscord(env, slug, f, logo, image).catch(e => console.error(e)));
-  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}` }, 201);
+  return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user ? user.login : null }, 201);
 }
 
-async function authorize(env, slug, tok) {
+// Who may change a project: the private edit link, or a signed-in person who submitted it or is listed as its maker.
+const owns = (user, row) => !!user && (row.owner_id === user.id || JSON.parse(row.maintainers || "[]").some(m => m.toLowerCase() === user.login.toLowerCase()));
+async function authorize(env, slug, tok, user) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
-  if (!row || !row.edit_hash || !tok || (await sha256(tok)) !== row.edit_hash) return null;
+  if (!row) return null;
+  if (owns(user, row)) return row;
+  if (!row.edit_hash || !tok || (await sha256(tok)) !== row.edit_hash) return null;
   return row;
 }
 
 async function edit(req, env, ctx, slug) {
   const now = Date.now();
   if (req.method === "GET") {
-    const row = await authorize(env, slug, req.headers.get("X-Edit-Token"));
-    return row ? json(toApi(row, now)) : fail("This edit link is not valid.", 403);
+    const row = await authorize(env, slug, req.headers.get("X-Edit-Token"), await currentUser(req, env));
+    return row ? json(toApi(row, now), 200, { "Cache-Control": "private, no-store" }) : fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   }
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
-  const row = await authorize(env, slug, String(form.get("token") || ""));
-  if (!row) return fail("This edit link is not valid.", 403);
+  const row = await authorize(env, slug, String(form.get("token") || ""), await currentUser(req, env));
+  if (!row) return fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   if (form.get("remove") === "yes") {
     await env.DB.prepare("UPDATE projects SET hidden = 1, updated_at = ?2 WHERE slug = ?1").bind(slug, now).run();
     return json({ removed: slug });
@@ -217,6 +227,37 @@ async function refreshStats(env, now = Date.now()) {
 }
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
+const KIND_LIST = ["people", "wild", "dev"];
+const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, email: u.email, emailOk: !!u.email_ok, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
+// GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
+// Writes need a JSON body, which another site cannot send with the cookie without a CORS preflight.
+async function me(req, env, path) {
+  const user = await currentUser(req, env), now = Date.now(), priv = { "Cache-Control": "private, no-store" };
+  if (req.method === "GET" && path === "/api/me") return json(meJson(user, env), 200, priv);
+  if (req.method !== "POST") return fail("Not allowed.", 405);
+  if (!user) return fail("Sign in first.", 401);
+  if (!(req.headers.get("Content-Type") || "").startsWith("application/json")) return fail("Send JSON.", 415);
+  let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+  if (path === "/api/me/delete") {
+    if (String(b.confirm || "").toLowerCase() !== user.login.toLowerCase()) return fail("Type your GitHub username to confirm.");
+    // Comments are emptied rather than removed so replies keep their place; the profile disappears.
+    await env.DB.batch([
+      env.DB.prepare("UPDATE comments SET deleted = 1, body = '' WHERE user_id = ?1").bind(user.id),
+      env.DB.prepare("UPDATE projects SET owner_id = NULL WHERE owner_id = ?1").bind(user.id),
+      env.DB.prepare(`UPDATE users SET login = 'deleted-' || id, name = NULL, avatar = NULL, bio = NULL, email = NULL, email_ok = 0, email_ok_at = ?2,
+        interests = '[]', onboarded_at = NULL, deleted_at = ?2 WHERE id = ?1`).bind(user.id, now),
+      env.DB.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(user.id),
+    ]);
+    return json({ deleted: true }, 200, { ...priv, "Set-Cookie": "oy_s=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0; Secure" });
+  }
+  const interests = Array.isArray(b.interests) ? [...new Set(b.interests.filter(k => KIND_LIST.includes(k)))] : JSON.parse(user.interests || "[]");
+  const emailOk = typeof b.emailOk === "boolean" ? (b.emailOk && !!user.email) : !!user.email_ok;
+  await env.DB.prepare(`UPDATE users SET interests = ?2, email_ok = ?3, email_ok_at = CASE WHEN email_ok = ?3 THEN email_ok_at ELSE ?4 END,
+      onboarded_at = COALESCE(onboarded_at, CASE WHEN ?5 THEN ?4 END) WHERE id = ?1`)
+    .bind(user.id, JSON.stringify(interests), emailOk ? 1 : 0, now, b.onboarded ? 1 : 0).run();
+  return json(meJson(await currentUser(req, env), env), 200, priv);
+}
+
 async function comments(req, env, url, id) {
   const user = await currentUser(req, env), admin = isAdmin(env, user), now = Date.now();
   if (req.method === "GET") {
@@ -441,7 +482,7 @@ export default {
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
       if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
-      if (path === "/api/me") { const u = await currentUser(req, env); return json(u ? { login: u.login, avatar: u.avatar } : null, 200, { "Cache-Control": "private, no-store" }); }
+      if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url);
       let m = /^\/api\/comments\/(\d+)$/.exec(path);
       if (m && req.method === "DELETE") return comments(req, env, url, Number(m[1]));
@@ -502,6 +543,25 @@ export default {
         return new Response(projectMarkdown(toApi(row, now), stats, vet), { headers: MD });
       }
       const HTML = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60" };
+      const PRIVATE = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" };
+      if (path === "/welcome" || path === "/settings") {
+        const user = await currentUser(req, env);
+        if (!user) return Response.redirect(`${url.origin}/auth/github?return=${encodeURIComponent(path + url.search)}`, 302);
+        if (path === "/welcome") return new Response(welcomePage({ user, site: SITE, back: url.searchParams.get("return") || "/" }), { headers: PRIVATE });
+        const { results } = await env.DB.prepare("SELECT * FROM projects WHERE hidden = 0 ORDER BY created_at DESC").all();
+        return new Response(settingsPage({ user, site: SITE, mine: results.filter(r => owns(user, r)).map(r => toApi(r, now)) }), { headers: PRIVATE });
+      }
+      if (path === "/privacy") return new Response(privacyPage({ site: SITE }), { headers: HTML });
+      if ((m = /^\/@([A-Za-z0-9-]{1,39})\/?$/.exec(path))) {
+        const person = await env.DB.prepare("SELECT id, login, name, avatar, bio, created_at FROM users WHERE login = ?1 COLLATE NOCASE AND deleted_at IS NULL AND banned = 0").bind(m[1]).first();
+        const all = await listProjects(env, now);
+        const owned = person ? new Set((await env.DB.prepare("SELECT slug FROM projects WHERE owner_id = ?1").bind(person.id).all()).results.map(r => r.slug)) : new Set();
+        const made = all.filter(p => owned.has(p.slug) || p.maintainers.some(x => x.toLowerCase() === m[1].toLowerCase()));
+        if (!person && !made.length) return new Response(listPage({ all, site: SITE, slug: "projects" }).replace("<head>", '<head>\n<meta name="robots" content="noindex">'), { status: 404, headers: HTML });
+        const talk = person ? (await env.DB.prepare(`SELECT c.slug, c.body, c.created_at, p.name FROM comments c JOIN projects p ON p.slug = c.slug
+          WHERE c.user_id = ?1 AND c.deleted = 0 AND p.hidden = 0 ORDER BY c.created_at DESC LIMIT 8`).bind(person.id).all()).results : [];
+        return new Response(profilePage({ login: person ? person.login : made[0].maintainers.find(x => x.toLowerCase() === m[1].toLowerCase()), person, made, talk, site: SITE, now }), { headers: HTML });
+      }
       if ((m = /^\/([a-z-]+)\/?$/.exec(path)) && (CAT[m[1]] || m[1] === "about" || m[1] === "community")) {
         const all = await listProjects(env, now), args = { all, site: SITE, slug: m[1] };
         return new Response(m[1] === "about" ? aboutPage(args) : m[1] === "community" ? communityPage(args) : listPage(args), { headers: HTML });
@@ -529,7 +589,7 @@ export default {
       if (env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) return new Response(env.INDEXNOW_KEY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
       if (path === "/sitemap.xml") {
         const all = await listProjects(env, now), checks = (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results;
-        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, ...tagPages(all).map(x => `/tags/${x}`)]), { headers: { "Content-Type": "application/xml" } });
+        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, "/privacy", ...tagPages(all).map(x => `/tags/${x}`), ...[...new Set(all.flatMap(p => p.maintainers))].map(x => `/@${x}`)]), { headers: { "Content-Type": "application/xml" } });
       }
     } catch (e) {
       console.error(e);

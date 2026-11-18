@@ -373,6 +373,7 @@ export const siteNav = (site, current = "", extra = "") => `<nav><div class="wra
   <div class="nlinks">${NAV.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${t(...label)}</a>`).join("")}</div>
   <div class="right">${extra}
     <button class="chip" id="lang" type="button" aria-label="Switch language">VI</button>
+    <a class="btn sm line" id="me" href="/auth/github">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script>
     <a class="btn sm dc" href="${esc(site.discord)}" target="_blank" rel="noopener">${svg(DISCORD)}<span>${t("Join Discord", "Vào Discord")}</span></a>
   </div>
 </div></nav>`;
@@ -382,7 +383,7 @@ export const siteFooter = (site, note = "") => {
   <div class="cols">
     <div><a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a><p class="fp">${t("A community for people who make free apps, wild ideas and open tools.", "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.")}</p></div>
     ${col(["Explore", "Khám phá"], [["/projects", ["All projects", "Tất cả dự án"]], ["/apps", ["Free apps", "App miễn phí"]], ["/open-source", ["Open source", "Mã nguồn mở"]], ["/dev-tools", ["Dev tools", "Công cụ cho dev"]], ["/wild-ideas", ["Wild ideas", "Ý tưởng điên rồ"]], ["/check", ["Check a repo", "Kiểm tra repo"]]])}
-    ${col(["Community", "Cộng đồng"], [["/submit", ["Submit a project", "Gửi dự án"]], ["/community", ["Join the community", "Tham gia cộng đồng"]], ["/about", ["About OpenYard", "Về OpenYard"]], [site.discord, ["Discord", "Discord"], 1]])}
+    ${col(["Community", "Cộng đồng"], [["/submit", ["Submit a project", "Gửi dự án"]], ["/community", ["Join the community", "Tham gia cộng đồng"]], ["/about", ["About OpenYard", "Về OpenYard"]], ["/privacy", ["Privacy", "Quyền riêng tư"]], [site.discord, ["Discord", "Discord"], 1]])}
     ${col(["Open source", "Mã nguồn mở"], [[site.repo, ["Site source code", "Mã nguồn trang web"], 1], [`${site.repo}/blob/main/CONTRIBUTING.md`, ["Contributing guide", "Hướng dẫn đóng góp"], 1], ["https://github.com/openyard-cloud/vetcode", ["vetcode", "vetcode"], 1], [`${site.repo}/blob/main/LICENSE`, ["MIT license", "Giấy phép MIT"], 1]])}
   </div>
   <div class="bot"><span>© ${new Date().getFullYear()} OpenYard · openyard.cloud</span><span>${note || t("Free for everyone. Made in Vietnam.", "Miễn phí cho tất cả. Làm tại Việt Nam.")}</span></div>
@@ -675,7 +676,7 @@ ${FX_JS}
   function render() {
     box.innerHTML = me
       ? \`<div class="me"><img src="\${esc(me.avatar)}" alt="">\${T("Signed in as", "Đang đăng nhập:")} @\${esc(me.login)} · <button id="out">\${T("Sign out", "Đăng xuất")}</button></div>\${compose(null, T("Say something nice, ask a question, share an idea…", "Khen một câu, hỏi một câu, góp một ý…"))}\`
-      : \`<div class="signin"><p>\${T("Sign in with GitHub to comment. We only read your public profile.", "Đăng nhập bằng GitHub để bình luận. Chỉ đọc hồ sơ công khai của bạn.")}</p><a class="btn dark" href="/auth/github?return=\${back}">${svg(GITHUB)}\${T("Sign in with GitHub", "Đăng nhập bằng GitHub")}</a></div>\`;
+      : \`<div class="signin"><p>\${T("Sign in with GitHub to comment. We read your public profile and email, nothing else.", "Đăng nhập bằng GitHub để bình luận. Chỉ đọc hồ sơ công khai và email của bạn.")}</p><a class="btn dark" href="/auth/github?return=\${back}">${svg(GITHUB)}\${T("Sign in with GitHub", "Đăng nhập bằng GitHub")}</a></div>\`;
     const top = items.filter(c => !c.parent);
     list.innerHTML = top.length ? top.slice().reverse().map(one).join("") : \`<p class="none">\${T("No comments yet. Be the first.", "Chưa có bình luận nào. Bạn là người đầu tiên nhé.")}</p>\`;
     const h = document.querySelector("#comments h2"); if (h) h.dataset.count = items.filter(c => !c.deleted).length;
