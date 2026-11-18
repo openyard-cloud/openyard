@@ -68,8 +68,9 @@ const ACC_JS = `<script>
 const safeBack = r => (typeof r === "string" && /^\/(?!\/)[\w\-./?=&#%@]*$/.test(r) && !r.startsWith("/welcome") ? r : "/projects");
 
 const picks = chosen => `<div class="picks">${KINDS.map(([k, c]) => `<label style="--k:${c}"><input type="checkbox" name="interest" value="${k}"${chosen.includes(k) ? " checked" : ""}><i></i>${t(...KIND[k])}</label>`).join("")}</div>`;
-const emailBox = user => user.email
-  ? `<label class="tick"><input type="checkbox" name="emailOk"${user.email_ok ? " checked" : ""}><span>${t("Email me when someone replies to me or comments on my project, plus a short weekly note on new projects.", "Gửi email cho mình khi có người trả lời mình hoặc bình luận về dự án của mình, kèm một bản tin ngắn mỗi tuần về dự án mới.")}<small>${t(`To ${user.email}. One click to stop, in every email or here in Settings.`, `Gửi tới ${user.email}. Bấm một lần là dừng, ngay trong email hoặc ở trang Cài đặt.`)}</small></span></label>`
+// on: ticked by default on /welcome; Settings shows what the person saved
+const emailBox = (user, on = !!user.email_ok) => user.email
+  ? `<label class="tick"><input type="checkbox" name="emailOk"${on ? " checked" : ""}><span>${t("Email me when someone replies to me or comments on my project, plus a short weekly note on new projects.", "Gửi email cho mình khi có người trả lời mình hoặc bình luận về dự án của mình, kèm một bản tin ngắn mỗi tuần về dự án mới.")}<small>${t(`To ${user.email}. One click to stop, in every email or here in Settings.`, `Gửi tới ${user.email}. Bấm một lần là dừng, ngay trong email hoặc ở trang Cài đặt.`)}</small></span></label>`
   : `<p class="fine" style="margin:0">${t("GitHub did not share an email address with us, so we will not email you. Everything else works the same.", "GitHub không chia sẻ email với chúng mình, nên sẽ không có email nào gửi tới bạn. Mọi thứ khác vẫn dùng bình thường.")}</p>`;
 
 export function welcomePage({ user, site, back }) {
@@ -78,7 +79,7 @@ export function welcomePage({ user, site, back }) {
 <div class="wrap acc">
   <form id="acc" data-back="${esc(go)}">
     <div class="box reveal"><h2>${t("What are you into?", "Bạn thích gì?")}</h2><p>${t("We use this to pick what to show you first.", "Để chọn thứ hiện cho bạn trước.")}</p>${picks(JSON.parse(user.interests || "[]"))}</div>
-    <div class="box reveal"><h2>${t("Can we email you?", "Gửi email cho bạn được không?")}</h2><p>${t("Off unless you tick it. We never share your address.", "Tắt nếu bạn không tick. Không bao giờ chia sẻ địa chỉ của bạn.")}</p>${emailBox(user)}</div>
+    <div class="box reveal"><h2>${t("Can we email you?", "Gửi email cho bạn được không?")}</h2><p>${t("Untick it to get nothing. We never share your address.", "Bỏ tick nếu không muốn nhận gì. Không bao giờ chia sẻ địa chỉ của bạn.")}</p>${emailBox(user, true)}</div>
     <div class="box reveal"><h2>${t("Say hi on Discord", "Chào mọi người trên Discord")}</h2><p>${t("Most of the talk happens there: #showcase for new projects, #help when you are stuck.", "Phần lớn câu chuyện diễn ra ở đó: #showcase cho dự án mới, #help khi bạn bí.")}</p><a class="btn line" href="${esc(site.discord)}" target="_blank" rel="noopener">${t("Open the Discord", "Mở Discord")} ${ARROW}</a></div>
     <div class="acts"><button class="btn dark" type="submit">${t("Continue", "Tiếp tục")}</button><button class="btn line" type="button" data-skip>${t("Skip for now", "Để sau")}</button><span class="msg" role="status"></span></div>
   </form>
@@ -138,7 +139,7 @@ export function privacyPage({ site }) {
 <div class="wrap acc priv">
   ${sec(["When you sign in with GitHub", "Khi bạn đăng nhập bằng GitHub"], [[
     ["Your GitHub id, username, name, picture and bio, from your public profile.", "Id, tên người dùng, tên, ảnh và giới thiệu trên hồ sơ GitHub công khai của bạn."],
-    ["Your primary verified email address, if GitHub shares it. We only email you if you turn that on, and every email has a one-click way to stop.", "Email chính đã xác minh, nếu GitHub chia sẻ. Chỉ gửi email khi bạn bật, và email nào cũng có nút dừng một chạm."],
+    ["Your primary verified email address, if GitHub shares it. Email is ticked on the welcome page; untick it there or in Settings to get nothing, and every email has a one-click way to stop.", "Email chính đã xác minh, nếu GitHub chia sẻ. Ở trang chào mừng, ô nhận email được tick sẵn; bỏ tick ở đó hoặc ở Cài đặt để không nhận gì, và email nào cũng có nút dừng một chạm."],
     ["What you pick on the welcome page: your interests and whether we may email you, with the time you said so.", "Những gì bạn chọn ở trang chào mừng: sở thích và việc có nhận email hay không, kèm thời điểm bạn chọn."],
     ["A sign-in cookie. We store only a hash of it, and it expires after 30 days. We keep no GitHub token.", "Một cookie đăng nhập. Chỉ lưu bản băm của nó, hết hạn sau 30 ngày. Không giữ token GitHub nào."],
   ]])}
