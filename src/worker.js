@@ -56,11 +56,16 @@ const token = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8
 const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "project";
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
+// What the community did on OpenYard this week, the same for every project: likes and people
+// commenting count most, then visits, plus a boost that fades over a listing's first two
+// weeks. GitHub is a small capped extra (new stars, at most 6, as much as 3 likes), so a
+// project without a repository can trend as well as one with a busy repository.
 function trend(p, s, clicks, talk, now, likes = 0) {
   const age = (now - Date.parse(p.added)) / DAY;
-  const gh = s ? s.stars_7d * 3 + s.prs_7d * 2 + s.issues_7d + s.discussions_7d * 2 + Math.min(s.commits_7d, 30) * 0.3 : 0;
-  return Math.round((gh + clicks * 0.5 + talk * 2 + likes * 2 + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
+  return Math.round((buzz(s, clicks, talk, likes) + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
 }
+// the week's activity alone, without the boost for new listings
+const buzz = (s, clicks, talk, likes) => likes * 2 + talk * 2 + clicks * 0.5 + (s ? Math.min(s.stars_7d * 2, 6) : 0);
 
 function toApi(row, now) {
   const p = {
@@ -73,7 +78,7 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0) };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0), buzz: Math.round(buzz(s, row.clicks || 0, row.talk || 0, row.likes_7d || 0) * 10) / 10 };
 }
 
 async function listProjects(env, now = Date.now()) {
