@@ -46,7 +46,7 @@ export const HUB_PATHS = ["/projects", ...CATS.map(c => `/${c.slug}`), "/about",
 
 export const HUB_CSS = `
 .pulse{display:flex;align-items:center;gap:18px 26px;flex-wrap:wrap;margin-top:26px}
-.pulse .stack img{width:34px;height:34px;margin:0;border-width:2.5px;display:block}.pulse .stack>*{display:block;margin-left:-10px;position:relative;transition:transform .3s var(--ease)}.pulse .stack>:first-child{margin-left:0}.pulse .stack>a:hover{transform:translateY(-3px);z-index:2}
+.pulse .stack img{width:34px;height:34px;margin:0;border-width:2.5px;display:block}.pulse .stack>*{display:block;margin-left:-10px;position:relative;transition:transform .3s var(--ease)}.pulse .stack>:first-child{margin-left:0}.pulse .stack>a:hover{transform:translateY(-3px);z-index:2}.pulse .stack .more{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;border:2.5px solid var(--bg);background:var(--bg2);font-size:11.5px;font-weight:600;color:var(--muted)}
 .pulse dl{display:flex;gap:22px;flex-wrap:wrap;margin:0}.pulse dl div{display:flex;flex-direction:column}
 .pulse dt{font-size:22px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}.pulse dd{margin:0;font-size:12.5px;color:var(--muted)}
 .lcols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
@@ -209,19 +209,27 @@ function grid(list, now = Date.now()) {
 }
 
 // The yard's pulse at the top of a list: projects, makers, this week's likes and comments, and faces.
+// The people of the yard: anyone with an account, every maker named on a project (GitHub
+// login, signed in or not), and whoever sent a listing without naming themselves (one per
+// listing). They all count as members; the faces show them, people with accounts and makers
+// first, then the rest by their project.
 function pulseBar(all, pulse) {
-  // a maker is a GitHub login, or the project itself when nobody was named; the team counts once
-  const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || `p:${p.slug}`));
-  // faces: the people in the yard, makers first (the team's too), then members seen lately and people talking
-  const face = (login, src) => [login.toLowerCase(), [login, src || `https://github.com/${login}.png?size=56`]];
-  const faces = [...new Map([
-    ...all.flatMap(p => p.maintainers.map(m => face(m))),
-    ...all.filter(p => p.owner).map(p => face(p.owner.login, p.owner.avatar)),
-    ...(pulse?.people || []).map(u => face(u.login, u.avatar)),
-    ...(pulse?.recent || []).map(c => face(c.login, c.avatar)),
-  ]).values()].slice(0, 10);
-  const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[pulse.members, ["members", "thành viên"]], [pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
-  return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(([login, src]) => `<a href="/@${esc(login)}" title="@${esc(login)}"><img src="${esc(src)}" alt="@${esc(login)}" loading="lazy"></a>`).join("")}<img src="/favicon.svg" alt="" title="OpenYard team"></span>
+  const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || p.owner?.login?.toLowerCase() || `p:${p.slug}`));
+  const person = (login, src) => [login.toLowerCase(), { label: `@${login}`, href: `/@${login}`, src: src || `https://github.com/${login}.png?size=56` }];
+  const quiet = all.filter(p => !p.team && !p.maintainers.length && !p.owner); // sent without a name
+  const seed = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h.toString(36); };
+  const people = new Map();
+  for (const [k, v] of [
+    ...all.flatMap(p => p.maintainers.map(m => person(m))),
+    ...all.filter(p => p.owner).map(p => person(p.owner.login, p.owner.avatar)),
+    ...(pulse?.people || []).map(u => person(u.login, u.avatar)),
+    ...(pulse?.recent || []).map(c => person(c.login, c.avatar)),
+    ...(pulse?.accounts || []).map(a => person(a.login, a.avatar)),
+    ...quiet.map(p => [`p:${p.slug}`, { label: `${p.name}`, href: `/p/${p.slug}`, src: `/a/${seed(p.slug)}/${encodeURIComponent((p.name.trim()[0] || "?").toUpperCase())}.svg` }]),
+  ]) if (!people.has(k)) people.set(k, v); // the first mention keeps its picture
+  const faces = [...people.values()].slice(0, 12);
+  const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[people.size, ["members", "thành viên"]], [pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
+  return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(f => `<a href="${esc(f.href)}" title="${esc(f.label)}"><img src="${esc(f.src)}" alt="${esc(f.label)}" loading="lazy"></a>`).join("")}${people.size > faces.length ? `<span class="more">+${people.size - faces.length}</span>` : ""}</span>
     <dl>${n.map(([v, l]) => `<div><dt>${+v || 0}</dt><dd>${t(...l)}</dd></div>`).join("")}</dl></div>`;
 }
 
