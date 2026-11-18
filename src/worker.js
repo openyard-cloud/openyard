@@ -9,6 +9,7 @@
 //   GET/POST /api/comments, DELETE /api/comments/<id>   comments on project pages (GitHub sign-in, see auth.js)
 //   GET/POST /api/likes        like a project (signed in); its makers hear about it once a day
 //   POST /auth/email, GET /auth/email?t=, POST /auth/email/confirm   sign in with a one-time email link (no GitHub needed)
+//   POST /auth/email/code      or with the 6-digit code from the same email
 //   GET  /a/<seed>/<letter>.svg   the generated picture of an account that has none
 //   GET  /discuss, /discuss/<category>, /discuss/t/<id>-<slug>, /discuss/new   discussions (discuss.js)
 //   POST /api/topics, DELETE /api/topics/<id>   start or remove a topic; replies go through /api/comments
@@ -289,12 +290,15 @@ async function emailSignin(req, env, url) {
     const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - 3600000).first();
     const { e } = await env.DB.prepare("SELECT COUNT(*) AS e FROM login_tokens WHERE email = ?1 AND created_at > ?2").bind(email, now - 3600000).first();
     if (a >= 6 || e >= 3) return fail("Too many sign-in emails. Wait an hour, or sign in with GitHub.", 429);
-    const tok = randomToken(24);
+    const tok = randomToken(24), th = await sha256(tok);
+    const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, "0");
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO login_tokens (token_hash, email, back, ip_hash, created_at, expires_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6)").bind(await sha256(tok), email, safeReturn(b.back), ipHash, now, now + 20 * 60000),
+      // a newer email replaces older ones: only the latest link and code work
+      env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE email = ?1 AND used_at IS NULL").bind(email, now),
+      env.DB.prepare("INSERT INTO login_tokens (token_hash, email, back, ip_hash, created_at, expires_at, code_hash) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)").bind(th, email, safeReturn(b.back), ipHash, now, now + 20 * 60000, await sha256(`${th}|${code}`)),
       env.DB.prepare("DELETE FROM login_tokens WHERE created_at < ?1").bind(now - 2 * DAY),
     ]);
-    const sent = await mail.signin(env, email, `${url.origin}/auth/email?t=${tok}`, b.lang === "vi" ? "vi" : "en");
+    const sent = await mail.signin(env, email, `${url.origin}/auth/email?t=${tok}`, code, b.lang === "vi" ? "vi" : "en");
     return sent ? json({ sent: true }) : fail("Email sign-in is busy right now. Try again later, or sign in with GitHub.", 503);
   }
   if (path === "/auth/email" && req.method === "GET") return new Response(signinConfirmPage({ site: SITE, token: url.searchParams.get("t") || "" }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex", "Referrer-Policy": "no-referrer" } });
@@ -302,16 +306,37 @@ async function emailSignin(req, env, url) {
     let form; try { form = await req.formData(); } catch { return fail("Bad request."); }
     const row = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL AND expires_at > ?2 RETURNING email, back").bind(await sha256(String(form.get("t") || "")), now).first();
     if (!row) return Response.redirect(`${url.origin}/signin?expired=1`, 303);
-    let u = await env.DB.prepare("SELECT id FROM users WHERE email = ?1 COLLATE NOCASE AND deleted_at IS NULL ORDER BY provider = 'github' DESC LIMIT 1").bind(row.email).first();
-    if (!u) {
-      const id = -(Math.floor(Math.random() * 2 ** 46) + 1), login = await freeHandle(env, row.email);
-      await env.DB.prepare(`INSERT INTO users (id, login, name, avatar, email, provider, created_at, seen_at) VALUES (?1, ?2, NULL, ?3, ?4, 'email', ?5, ?5)`).bind(id, login, pic(id, login), row.email, now).run();
-      u = { id };
-    }
-    const sess = await sessionFor(env, u.id, secure);
+    const sess = await signInEmail(env, row.email, secure, now);
     return new Response(null, { status: 303, headers: { Location: landing(sess, row.back), "Set-Cookie": sess.set } });
   }
+  // POST /auth/email/code {email, code}: the 6-digit code from the same email, typed on any device
+  if (path === "/auth/email/code" && req.method === "POST") {
+    let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
+    const email = String(b.email || "").trim().toLowerCase(), code = String(b.code || "").replace(/\D/g, "");
+    if (code.length !== 6) return fail("Type the 6-digit code from the email.");
+    const row = await env.DB.prepare("SELECT token_hash, code_hash, tries, back FROM login_tokens WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL ORDER BY created_at DESC LIMIT 1").bind(email, now).first();
+    if (!row) return fail("That code has expired. Ask for a new one.", 410);
+    if (row.tries >= 5) return fail("Too many wrong codes. Ask for a new one.", 429);
+    if ((await sha256(`${row.token_hash}|${code}`)) !== row.code_hash) {
+      await env.DB.prepare("UPDATE login_tokens SET tries = tries + 1 WHERE token_hash = ?1").bind(row.token_hash).run();
+      return fail(row.tries >= 4 ? "Too many wrong codes. Ask for a new one." : "That code is not right. Check the email and try again.", 400);
+    }
+    const used = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL RETURNING email").bind(row.token_hash, now).first();
+    if (!used) return fail("That code has expired. Ask for a new one.", 410);
+    const sess = await signInEmail(env, email, secure, now);
+    return json({ go: landing(sess, row.back) }, 200, { "Set-Cookie": sess.set, "Cache-Control": "no-store" });
+  }
   return null;
+}
+// The account for a proven email address: an existing one (GitHub accounts first), or a new one.
+async function signInEmail(env, email, secure, now) {
+  let u = await env.DB.prepare("SELECT id FROM users WHERE email = ?1 COLLATE NOCASE AND deleted_at IS NULL ORDER BY provider = 'github' DESC LIMIT 1").bind(email).first();
+  if (!u) {
+    const id = -(Math.floor(Math.random() * 2 ** 46) + 1), login = await freeHandle(env, email);
+    await env.DB.prepare(`INSERT INTO users (id, login, name, avatar, email, provider, created_at, seen_at) VALUES (?1, ?2, NULL, ?3, ?4, 'email', ?5, ?5)`).bind(id, login, pic(id, login), email, now).run();
+    u = { id };
+  }
+  return sessionFor(env, u.id, secure);
 }
 const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, provider: u.provider, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
