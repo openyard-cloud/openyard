@@ -359,8 +359,9 @@ nav .links a:hover{color:var(--ink)}
 .pillar:hover .pg{opacity:.6;transform:scale(1.2)}
 .pillar h3{font-size:24px;margin-top:8px;position:relative}
 .pillar p{margin:0;color:var(--muted);position:relative}
-.pchips{display:flex;align-items:center;gap:10px;margin-top:auto;padding-top:18px;border-top:1px solid var(--line);position:relative}
+.pchips{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:auto;padding-top:18px;border-top:1px solid var(--line);position:relative}
 .pstack{display:flex}
+.pstack .ini.more{background:var(--bg);color:var(--ink);font-weight:600;box-shadow:0 0 0 2px var(--bg2),inset 0 0 0 1px var(--line2)}
 .pstack img{width:30px;height:30px;border-radius:9px;object-fit:cover;background:#fff;box-shadow:0 0 0 2px var(--bg2);margin-left:-8px;transition:transform .4s var(--ease)}
 .pstack img:first-child{margin-left:0}
 .pillar:hover .pstack img{transform:translateY(-2px)}
@@ -1182,7 +1183,9 @@ function renderFooterProjects(){
 function renderPillars(){
   document.querySelectorAll("[data-chips]").forEach(el => {
     const k = el.dataset.chips, list = PROJECTS.filter(p => (p.kinds || []).includes(k));
-    el.innerHTML = `<span class="pstack">${list.map(p => logoTag(p, "", `title="${esc(p.name)}"`)).join("")}</span>`
+    // at most four faces, so the count and the button fit on one line in either language
+    const shown = list.length > 4 ? list.slice(0, 3) : list, more = list.length - shown.length;
+    el.innerHTML = `<span class="pstack">${shown.map(p => logoTag(p, "", `title="${esc(p.name)}"`)).join("")}${more ? `<span class="ini more">+${more}</span>` : ""}</span>`
       + `<span class="pcount"><b>${list.length}</b> ${list.length === 1 ? T("project", "dự án") : T("projects", "dự án")}</span>`
       + `<span class="padd">${T("+ Add yours", "+ Thêm của bạn")}</span>`;
   });
