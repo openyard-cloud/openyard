@@ -39,7 +39,7 @@ export async function relay(req, env, path) {
   const headers = new Headers(req.headers);
   headers.delete("Cookie"); // our sign-in cookie stays here
   headers.set("Host", host);
-  // PostHog's cookieless hash and country lookup need the visitor's address, not the Worker's
+  // PostHog's cookieless hash needs the visitor's address, not the Worker's (it hashes it and keeps no country)
   const ip = req.headers.get("CF-Connecting-IP");
   if (ip) headers.set("X-Forwarded-For", ip);
   const r = await fetch(`https://${host}${rest}${url.search}`, {
