@@ -8,6 +8,8 @@
 // Needs GITHUB_CLIENT_ID (var) and GITHUB_CLIENT_SECRET (secret). For local work only,
 // DEV_LOGIN in .dev.vars signs you in as that GitHub login without going to GitHub.
 
+import { track } from "./analytics.js";
+
 const DAY = 86400000, SESSION_DAYS = 30, COOKIE = "oy_s", STATE = "oy_state";
 
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
@@ -33,7 +35,7 @@ export const isAdmin = (env, user) => !!user && String(env.ADMIN_LOGINS || "").t
 
 // Returns the session cookie and whether the person still has to see /welcome.
 // A deleted account that signs in again starts over as a new one.
-async function startSession(env, profile, email, secure) {
+async function startSession(env, profile, email, secure, ctx) {
   const now = Date.now();
   await env.DB.batch([
     // a GitHub login always belongs to its GitHub owner: an email account that picked the same nickname moves aside
@@ -46,18 +48,20 @@ async function startSession(env, profile, email, secure) {
         created_at = CASE WHEN users.deleted_at IS NULL THEN users.created_at ELSE excluded.created_at END, deleted_at = NULL`)
       .bind(profile.id, profile.login, profile.name || null, profile.avatar_url || null, profile.bio ? String(profile.bio).slice(0, 300) : null, email, now),
   ]);
-  return sessionFor(env, profile.id, secure);
+  return sessionFor(env, profile.id, secure, ctx);
 }
 
 /** A new session for an existing account: the cookie, and whether /welcome is still to come. */
-export async function sessionFor(env, userId, secure) {
+export async function sessionFor(env, userId, secure, ctx) {
   const now = Date.now(), tok = randomToken();
   await env.DB.batch([
     env.DB.prepare("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?1, ?2, ?3)").bind(await sha256(tok), userId, now + SESSION_DAYS * DAY),
     env.DB.prepare("DELETE FROM sessions WHERE expires_at < ?1").bind(now),
     env.DB.prepare("UPDATE users SET seen_at = ?2 WHERE id = ?1").bind(userId, now),
   ]);
-  const u = await env.DB.prepare("SELECT onboarded_at FROM users WHERE id = ?1").bind(userId).first();
+  const u = await env.DB.prepare("SELECT onboarded_at, created_at, provider FROM users WHERE id = ?1").bind(userId).first();
+  // an account made in the last minute is a sign-up
+  ctx?.waitUntil(track(env, "signed in", userId, { method: u?.provider || "github", new_account: !!u && now - u.created_at < 60000 }));
   return { set: cookie(COOKIE, tok, SESSION_DAYS * 86400, secure), fresh: !u?.onboarded_at };
 }
 // After sign-in: the page they came from, or /welcome first if they have not been through it.
@@ -72,14 +76,14 @@ async function primaryEmail(token) {
   } catch { return null; }
 }
 
-export async function handleAuth(req, env, url) {
+export async function handleAuth(req, env, url, ctx) {
   const secure = url.protocol === "https:", path = url.pathname;
   if (path === "/auth/github") {
     const back = safeReturn(url.searchParams.get("return"));
     // .dev.vars only; never set this on the deployed Worker
     if (env.DEV_LOGIN) {
       const login = String(env.DEV_LOGIN);
-      const s = await startSession(env, { id: 1000000 + login.length, login, name: login, avatar_url: `https://github.com/${login}.png`, bio: "Signed in locally." }, `${login}@example.com`, secure);
+      const s = await startSession(env, { id: 1000000 + login.length, login, name: login, avatar_url: `https://github.com/${login}.png`, bio: "Signed in locally." }, `${login}@example.com`, secure, ctx);
       return redirect(landing(s, back), [s.set]);
     }
     if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET) return new Response("GitHub sign-in is not set up yet.", { status: 503 });
@@ -98,7 +102,7 @@ export async function handleAuth(req, env, url) {
     if (!tr.access_token) { console.error("github token exchange failed:", tr.error, tr.error_description); return redirect(failed(back), [clear]); }
     const profile = await fetch("https://api.github.com/user", { headers: { Authorization: `Bearer ${tr.access_token}`, "User-Agent": "openyard.cloud", Accept: "application/vnd.github+json" } }).then(r => r.json());
     if (!profile?.id) { console.error("github profile failed:", profile?.message); return redirect(failed(back), [clear]); }
-    const s = await startSession(env, profile, await primaryEmail(tr.access_token), secure);
+    const s = await startSession(env, profile, await primaryEmail(tr.access_token), secure, ctx);
     return redirect(landing(s, back), [clear, s.set]);
   }
   if (path === "/auth/logout" && req.method === "POST") {
