@@ -379,6 +379,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
       $("edit-link").value = location.origin + d.edit;
       if (d.owner) $("owned").hidden = false;
       $("done").classList.add("on"); scrollTo(0, 0);
+      window.posthog?.capture?.("submit form sent"); // the last step of the submit funnel in PostHog
     } catch (e) {
       $("err").textContent = e.message || T("Something went wrong. Try again.", "Có lỗi xảy ra. Thử lại nhé.");
       if (window.turnstile && tsKey) turnstile.reset();
