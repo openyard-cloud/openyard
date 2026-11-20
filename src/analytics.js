@@ -1,4 +1,4 @@
-// Product analytics through PostHog (EU cloud), without cookies.
+// Product analytics through PostHog (US cloud; POSTHOG_REGION), without cookies.
 //
 // In the browser: pageviews and clicks, sent in PostHog's cookieless mode, so nothing is stored on
 // the visitor's device and no consent banner is needed. PostHog counts unique visitors with a

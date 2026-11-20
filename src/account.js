@@ -288,7 +288,7 @@ export function privacyPage({ site }) {
     ["Clicks on a project's link are counted per day, with nothing about who clicked.", "Lượt bấm vào link dự án được đếm theo ngày, không kèm thông tin ai bấm."],
   ]])}
   ${sec(["Who else sees it", "Ai khác thấy"], [
-    ["The site runs on Cloudflare, email goes out through Resend, and visit counts go to PostHog in the EU. Nobody else gets your data, and we never sell it.", "Trang chạy trên Cloudflare, email gửi qua Resend, số liệu lượt xem gửi về PostHog đặt tại EU. Ngoài ra không ai nhận dữ liệu của bạn, và chúng mình không bao giờ bán nó."],
+    ["The site runs on Cloudflare, email goes out through Resend, and visit counts go to PostHog in the US. Nobody else gets your data, and we never sell it.", "Trang chạy trên Cloudflare, email gửi qua Resend, số liệu lượt xem gửi về PostHog đặt tại Mỹ. Ngoài ra không ai nhận dữ liệu của bạn, và chúng mình không bao giờ bán nó."],
   ])}
   ${sec(["Your choices", "Lựa chọn của bạn"], [
     ["In Settings you can turn email off, change your interests, or delete your account. Deleting erases your email and profile and empties your comments straight away.", "Ở trang Cài đặt bạn có thể tắt email, đổi sở thích hoặc xoá tài khoản. Xoá tài khoản sẽ xoá ngay email, hồ sơ và nội dung bình luận."],

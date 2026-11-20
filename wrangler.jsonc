@@ -28,7 +28,7 @@
     // PostHog analytics (src/analytics.js), cookieless. The project key is public by design: it
     // only lets someone send events. Empty means analytics is off.
     "POSTHOG_KEY": "",
-    "POSTHOG_REGION": "eu"
+    "POSTHOG_REGION": "us"
   },
   // Worker Previews: every pull request gets its own preview URL. It uses a separate
   // database (seeded with the same migrations) and no Turnstile or GitHub sign-in,
