@@ -89,8 +89,10 @@ async function download(owner, name, sha, into) {
 }
 
 // VETCODE_BIN (a checkout of the vetcode repository, as in the workflow) avoids depending on npm.
-function scan(dir, out) {
-  const args = [dir, "--json", out, "--no-tools", "--quiet"];
+// The download has no .git folder, so vetcode is told whose repository it is (--repo): actions
+// from the same owner are the project's own code, as they are when it is run in a clone.
+function scan(dir, out, repo) {
+  const args = [dir, "--json", out, "--no-tools", "--quiet", "--repo", repo];
   const [cmd, pre] = process.env.VETCODE_BIN ? [process.execPath, [process.env.VETCODE_BIN]] : ["npx", ["-y", VETCODE]];
   const r = spawnSync(cmd, [...pre, ...args], { stdio: ["ignore", "ignore", "inherit"], timeout: 10 * 60 * 1000 });
   if (!fs.existsSync(out)) throw new Error(`vetcode did not finish (${r.signal || r.status})`);
@@ -104,7 +106,7 @@ async function readRepo(owner, name, sha) {
     const dir = await download(owner, name, sha, tmp);
     let ignored = [];
     try { ignored = fs.readFileSync(path.join(dir, ".vetcodeignore"), "utf8").split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#")).map(l => l.slice(0, 100)); } catch {}
-    return { commit: sha, ...summarize(scan(dir, path.join(tmp, "report.json")), ignored) };
+    return { commit: sha, ...summarize(scan(dir, path.join(tmp, "report.json"), `${owner}/${name}`), ignored) };
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }
