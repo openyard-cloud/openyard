@@ -6,7 +6,7 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/llms.txt", "/1f6e54887a1437cf51811144db0cb242.txt", "/projects", "/projects/", "/apps", "/apps/", "/open-source", "/open-source/", "/for-people", "/for-people/", "/wild-ideas", "/wild-ideas/", "/dev-tools", "/dev-tools/", "/tags/*", "/about", "/about/", "/community", "/community/", "/welcome", "/settings", "/privacy", "/@*", "/unsubscribe", "/signin", "/a/*", "/discuss", "/discuss/*", "/claim/*", "/submit", "/submit/", "/submit.html"]
+    "run_worker_first": ["/api/*", "/p/*", "/go/*", "/u/*", "/sitemap.xml", "/projects.json", "/auth/*", "/badge/*", "/check", "/check/*", "/llms.txt", "/1f6e54887a1437cf51811144db0cb242.txt", "/projects", "/projects/", "/apps", "/apps/", "/open-source", "/open-source/", "/for-people", "/for-people/", "/wild-ideas", "/wild-ideas/", "/dev-tools", "/dev-tools/", "/tags/*", "/about", "/about/", "/community", "/community/", "/welcome", "/settings", "/privacy", "/@*", "/unsubscribe", "/signin", "/a/*", "/discuss", "/discuss/*", "/claim/*", "/submit", "/submit/", "/submit.html", "/ph.js", "/relay/*"]
   },
   "d1_databases": [
     { "binding": "DB", "database_name": "openyard", "database_id": "90c96a85-e184-41fb-b6de-324f0a4bed51" }
@@ -24,7 +24,11 @@
     "INDEXNOW_KEY": "1f6e54887a1437cf51811144db0cb242",
     // Email through Resend (the RESEND_API_KEY secret); its free plan sends 100 a day, so we stop at 90
     "EMAIL_FROM": "OpenYard <hello@openyard.cloud>",
-    "EMAIL_DAILY_LIMIT": "90"
+    "EMAIL_DAILY_LIMIT": "90",
+    // PostHog analytics (src/analytics.js), cookieless. The project key is public by design: it
+    // only lets someone send events. Empty means analytics is off.
+    "POSTHOG_KEY": "phc_w3L6BgyV7E4DfKRzohLSDUV3WVSUay2TcZVHTzewYC3U",
+    "POSTHOG_REGION": "us"
   },
   // Worker Previews: every pull request gets its own preview URL. It uses a separate
   // database (seeded with the same migrations) and no Turnstile or GitHub sign-in,
@@ -34,7 +38,8 @@
     "vars": {
       "TURNSTILE_SITE_KEY": "",
       "GITHUB_CLIENT_ID": "",
-      "ADMIN_LOGINS": "thihodev"
+      "ADMIN_LOGINS": "thihodev",
+      "POSTHOG_KEY": ""
     },
     "d1_databases": [
       { "binding": "DB", "database_name": "openyard-preview", "database_id": "86964cba-9462-4365-8aca-ec5ac78dee6b" }

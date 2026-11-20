@@ -421,7 +421,7 @@ export const siteNav = (site, current = "", extra = "") => `<nav><div class="wra
   <div class="nlinks">${NAV.map(([href, label]) => `<a href="${href}"${href === current ? ' aria-current="page"' : ""}>${t(...label)}</a>`).join("")}</div>
   <div class="right">${extra}
     <button class="chip" id="lang" type="button" aria-label="Switch language" data-vi-aria-label="Đổi ngôn ngữ">VI</button>
-    <a class="btn sm line" id="me" href="/signin">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script>
+    <a class="btn sm line" id="me" href="/signin">${t("Sign in", "Đăng nhập")}</a><script src="/me.js" defer></script><script src="/ph.js" defer></script>
   </div>
 </div></nav>`;
 export const siteFooter = (site, note = "") => {

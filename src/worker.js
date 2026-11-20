@@ -35,6 +35,7 @@ import { siteMeta, grabImage, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
+import { clientScript, relay, track, RELAY } from "./analytics.js";
 
 const DAY = 86400000;
 const TYPES = ["app", "open-source"], STATUSES = ["live", "beta", "soon"], KINDS = ["people", "wild", "dev"];
@@ -292,6 +293,7 @@ async function submit(req, env, ctx) {
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
+  ctx.waitUntil(track(env, "project submitted", user.id, { slug, type: f.type, kinds: f.kinds, has_repo: !!f.repo, lang: f.lang }));
   ctx.waitUntil(mail.live(env, slug, `/submit?edit=${slug}#${edit}`).then(() => mail.drain(env, 3)).catch(e => console.error("live mail", e)));
   return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user.login }, 201);
 }
@@ -393,7 +395,7 @@ async function tsOk(env, token, ip) {
 }
 // POST /auth/email: send a one-time link. GET shows a button (mail scanners open links, they do not
 // press buttons); POST /auth/email/confirm signs in, making the account on first use.
-async function emailSignin(req, env, url) {
+async function emailSignin(req, env, url, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0", path = url.pathname, secure = url.protocol === "https:";
   if (path === "/auth/email" && req.method === "POST") {
     let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
@@ -420,7 +422,7 @@ async function emailSignin(req, env, url) {
     let form; try { form = await req.formData(); } catch { return fail("Bad request."); }
     const row = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL AND expires_at > ?2 RETURNING email, back").bind(await sha256(String(form.get("t") || "")), now).first();
     if (!row) return Response.redirect(`${url.origin}/signin?expired=1`, 303);
-    const sess = await signInEmail(env, row.email, secure, now);
+    const sess = await signInEmail(env, row.email, secure, now, ctx);
     return new Response(null, { status: 303, headers: { Location: landing(sess, row.back), "Set-Cookie": sess.set } });
   }
   // POST /auth/email/code {email, code}: the 6-digit code from the same email, typed on any device
@@ -437,20 +439,20 @@ async function emailSignin(req, env, url) {
     }
     const used = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL RETURNING email").bind(row.token_hash, now).first();
     if (!used) return fail("That code has expired. Ask for a new one.", 410);
-    const sess = await signInEmail(env, email, secure, now);
+    const sess = await signInEmail(env, email, secure, now, ctx);
     return json({ go: landing(sess, row.back) }, 200, { "Set-Cookie": sess.set, "Cache-Control": "no-store" });
   }
   return null;
 }
 // The account for a proven email address: an existing one (GitHub accounts first), or a new one.
-async function signInEmail(env, email, secure, now) {
+async function signInEmail(env, email, secure, now, ctx) {
   let u = await env.DB.prepare("SELECT id FROM users WHERE email = ?1 COLLATE NOCASE AND deleted_at IS NULL ORDER BY provider = 'github' DESC LIMIT 1").bind(email).first();
   if (!u) {
     const id = -(Math.floor(Math.random() * 2 ** 46) + 1), login = await freeHandle(env, email);
     await env.DB.prepare(`INSERT INTO users (id, login, name, avatar, email, provider, created_at, seen_at) VALUES (?1, ?2, NULL, ?3, ?4, 'email', ?5, ?5)`).bind(id, login, pic(id, login), email, now).run();
     u = { id };
   }
-  return sessionFor(env, u.id, secure);
+  return sessionFor(env, u.id, secure, ctx);
 }
 const meJson = (u, env) => u ? { login: u.login, name: u.name, avatar: u.avatar, provider: u.provider, email: u.email, emailOk: !!u.email_ok, lang: u.lang, interests: JSON.parse(u.interests || "[]"), onboarded: !!u.onboarded_at, admin: isAdmin(env, u) } : null;
 // GET who is signed in; POST changes their choices; POST /api/me/delete removes the account.
@@ -501,7 +503,7 @@ async function me(req, env, path, ctx) {
 }
 
 // GET how many people like a project and whether you do; POST toggles your like (signed in).
-async function likes(req, env, url) {
+async function likes(req, env, url, ctx) {
   const user = await currentUser(req, env), priv = { "Cache-Control": "private, no-store" };
   if (req.method === "GET") {
     const slug = url.searchParams.get("slug") || "";
@@ -519,7 +521,10 @@ async function likes(req, env, url) {
   const slug = String(b.slug || "");
   if (!(await env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first())) return fail("No such project.", 404);
   const had = await env.DB.prepare("DELETE FROM likes WHERE slug = ?1 AND user_id = ?2 RETURNING slug").bind(slug, user.id).first();
-  if (!had) await env.DB.prepare("INSERT INTO likes (slug, user_id, created_at) VALUES (?1, ?2, ?3) ON CONFLICT DO NOTHING").bind(slug, user.id, Date.now()).run();
+  if (!had) {
+    await env.DB.prepare("INSERT INTO likes (slug, user_id, created_at) VALUES (?1, ?2, ?3) ON CONFLICT DO NOTHING").bind(slug, user.id, Date.now()).run();
+    ctx.waitUntil(track(env, "project liked", user.id, { slug }));
+  }
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1").bind(slug).first();
   const { results: people } = await env.DB.prepare(`SELECT u.login, u.avatar FROM likes l JOIN users u ON u.id = l.user_id
     WHERE l.slug = ?1 AND u.deleted_at IS NULL AND u.banned = 0 ORDER BY l.created_at DESC LIMIT 8`).bind(slug).all();
@@ -532,7 +537,7 @@ const threadExists = (env, key) => /^t-\d+$/.test(key)
   : env.DB.prepare("SELECT 1 FROM projects WHERE slug = ?1 AND hidden = 0").bind(key).first();
 
 // POST /api/topics starts a discussion; DELETE /api/topics/<id> removes one (its author or an admin).
-async function topics(req, env, url, id) {
+async function topics(req, env, url, id, ctx) {
   const user = await currentUser(req, env), now = Date.now();
   if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
@@ -552,6 +557,7 @@ async function topics(req, env, url, id) {
   const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM topics WHERE user_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
   if (n >= 5) return fail("That is five topics today. Reply to one, or come back tomorrow.", 429);
   const r = await env.DB.prepare("INSERT INTO topics (cat, title, body, user_id, created_at, last_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5) RETURNING id").bind(cat, title, body, user.id, now).first();
+  ctx?.waitUntil(track(env, "topic started", user.id, { category: cat }));
   return json({ id: r.id, url: topicPath({ id: r.id, title }) }, 201);
 }
 
@@ -608,6 +614,7 @@ async function comments(req, env, url, id, ctx) {
   if ((recent.minute || 0) >= 3 || (recent.day || 0) >= 60) return fail("Slow down a little, then try again.", 429);
   const r = await env.DB.prepare("INSERT INTO comments (slug, user_id, parent_id, body, created_at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id").bind(slug, user.id, parent, body, now).first();
   if (slug.startsWith("t-")) await env.DB.prepare("UPDATE topics SET last_at = ?2 WHERE id = ?1").bind(+slug.slice(2), now).run();
+  ctx.waitUntil(track(env, "comment posted", user.id, { thread: slug.startsWith("t-") ? "topic" : "project", slug, reply: !!parent }));
   ctx.waitUntil(mail.comment(env, { id: r.id, slug, parentId: parent, body, author: user }).then(() => mail.drain(env, 5)).catch(e => console.error("comment mail", e)));
   return json({ id: r.id, parent, at: now, body, deleted: false, mine: true, user: { login: user.login, name: user.name, avatar: user.avatar } }, 201);
 }
@@ -791,8 +798,10 @@ export default {
         catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
-      if (path.startsWith("/auth/email")) { const r = await emailSignin(req, env, url); if (r) return r; }
-      if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url); if (r) return r; }
+      if (path === "/ph.js") return clientScript(env);
+      if (path.startsWith(RELAY + "/")) return relay(req, env, path);
+      if (path.startsWith("/auth/email")) { const r = await emailSignin(req, env, url, ctx); if (r) return r; }
+      if (path.startsWith("/auth/")) { const r = await handleAuth(req, env, url, ctx); if (r) return r; }
       const av = /^\/a\/([a-z0-9]{1,12})\/([^/]{1,12})\.svg$/.exec(path);
       if (av) return new Response(avatarSvg(av[1], (() => { try { return decodeURIComponent(av[2]); } catch { return "?"; } })()), { headers: { "Content-Type": "image/svg+xml", "Cache-Control": "public, max-age=31536000, immutable" } });
       // the submit form is a static page; it gets the same footer as the pages rendered here
@@ -806,7 +815,7 @@ export default {
       if (path === "/signin") return new Response(signinPage({ site: SITE, back: url.searchParams.get("return") || "/", expired: url.searchParams.has("expired"), turnstile: env.TURNSTILE_SITE_KEY }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
       if (path === "/api/me" || path === "/api/me/delete") return me(req, env, path, ctx);
       if (path === "/api/comments" && (req.method === "GET" || req.method === "POST")) return comments(req, env, url, undefined, ctx);
-      if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url);
+      if (path === "/api/likes" && (req.method === "GET" || req.method === "POST")) return likes(req, env, url, ctx);
       if (path === "/api/site" && req.method === "GET") return siteLookup(req, env, url);
       const cl = /^\/(api\/)?claim\/([a-z0-9-]+)$/.exec(path);
       if (cl && cl[1] && req.method === "POST") return claim(req, env, url, cl[2]);
@@ -820,7 +829,7 @@ export default {
         return new Response(claimPage({ p: toApi(p, Date.now()), user, token, github: !mine && !taken && ghClaim(user, p), mine, taken, site: SITE }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       }
       let dm; // discussions
-      if (path === "/api/topics" && req.method === "POST") return topics(req, env, url);
+      if (path === "/api/topics" && req.method === "POST") return topics(req, env, url, undefined, ctx);
       if ((dm = /^\/api\/topics\/(\d+)$/.exec(path)) && req.method === "DELETE") return topics(req, env, url, +dm[1]);
       if (path === "/discuss/new") return new Response(newTopicPage({ site: SITE, cat: url.searchParams.get("cat") || "help" }), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store" } });
       if ((dm = /^\/discuss(?:\/([a-z]+))?\/?$/.exec(path)) && (!dm[1] || DCAT[dm[1]])) {
