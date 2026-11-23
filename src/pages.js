@@ -1,6 +1,7 @@
 // Pages the Worker renders from the database: one page per project at /p/<slug>,
-// plus sitemap.xml. Pages are English in the HTML (what search engines and link
-// previews read) and switch to Vietnamese in the browser, like the home page.
+// plus sitemap.xml. Pages are English in the HTML and switch to Vietnamese in the
+// browser; /vi/<path> serves the same page already in Vietnamese (i18n.js).
+import { VI_OK, viPath } from "./i18n.js";
 
 export const ORIGIN = "https://openyard.cloud";
 
@@ -385,19 +386,26 @@ ${FOOTER_CSS}
 .js .reveal.in{opacity:1;transform:none}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.js .reveal{opacity:1;transform:none}.frame{transform:none;opacity:1}}`;
 
-export const head = ({ title, desc, url, image, jsonld, noindex = false, md = null }) => `<!doctype html>
+// `vi`: { title, desc } in Vietnamese, used by the /vi/ version of the page (i18n.js)
+export const head = ({ title, desc, url, image, jsonld, noindex = false, md = null, vi: V = null }) => {
+  const path = url.startsWith(ORIGIN) ? url.slice(ORIGIN.length) || "/" : null;
+  const tv = V?.title ? ` data-vi="${esc(V.title)}"` : "", dv = V?.desc ? ` data-vi-content="${esc(V.desc)}"` : "", tvc = V?.title ? ` data-vi-content="${esc(V.title)}"` : "";
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${esc(url)}">${noindex ? `
+<title${tv}>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}"${dv}>
+<link rel="canonical" href="${esc(url)}">${path && VI_OK(path) ? `
+<link rel="alternate" hreflang="en" href="${esc(url)}">
+<link rel="alternate" hreflang="vi" href="${esc(ORIGIN + viPath(path))}">
+<link rel="alternate" hreflang="x-default" href="${esc(url)}">` : ""}${noindex ? `
 <meta name="robots" content="noindex">` : ""}${md ? `
 <link rel="alternate" type="text/markdown" href="${esc(md)}">` : ""}
 <meta property="og:site_name" content="OpenYard">
-<meta property="og:title" content="${esc(title)}">
-<meta property="og:description" content="${esc(desc)}">
+<meta property="og:title" content="${esc(title)}"${tvc}>
+<meta property="og:description" content="${esc(desc)}"${dv}>
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:type" content="website">
 <meta property="og:image" content="${esc(image.url)}">${image.w ? `
@@ -413,6 +421,7 @@ export const head = ({ title, desc, url, image, jsonld, noindex = false, md = nu
 <style>${CSS}</style>
 <script>document.documentElement.classList.add("js")</script>
 </head>`;
+};
 
 // The same top bar and footer on every page the Worker renders, the home page included; submit.html mirrors them.
 const NAV = [["/projects", ["Projects", "Dự án"]], ["/discuss", ["Discuss", "Thảo luận"]], ["/check", ["Check a repo", "Kiểm tra repo"]], ["/submit", ["Submit", "Gửi dự án"]]];
@@ -441,11 +450,14 @@ export const siteFooter = (site, note = "") => {
 // or their browser is Vietnamese, and wires the VI/EN toggle.
 export const LANG_JS = `<script>
 (() => {
-  const els = [...document.querySelectorAll("[data-vi]")];
+  // a page at /vi/… arrives in Vietnamese; the button then goes to the English address, and back
+  const page = document.documentElement.lang === "vi" ? "vi" : "en", alt = {};
+  document.querySelectorAll("link[rel=alternate][hreflang]").forEach(x => alt[x.hreflang] = x.href);
+  const els = page === "en" ? [...document.querySelectorAll("body [data-vi]")] : [];
   els.forEach(e => e.dataset.en = e.textContent);
   // attributes: data-vi-placeholder, data-vi-aria-label, data-vi-title hold the Vietnamese
   const ATTRS = ["placeholder", "aria-label", "title"];
-  const attrs = ATTRS.flatMap(a => [...document.querySelectorAll("[data-vi-" + a + "]")].map(e => (e.setAttribute("data-en-" + a, e.getAttribute(a) || ""), [e, a])));
+  const attrs = page === "en" ? ATTRS.flatMap(a => [...document.querySelectorAll("[data-vi-" + a + "]")].map(e => (e.setAttribute("data-en-" + a, e.getAttribute(a) || ""), [e, a]))) : [];
   const set = l => {
     els.forEach(e => e.textContent = l === "vi" ? e.dataset.vi : e.dataset.en);
     attrs.forEach(([e, a]) => e.setAttribute(a, e.getAttribute("data-" + (l === "vi" ? "vi" : "en") + "-" + a)));
@@ -454,8 +466,13 @@ export const LANG_JS = `<script>
     try { localStorage.setItem("oy-lang", l); } catch (e) {}
   };
   let l = null; try { l = localStorage.getItem("oy-lang"); } catch (e) {}
-  l = l || ((navigator.language || "").toLowerCase().startsWith("vi") ? "vi" : "en");
-  document.getElementById("lang").addEventListener("click", () => { l = l === "vi" ? "en" : "vi"; set(l); });
+  l = page === "vi" ? "vi" : l || ((navigator.language || "").toLowerCase().startsWith("vi") ? "vi" : "en");
+  document.getElementById("lang").addEventListener("click", () => {
+    const next = l === "vi" ? "en" : "vi";
+    const to = alt[next] && new URL(alt[next]).pathname; // same host, so previews and local work too
+    if (to && to !== location.pathname) { try { localStorage.setItem("oy-lang", next); } catch (e) {} location.href = to + location.search + location.hash; return; }
+    l = next; set(l);
+  });
   if (l === "vi") set("vi");
 })();
 </script>`;
@@ -793,7 +810,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
   ].filter(Boolean);
   const prompts = [["Tried it: ", "Đã dùng thử: "], ["Idea: ", "Ý tưởng: "], ["Found a bug: ", "Gặp lỗi: "], ["Question: ", "Hỏi: "]];
   const facts2 = facts.filter(([[e]]) => e !== "Made by");
-  return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld, md: `${url}.md` })}
+  return `${head({ title: `${p.name}: ${en(p.tagline)} · OpenYard`, desc: en(p.description), url, image, jsonld, md: `${url}.md`, vi: { title: `${p.name}: ${vi(p.tagline)} · OpenYard`, desc: vi(p.description) } })}
 <body style="--c:${esc(p.color || "#6d5bd0")}">
 ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true">${logo(p, "nl", 28)}<b>${esc(p.name)}</b><span class="btn sm dark">${t("Open", "Mở")} ${ARROW}</span></a>`)}
 <main>
@@ -1064,6 +1081,8 @@ export function sitemap(projects, today, checks = [], pages = []) {
   // lastmod only where we know when a page really changed; `today` is the yard's newest activity (the home page)
   const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check` }, ...pages.map(p => typeof p === "string" ? { loc: ORIGIN + p } : { loc: ORIGIN + p.path, lastmod: p.at || null }), ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.at || p.added })),
     ...checks.map(c => ({ loc: `${ORIGIN}/check/${c.repo}`, lastmod: new Date(c.scanned_at).toISOString().slice(0, 10) }))];
+  // and the Vietnamese version of every page that has one
+  urls.push(...urls.filter(u => VI_OK(u.loc.slice(ORIGIN.length) || "/")).map(u => ({ ...u, loc: ORIGIN + viPath(u.loc.slice(ORIGIN.length) || "/") })));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(u => `  <url><loc>${u.loc}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n")}

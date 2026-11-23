@@ -78,7 +78,8 @@ export function discussPage({ items, cat, counts, site, now = Date.now() }) {
   <div class="reveal">${items.length ? `<ul class="tl2">${items.map(row).join("")}</ul>` : `<div class="tl2 empty2">${cat === "showcase" ? t("No projects yet.", "Chưa có dự án nào.") : t("Nothing here yet. Start the first topic.", "Chưa có gì ở đây. Mở chủ đề đầu tiên đi.")}</div>`}</div>
 </div>`;
   const path = cat ? `/discuss/${cat}` : "/discuss";
-  return page({ title: `${C ? `${C.name[0]} · ` : ""}Discuss · OpenYard`, desc: C ? C.lead[0] : "Discussions among people who make free software: help, ideas, building in public and new projects.", path, color: C?.c || "#b67cff", site, current: "/discuss", body, css: D_CSS,
+  return page({ vi: { title: `${C ? `${C.name[1]} · ` : ""}Thảo luận · OpenYard`, desc: C ? C.lead[1] : "Thảo luận giữa những người làm phần mềm miễn phí: hỏi đáp, ý tưởng, làm sản phẩm công khai và dự án mới." },
+    title: `${C ? `${C.name[0]} · ` : ""}Discuss · OpenYard`, desc: C ? C.lead[0] : "Discussions among people who make free software: help, ideas, building in public and new projects.", path, color: C?.c || "#b67cff", site, current: "/discuss", body, css: D_CSS,
     jsonld: [crumbs([["OpenYard", ORIGIN], ["Discuss", `${ORIGIN}/discuss`], ...(C ? [[C.name[0], ORIGIN + path]] : [])])] });
 }
 
@@ -114,7 +115,7 @@ document.getElementById("deltopic").addEventListener("click", async e => {
   if (r.ok) location.href = "/discuss/${C.slug}";
 });
 </script>` : "";
-  return page({ title: `${tp.title} · Discuss · OpenYard`, desc: tp.body.replace(/\s+/g, " ").slice(0, 155), path: topicPath(tp), color: C.c, site, current: "/discuss", body, css: D_CSS, extra: commentsJs(`t-${tp.id}`) + del,
+  return page({ vi: { title: `${tp.title} · Thảo luận · OpenYard` }, title: `${tp.title} · Discuss · OpenYard`, desc: tp.body.replace(/\s+/g, " ").slice(0, 155), path: topicPath(tp), color: C.c, site, current: "/discuss", body, css: D_CSS, extra: commentsJs(`t-${tp.id}`) + del,
     jsonld: [{ "@context": "https://schema.org", "@type": "DiscussionForumPosting", headline: tp.title, text: tp.body.slice(0, 2000), url, datePublished: new Date(tp.created_at).toISOString(), author: { "@type": "Person", name: author.name || author.login, url: `${ORIGIN}/@${author.login}` }, commentCount: replies },
       crumbs([["OpenYard", ORIGIN], ["Discuss", `${ORIGIN}/discuss`], [C.name[0], `${ORIGIN}/discuss/${C.slug}`], [tp.title, url]])] });
 }

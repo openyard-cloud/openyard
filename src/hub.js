@@ -180,7 +180,7 @@ export const crumbs = items => ({ "@context": "https://schema.org", "@type": "Br
 const collection = (name, url, desc, list) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name, url, description: desc, isPartOf: { "@type": "WebSite", name: "OpenYard", url: ORIGIN },
   mainEntity: { "@type": "ItemList", numberOfItems: list.length, itemListElement: list.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${ORIGIN}/p/${p.slug}`, name: p.name })) } });
 
-export const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "", extra = "", css = "" }) => `${head({ title, desc, url: ORIGIN + path, image: IMG, jsonld, noindex }).replace("</style>", `${HUB_CSS}${css}</style>`)}
+export const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "", extra = "", css = "", vi = null }) => `${head({ title, desc, url: ORIGIN + path, image: IMG, jsonld, noindex, vi }).replace("</style>", `${HUB_CSS}${css}</style>`)}
 <body style="--c:${esc(color)}">
 ${siteNav(site, current)}
 <main>${body}</main>
@@ -264,6 +264,7 @@ export function listPage({ all, site, slug, pulse = null }) {
   ${band()}
 </div>`;
   return page({ title: cat.title, desc, path, color: cat.c, site, current: "/projects", noindex: !list.length, body,
+    vi: { title: `${cat.h1[1]} · OpenYard`, desc: `${cat.lead[1]} ${list.length} dự án.` },
     jsonld: [collection(cat.h1[0], ORIGIN + path, desc, list), crumbs([["OpenYard", ORIGIN], ...(slug === "projects" ? [] : [["Projects", `${ORIGIN}/projects`]]), [cat.h1[0], ORIGIN + path]])] });
 }
 
@@ -281,6 +282,7 @@ export function tagPage({ all, site, tag, pulse = null }) {
   ${band()}
 </div>`;
   return page({ title: `Free ${tag} apps and tools · OpenYard`, desc, path, color: "#6d5bd0", site, current: "/projects", noindex: list.length < 2, body,
+    vi: { title: `App và công cụ ${tag} miễn phí · OpenYard`, desc: `${list.length} dự án miễn phí gắn thẻ ${tag} trên OpenYard: ${list.slice(0, 4).map(p => p.name).join(", ")}${list.length > 4 ? " và nhiều hơn nữa" : ""}.` },
     jsonld: [collection(`Projects tagged ${tag}`, ORIGIN + path, desc, list), crumbs([["OpenYard", ORIGIN], ["Projects", `${ORIGIN}/projects`], [tag, ORIGIN + path]])] });
 }
 
@@ -311,6 +313,7 @@ export function aboutPage({ all, site }) {
 </div>`;
   const desc = "OpenYard is a community for people who make free software: free apps, wild ideas and open-source tools, with every repository read for malware.";
   return page({ title: "About OpenYard: a community for people who make free software", desc, path: "/about", color: "#b67cff", site, body,
+    vi: { title: "Về OpenYard: cộng đồng của những người làm phần mềm miễn phí", desc: "OpenYard là cộng đồng của những người làm phần mềm miễn phí: app miễn phí, ý tưởng điên rồ và công cụ mã nguồn mở, mọi repo đều được đọc để tìm mã độc." },
     jsonld: [{ "@context": "https://schema.org", "@type": "AboutPage", name: "About OpenYard", url: `${ORIGIN}/about`, description: desc }, crumbs([["OpenYard", ORIGIN], ["About", `${ORIGIN}/about`]])] });
 }
 
@@ -347,5 +350,6 @@ export function communityPage({ all, site }) {
 </div>`;
   const desc = "Join the OpenYard community: share the free software you make, get feedback and testers, ask for help and help other makers.";
   return page({ title: "Join the OpenYard community of people who make free software", desc, path: "/community", color: "#b67cff", site, current: "/community", body,
+    vi: { title: "Tham gia cộng đồng OpenYard của những người làm phần mềm miễn phí", desc: "Tham gia cộng đồng OpenYard: chia sẻ phần mềm miễn phí bạn làm, nhận góp ý và người dùng thử, hỏi khi bí và giúp người làm khác." },
     jsonld: [{ "@context": "https://schema.org", "@type": "WebPage", name: "OpenYard community", url: `${ORIGIN}/community`, description: desc }, crumbs([["OpenYard", ORIGIN], ["Community", `${ORIGIN}/community`]])] });
 }
