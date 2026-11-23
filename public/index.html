@@ -94,19 +94,7 @@ nav .links a:hover{color:var(--ink)}
 .hero .sub{font-size:clamp(17px,1.6vw,20px);color:var(--muted);max-width:36em;margin:0 auto 34px}
 .hero .cta{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 
-/* composer demo */
-.demo{max-width:720px;margin:64px auto 0;text-align:left}
-.composer{display:flex;align-items:center;gap:12px;min-height:60px;padding:10px 10px 10px 22px;border-radius:30px;background:var(--solid);border:1px solid var(--line2);box-shadow:var(--shadow);font-size:16px}
-.composer .txt{flex:1;min-height:24px;color:var(--ink)}
-.composer .ph{color:var(--faint)}
-.composer .cur{display:inline-block;width:2px;height:1.15em;background:var(--ink);vertical-align:-3px;margin-left:1px;animation:blink 1.05s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
-.send{width:40px;height:40px;border-radius:50%;border:0;display:grid;place-items:center;background:var(--line2);color:var(--bg);transition:background .4s var(--ease),transform .4s var(--ease);flex:none}
-.send.on{background:var(--ink)}
-.send.go{transform:scale(.88)}
-.send svg{width:18px;height:18px}
-.status{display:flex;align-items:center;gap:12px;height:44px;padding:0 6px;margin-top:14px;opacity:0;transform:translateY(6px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-.status.on{opacity:1;transform:none}
 .team{display:flex}
 .team i{width:22px;height:22px;border-radius:50%;margin-left:-6px;border:2px solid var(--bg);animation:bob 2.4s var(--ease) infinite}
 .team i:first-child{margin-left:0;background:linear-gradient(135deg,#7c9cff,#b67cff)}
@@ -116,46 +104,7 @@ nav .links a:hover{color:var(--ink)}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 .shimmer{font-size:14.5px;font-weight:500;background:linear-gradient(90deg,var(--muted) 0%,var(--muted) 40%,var(--ink) 50%,var(--muted) 60%,var(--muted) 100%);background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shim 2s linear infinite}
 @keyframes shim{from{background-position:100% 0}to{background-position:-50% 0}}
-.status .done{font-size:14.5px;font-weight:500;color:#10b981;display:none}
-.status.ok .shimmer{display:none}.status.ok .done{display:inline}
-.result{margin-top:6px;border-radius:24px;background:var(--solid);border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden;opacity:0;transform:translateY(16px) scale(.98);filter:blur(10px);transition:opacity .9s var(--ease),transform .9s var(--ease),filter .9s var(--ease)}
-.result.on{opacity:1;transform:none;filter:none}
-.result.out{opacity:0;transform:translateY(-10px) scale(.99);filter:blur(8px);transition-duration:.6s}
-.rhead{display:flex;align-items:center;gap:14px;padding:20px 22px;border-bottom:1px solid var(--line)}
-.ricon{width:44px;height:44px;border-radius:14px;flex:none;position:relative;overflow:hidden}
-.ricon::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.55) 50%,transparent 70%);transform:translateX(-100%);animation:glint 3s var(--ease) infinite}
 @keyframes glint{60%,100%{transform:translateX(100%)}}
-.rhead h3{font-size:19px;letter-spacing:-.02em}
-.rhead p{margin:0;font-size:14px;color:var(--muted)}
-.rhead .tag{margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px;white-space:nowrap}
-.rbody{padding:16px 22px 20px;display:flex;flex-direction:column;gap:10px;min-height:150px}
-.row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;background:var(--bg2);font-size:14px;opacity:0;transform:translateY(8px);filter:blur(6px);transition:all .8s var(--ease)}
-.row.on{opacity:1;transform:none;filter:none}
-.row .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:15px;background:var(--solid);flex:none}
-.row .r{margin-left:auto;font-size:12.5px;color:var(--muted)}
-.pill{font-size:12px;font-weight:500;padding:3px 9px;border-radius:999px}
-.p-g{background:#10b98122;color:#0ea371}.p-a{background:#f59e0b22;color:#c77a06}.p-v{background:#8b5cf622;color:#7c4ee6}.p-b{background:#3b82f622;color:#2f6fe0}
-.bar{height:6px;border-radius:9px;background:var(--line2);overflow:hidden;flex:1}
-.bar i{display:block;height:100%;width:0;border-radius:9px;background:linear-gradient(90deg,#7c9cff,#ff7eb0);transition:width 2.2s var(--ease)}
-.thumbs{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
-.thumbs i{aspect-ratio:9/14;border-radius:10px;opacity:0;transform:scale(.9);transition:all .7s var(--ease)}
-.thumbs i.on{opacity:1;transform:none}
-.hexm{padding:2px 0 4px}
-.hexm .hr{display:flex;margin-top:-1.18%}
-.hexm .hr:first-child{margin-top:0}
-.hexm .hr:nth-child(even){padding-left:2.04%}
-.hexm i{width:4.08%;aspect-ratio:.866;flex:none;clip-path:polygon(50% 3%,95% 27%,95% 73%,50% 97%,5% 73%,5% 27%);background:var(--line2);transition:background .5s var(--ease),opacity .6s var(--ease)}
-.hexm i.sea{background:rgba(59,130,246,.3)}
-.hexm i.mtn{background:color-mix(in srgb,var(--ink) 48%,transparent)}
-.hexm i.riv{background:#60a5fa}
-.hexm i.fog{opacity:.25}
-.hexm i.cap{filter:brightness(1.25) saturate(1.2)}
-.bubble{align-self:flex-start;max-width:80%;padding:10px 14px;border-radius:18px;background:var(--bg2);font-size:14px}
-.bubble.me{align-self:flex-end;background:var(--ink);color:var(--bg)}
-.stage2{min-height:330px}
-.dots{display:flex;gap:6px;justify-content:center;margin-top:18px}
-.dots button{width:6px;height:6px;border-radius:9px;border:0;padding:0;background:var(--line2);cursor:pointer;transition:width .6s var(--ease),background .3s}
-.dots button.on{width:22px;background:var(--ink)}
 
 
 
@@ -259,6 +208,42 @@ nav .links a:hover{color:var(--ink)}
 
 /* join v2 */
 .join .eyebrow{margin-bottom:14px}
+/* from the community: the live feed */
+.yard-sec{padding:120px 0 40px}
+.yhead{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:40px}
+.yhead .h2{margin:0}
+.ygrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.yfeed{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:24px;background:var(--bg2);overflow:hidden}
+.yfeed li+li{border-top:1px solid var(--line)}
+.yfeed a{display:flex;gap:14px;padding:18px 22px;color:inherit;transition:background .2s}
+.yfeed a:hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.yfeed .yav{position:relative;flex:none;width:40px;height:40px}
+.yfeed .yav img,.yfeed .yav .ini{width:40px;height:40px;border-radius:12px;object-fit:cover;background:#fff;display:grid;place-items:center;font-size:14px}
+.yfeed .yav .ini{background:var(--c,#6d5bd0);color:#fff;font-weight:700}
+.yfeed .yav img.face{border-radius:50%}
+.yfeed .yk{position:absolute;right:-5px;bottom:-5px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1px solid var(--line2);color:var(--muted)}
+.yfeed .yk .ico{width:11px;height:11px;stroke-width:2.2}
+.yfeed .ybody{min-width:0;flex:1}
+.yfeed .yline{font-size:14.5px;color:var(--muted);line-height:1.45}
+.yfeed .yline b{color:var(--ink);font-weight:600}
+.yfeed .ytext{margin:4px 0 0;font-size:14.5px;color:var(--ink);line-height:1.5;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.yfeed small{display:block;margin-top:6px;font-size:12.5px;color:var(--faint)}
+.yfeed .ysk{height:86px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--ink) 4%,transparent),transparent) 0 0/200% 100%;animation:ysk 1.4s linear infinite}
+@keyframes ysk{to{background-position:-200% 0}}
+.yfeed .yempty{padding:28px 22px;color:var(--muted);font-size:14.5px}
+.yside{display:flex;flex-direction:column;gap:12px;position:sticky;top:88px}
+.ybox{display:block;padding:20px 22px;border:1px solid var(--line);border-radius:22px;background:var(--bg2);color:inherit}
+a.ybox{transition:border-color .2s,transform .5s var(--ease)}a.ybox:hover{border-color:var(--line2);transform:translateY(-2px)}
+.ynums{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.ynums b{display:block;font-size:26px;font-weight:600;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.ynums span{font-size:12.5px;color:var(--muted)}
+.ypeople .ystack{display:flex;margin-bottom:12px}
+.ypeople .ystack img{width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--bg);box-shadow:0 0 0 2px var(--bg2);margin-left:-8px}
+.ypeople .ystack img:first-child{margin-left:0}
+.ypeople b,.ynew b{display:block;font-weight:600;font-size:15px}
+.ypeople span,.ynew span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+@media (max-width:860px){.ygrid{grid-template-columns:minmax(0,1fr)}.yside{position:static;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
+@media (max-width:600px){.yfeed a{padding:16px}}
 .roles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:0 auto 30px}
 .roles>span{font-size:13.5px;padding:6px 14px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);backdrop-filter:blur(8px)}
 
@@ -266,30 +251,6 @@ nav .links a:hover{color:var(--ink)}
 .ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .tile{--tc:#b67cff;display:grid;place-items:center;width:30px;height:30px;border-radius:9px;flex:none;color:var(--tc);background:color-mix(in srgb,var(--tc) 16%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--tc) 22%,transparent)}
 .tile .ico{width:16px;height:16px}
-.rv2{opacity:0;transform:translateY(8px);filter:blur(6px);transition:all .8s var(--ease)}
-.rv2.on{opacity:1;transform:none;filter:none}
-.wx{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px;border-radius:16px;background:linear-gradient(160deg,#3b82f622,#06b6d41a);border:1px solid var(--line)}
-.wx div{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;color:var(--muted);padding:6px 0;border-radius:10px}
-.wx div b{font-size:14px;font-weight:600;color:var(--ink)}
-.wx div .ico{width:20px;height:20px;color:#f59e0b}
-.wx div.cur{background:color-mix(in srgb,#3b82f6 18%,transparent)}
-.wx div.cur .ico{color:#3b82f6}
-.vprev{position:relative;height:150px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
-.vprev img{width:100%;height:100%;object-fit:cover;object-position:top left}
-.vprev .pb{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);color:#ff4d6d;box-shadow:0 10px 30px -8px rgba(0,0,0,.5);animation:bob 2.4s var(--ease) infinite}
-.vprev .pb .ico{width:20px;height:20px;margin-left:3px}
-.vprev .vt{position:absolute;left:10px;right:10px;bottom:10px;height:4px;border-radius:4px;background:rgba(255,255,255,.3);overflow:hidden}
-.vprev .vt i{display:block;height:100%;width:0;background:#ff4d6d;transition:width 3s linear}
-.legend{display:flex;flex-wrap:wrap;gap:6px}
-.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px 4px 6px;border-radius:999px;background:var(--bg2);border:1px solid var(--line)}
-.legend .ico{width:14px;height:14px}
-.cscene{position:relative;height:178px;border-radius:16px;overflow:hidden;border:1px solid var(--line);background:#8ec5f0 url(/images/chatscape.webp) -26px -24px/460% auto no-repeat;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
-.cscene .bubble{background:rgba(255,255,255,.88);color:#0d0d0f;backdrop-filter:blur(6px);display:inline-flex;align-items:center;gap:6px}
-.cscene .bubble.me{background:#0d0d0f;color:#fff}
-.cscene .bubble .ico{width:14px;height:14px;color:#8b5cf6}
-.chips2{display:flex;flex-wrap:wrap;gap:6px}
-.chips2 span{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--bg2);border:1px solid var(--line);color:var(--muted)}
-.chips2 .ico{width:14px;height:14px}
 .team i{display:grid;place-items:center;color:#fff}
 .team i .ico{width:12px;height:12px;stroke-width:2.2}
 .team i:nth-child(4){color:#5b4630}
@@ -419,10 +380,9 @@ nav .links a:hover{color:var(--ink)}
   .now{width:auto}.now-steps{display:none}
   .hint2{display:none}
 }
-.demo-sec{padding:120px 0 40px}
 nav:not(.solid){--ink:#f4f4f5;--muted:#b4b4bd;--line2:rgba(255,255,255,.2);--bg:#05050a;--bg2:rgba(255,255,255,.08)}
 section{padding:130px 0}
-@media (max-width:600px){section{padding:84px 0}.card h3{font-size:22px}.card .cb{padding:20px}.pillars{margin-top:56px}.vals{margin-top:56px}.demo-sec{padding:72px 0 24px}}
+@media (max-width:600px){section{padding:84px 0}.card h3{font-size:22px}.card .cb{padding:20px}.pillars{margin-top:56px}.vals{margin-top:56px}.yard-sec{padding:72px 0 24px}}
 .eyebrow{font-size:14px;font-weight:500;color:var(--muted);margin-bottom:16px}
 .h2{font-size:clamp(34px,5vw,60px);max-width:16em}
 .lead2{color:var(--muted);font-size:18px;max-width:34em;margin:20px 0 0}
@@ -454,8 +414,6 @@ section{padding:130px 0}
 .card .cb{padding:24px 28px 28px;display:flex;flex-direction:column;gap:8px;flex:1}
 .logo{width:40px;height:40px;border-radius:12px;background:#fff;padding:5px;object-fit:contain;box-shadow:0 0 0 1px var(--line);flex:none}
 .logo.full{padding:0;object-fit:cover}
-.ricon img{width:100%;height:100%;object-fit:contain;padding:5px;background:#fff;border-radius:14px}
-.ricon img.full{padding:0;object-fit:cover}
 .card .ct{display:flex;align-items:center;gap:10px}
 .card h3{font-size:26px;letter-spacing:-.03em}
 .card .tag{white-space:nowrap;flex:none;margin-left:auto;font-size:12px;font-weight:500;color:var(--muted);border:1px solid var(--line2);border-radius:999px;padding:3px 10px}
@@ -584,23 +542,23 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
   </div>
 </header>
 
-<section id="demo" class="demo-sec">
-  <div class="wrap" style="text-align:center">
-    <div class="eyebrow rv" data-i="demo.eye">From the community</div>
-    <h2 class="h2 rv" style="margin:0 auto" data-i="demo.title">One idea, one maker, a little help from AI.</h2>
-    <div class="demo rv" aria-label="Demo: an idea becomes an app" data-i-aria="demo.aria">
-      <div class="composer">
-        <div class="txt" id="ptxt"></div>
-        <button class="send" id="send" type="button" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
-      </div>
-      <div class="status" id="status">
-        <div class="team"><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-bot"/></svg></i><i><svg class="ico "><use href="#i-user"/></svg></i></div>
-        <span class="shimmer" id="stxt" data-i="demo.st">Agents are building</span>
-        <span class="done" id="sdone">✓ Shipped</span>
-      </div>
-      <div class="stage2"><div class="result" id="result"></div></div>
-      <div class="dots" id="dots"></div>
-    
+<section id="yard" class="yard-sec">
+  <div class="wrap">
+    <div class="yhead">
+      <div><div class="eyebrow rv" data-i="demo.eye">From the community</div>
+      <h2 class="h2 rv" data-i="yard.title">What people are up to</h2></div>
+      <a class="btn line rv" href="/discuss"><span data-i="yard.cta">Join the discussion</span> <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+    <div class="ygrid rv">
+      <ul class="yfeed" id="yfeed" aria-live="polite">
+        <li class="ysk"></li><li class="ysk"></li><li class="ysk"></li><li class="ysk"></li>
+      </ul>
+      <aside class="yside">
+        <div class="ybox ynums" id="ynums"></div>
+        <a class="ybox ypeople" href="/community" id="ypeople"></a>
+        <a class="ybox ynew" href="/discuss/new"><b data-i="yard.new">Start a topic</b><span data-i="yard.new.d">Ask for help, share progress, float an idea.</span></a>
+      </aside>
+    </div>
   </div>
 </section>
 
@@ -788,7 +746,7 @@ footer::before{content:"";position:absolute;left:50%;bottom:-260px;width:900px;h
 
 <script>
 /* ---------- i18n ---------- */
-const VI = { "nav.why": "Vì sao", "nav.projects": "Dự án", "nav.how": "Cách hoạt động", "nav.join": "Cộng đồng", "nav.submit": "Gửi dự án", "nav.check": "Kiểm tra repo", "demo.st": "Các agent đang làm", "demo.aria": "Minh hoạ: một ý tưởng thành một app", "nav.discuss": "Thảo luận", "proj.all": "Xem tất cả dự án", "nav.signin": "Đăng nhập", "foot.c5": "Tham gia cộng đồng", "foot.c6": "Về OpenYard", "hero.badge": "Cộng đồng của những người làm phần mềm miễn phí", "hero.title": "App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.", "hero.sub": "OpenYard là nơi những người làm ra thứ miễn phí gặp nhau. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí.", "hero.cta2": "Chia sẻ dự án", "hero.cta1": "Xem các dự án", "so.trend": "Đang lên", "so.new": "Mới nhất", "f.all": "Tất cả", "f.people": "Cho mọi người", "f.wild": "Ý tưởng điên rồ", "f.dev": "Công cụ cho dev", "f.com": "Cộng đồng", "il.n1":"Chuồng 3: hôm nay tiêm","il.n2":"15:00 có giông, nhớ che chuồng","il.n3":"Video của bạn đã xong","il.n4":"12 hộ trong xóm đã tham gia","pl1.t": "Cho những người bị phần mềm bỏ quên", "pl1.d": "Nông dân, người làm nội dung nhỏ, hội nhóm địa phương. Những app không ai làm vì chẳng có lời.", "pl2.t": "Ý tưởng điên rồ", "pl2.d": "Quốc gia do AI cai trị. Hình nền biết chuyển động sau khung chat. Những thí nghiệm quá lạ để khởi nghiệp, làm vì thấy vui.", "pl3.t": "Công cụ cho dev", "pl3.d": "Thư viện, agent và quy trình mã nguồn mở, giúp ai làm dự án sau cũng nhanh hơn.", "sub.eye": "Bạn cũng có dự án?", "sub.title": "Đưa dự án của bạn lên OpenYard.", "sub.lead": "Bạn làm ra thứ gì đó miễn phí? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev đều đưa lên được. Mở mã nguồn hay không, to hay nhỏ đều được. Chỉ mất năm phút.", "sub.p1.t": "Đăng nhập, điền một form", "sub.p1.d": "Một form ngắn: đường dẫn, vài dòng giới thiệu, logo nếu có. Gửi xong là có mặt trên OpenYard ngay.", "sub.p1.cta": "Mở biểu mẫu", "sub.f1": "Tên dự án", "sub.f2": "Đường dẫn", "sub.f3": "Loại", "sub.p2.t": "Có repo GitHub?", "sub.p2.d": "Dán link vào, tên, mô tả, giấy phép và logo tự điền sẵn. Sao, pull request và issue hiện trên trang dự án và đẩy bạn lên mục Đang lên.", "sub.p2.cta": "Dán link", "fl1.t": "Gửi", "fl1.d": "Đăng nhập bằng GitHub hoặc email, một form ngắn", "fl2.t": "Lên trang ngay", "fl2.d": "Trang dự án có ngay khi bạn gửi", "fl3.t": "Đang lên", "fl3.d": "Sao, pull request, issue và lượt ghé thăm đẩy dự án lên đầu", "r1.t": "Miễn phí. Luật chỉ có vậy.", "r1.d": "Ai cũng dùng được mà không phải trả tiền. Mở mã nguồn thì hoan nghênh, không bắt buộc.", "r2.t": "Giai đoạn nào cũng được", "r2.d": "Mới thử nghiệm hay đã có người dùng hằng ngày.", "r3.t": "Công nghệ gì cũng được", "r3.d": "Web, mobile, CLI, extension, game. Có hay không dùng AI.", "r4.t": "Ai cũng được", "r4.d": "Sinh viên, người làm một mình hay cả nhóm. Dự án đầu tay cũng được.", "join.eye": "Tham gia cộng đồng", "join.discord": "Vào Discord", "join.form": "Giới thiệu bản thân", "join.gh": "Đóng góp trên GitHub", "join.chat": "Tham gia thảo luận", "ro1": "Lập trình viên", "ro2": "Thiết kế", "ro3": "Dịch thuật", "ro4": "Kiểm thử", "ro5": "Góp ý tưởng", "now.k": "Mới trên OpenYard", "hero.hint": "", "demo.eye": "Từ cộng đồng", "demo.title": "Một ý tưởng, một người làm, thêm chút sức AI.", "why.eye": "Vì sao có OpenYard", "mani": "AI giúp làm phần mềm rẻ đi cả chục lần, nên ngày càng nhiều người làm ra những thứ chẳng ai rót vốn: một cái app cho vài trăm hộ nuôi heo, một thí nghiệm quá lạ để khởi nghiệp, một công cụ mà chính mình cần. Phần lớn họ làm một mình. OpenYard là nơi để mang những thứ đó tới: có người xem, có người giúp khi bí, có người cổ vũ. Luật chỉ có một: phải miễn phí.", "v1.t": "Miễn phí là đủ", "v1.d": "Ai cũng dùng được mà không phải trả tiền là đưa lên OpenYard được. Mở mã nguồn thì càng tốt, nhưng không bắt buộc.", "v2.t": "Dự án vẫn là của bạn", "v2.d": "Bạn làm trên GitHub hay trang của mình. Chúng mình chỉ dẫn link, sao và công trạng vẫn về bạn.", "v3.t": "Cứ hỏi", "v3.d": "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi ở mục Thảo luận, kiểu gì cũng có người từng gặp.", "v4.t": "Góp ý thật", "v4.d": "Đăng bản mới lên là có người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "proj.eye": "Dự án", "proj.title": "Đang có gì trên OpenYard", "proj.lead": "App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, của nhóm lẫn của cộng đồng. Tất cả đều miễn phí, phần lớn mở mã nguồn, và mọi repo đều được đọc để tìm mã độc trước khi bạn cài.", "t.app": "App miễn phí", "t.oss": "Mã nguồn mở", "t.soon": "Sắp ra mắt", "fm.d": "Dành cho chủ trại chăn nuôi, thủy sản ở Việt Nam: ghi sổ trại, xem thời tiết, hỏi trợ lý AI bằng lời dễ hiểu, kết nối cảm biến IoT.", "ac.d": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng.", "sm.d": "Một thế giới nơi mỗi quốc gia do một AI riêng cai trị, khởi đầu từ thời đồ đá. Bạn là Người Quan Sát, phân xử và ban chiếu chỉ.", "cs.d": "Hình nền chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, dữ liệu không rời khỏi trình duyệt.", "cs.go": "Tiện ích trình duyệt", "idea.t": "Dự án tiếp theo có thể là của bạn.", "idea.d": "Bạn biết một nhóm người vẫn phải dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng mình nghe. Ý tưởng hay nhất thường đến từ chính người gặp khó khăn.", "idea.cta": "Gửi ý tưởng", "how.eye": "OpenYard hoạt động thế nào", "how.title": "Làm ở đâu cũng được. Mang lên đây. Làm tiếp.", "s1.t": "Làm ở đâu cũng được", "s1.d": "Trên GitHub, trang web hay kho ứng dụng của bạn. Công nghệ gì cũng được, có hay không dùng AI.", "s2.t": "Mang lên OpenYard", "s2.d": "Đăng dự án mất năm phút. Dự án có mặt trong mục Khoe dự án, nơi mọi người dùng thử.", "s3.t": "Nhận góp ý", "s3.d": "Mọi người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "s4.t": "Giúp nhau", "s4.d": "Bí thì hỏi, có gì mới thì kể, thấy ai cần thì giúp.", "chat.hd": "OpenYard · Khoe dự án", "st1": "dự án trên OpenYard", "st2": "repo mã nguồn mở", "st3.v": "0₫", "st3": "là số tiền bạn phải trả", "join.title": "Ghé OpenYard chơi cùng mọi người.", "join.d": "Khoe thứ bạn đang làm, hỏi khi bí, giúp người khác khi rảnh. Dev, designer, người dịch, người test hay chỉ có ý tưởng đều được chào đón.", "join.cta": "Tìm chúng mình trên GitHub", "join.cta2": "Xem các dự án", "foot": "Miễn phí cho tất cả. Làm tại Việt Nam.", "foot.tag": "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.", "foot.dc": "Vào Discord", "foot.p": "Dự án", "foot.c": "Cộng đồng", "foot.c1": "Gửi dự án", "foot.c2": "Giới thiệu bản thân", "foot.c3": "Thảo luận", "foot.c4": "Việc dễ cho người mới", "foot.r": "Mã nguồn mở", "foot.r1": "Mã nguồn trang web", "foot.r2": "Hướng dẫn đóng góp", "foot.r3": "Tổ chức trên GitHub", "foot.r4": "Giấy phép MIT" };
+const VI = { "nav.why": "Vì sao", "nav.projects": "Dự án", "nav.how": "Cách hoạt động", "nav.join": "Cộng đồng", "nav.submit": "Gửi dự án", "nav.check": "Kiểm tra repo", "nav.discuss": "Thảo luận", "proj.all": "Xem tất cả dự án", "nav.signin": "Đăng nhập", "foot.c5": "Tham gia cộng đồng", "foot.c6": "Về OpenYard", "hero.badge": "Cộng đồng của những người làm phần mềm miễn phí", "hero.title": "App miễn phí, <span class=\"grad\">ý tưởng điên rồ,</span> công cụ mở.", "hero.sub": "OpenYard là nơi những người làm ra thứ miễn phí gặp nhau. Bạn làm dự án trên GitHub hay trang của mình, rồi mang tới đây để khoe, nhận góp ý, tìm người test và hỏi han khi bí.", "hero.cta2": "Chia sẻ dự án", "hero.cta1": "Xem các dự án", "so.trend": "Đang lên", "so.new": "Mới nhất", "f.all": "Tất cả", "f.people": "Cho mọi người", "f.wild": "Ý tưởng điên rồ", "f.dev": "Công cụ cho dev", "f.com": "Cộng đồng", "il.n1":"Chuồng 3: hôm nay tiêm","il.n2":"15:00 có giông, nhớ che chuồng","il.n3":"Video của bạn đã xong","il.n4":"12 hộ trong xóm đã tham gia","pl1.t": "Cho những người bị phần mềm bỏ quên", "pl1.d": "Nông dân, người làm nội dung nhỏ, hội nhóm địa phương. Những app không ai làm vì chẳng có lời.", "pl2.t": "Ý tưởng điên rồ", "pl2.d": "Quốc gia do AI cai trị. Hình nền biết chuyển động sau khung chat. Những thí nghiệm quá lạ để khởi nghiệp, làm vì thấy vui.", "pl3.t": "Công cụ cho dev", "pl3.d": "Thư viện, agent và quy trình mã nguồn mở, giúp ai làm dự án sau cũng nhanh hơn.", "sub.eye": "Bạn cũng có dự án?", "sub.title": "Đưa dự án của bạn lên OpenYard.", "sub.lead": "Bạn làm ra thứ gì đó miễn phí? App hữu ích, thí nghiệm kỳ quặc hay công cụ cho dev đều đưa lên được. Mở mã nguồn hay không, to hay nhỏ đều được. Chỉ mất năm phút.", "sub.p1.t": "Đăng nhập, điền một form", "sub.p1.d": "Một form ngắn: đường dẫn, vài dòng giới thiệu, logo nếu có. Gửi xong là có mặt trên OpenYard ngay.", "sub.p1.cta": "Mở biểu mẫu", "sub.f1": "Tên dự án", "sub.f2": "Đường dẫn", "sub.f3": "Loại", "sub.p2.t": "Có repo GitHub?", "sub.p2.d": "Dán link vào, tên, mô tả, giấy phép và logo tự điền sẵn. Sao, pull request và issue hiện trên trang dự án và đẩy bạn lên mục Đang lên.", "sub.p2.cta": "Dán link", "fl1.t": "Gửi", "fl1.d": "Đăng nhập bằng GitHub hoặc email, một form ngắn", "fl2.t": "Lên trang ngay", "fl2.d": "Trang dự án có ngay khi bạn gửi", "fl3.t": "Đang lên", "fl3.d": "Sao, pull request, issue và lượt ghé thăm đẩy dự án lên đầu", "r1.t": "Miễn phí. Luật chỉ có vậy.", "r1.d": "Ai cũng dùng được mà không phải trả tiền. Mở mã nguồn thì hoan nghênh, không bắt buộc.", "r2.t": "Giai đoạn nào cũng được", "r2.d": "Mới thử nghiệm hay đã có người dùng hằng ngày.", "r3.t": "Công nghệ gì cũng được", "r3.d": "Web, mobile, CLI, extension, game. Có hay không dùng AI.", "r4.t": "Ai cũng được", "r4.d": "Sinh viên, người làm một mình hay cả nhóm. Dự án đầu tay cũng được.", "join.eye": "Tham gia cộng đồng", "join.discord": "Vào Discord", "join.form": "Giới thiệu bản thân", "join.gh": "Đóng góp trên GitHub", "join.chat": "Tham gia thảo luận", "ro1": "Lập trình viên", "ro2": "Thiết kế", "ro3": "Dịch thuật", "ro4": "Kiểm thử", "ro5": "Góp ý tưởng", "now.k": "Mới trên OpenYard", "hero.hint": "", "demo.eye": "Từ cộng đồng", "yard.title": "Mọi người đang làm gì", "yard.cta": "Tham gia thảo luận", "yard.new": "Mở chủ đề mới", "yard.new.d": "Nhờ giúp, kể tiến độ, rủ góp ý tưởng.", "why.eye": "Vì sao có OpenYard", "mani": "AI giúp làm phần mềm rẻ đi cả chục lần, nên ngày càng nhiều người làm ra những thứ chẳng ai rót vốn: một cái app cho vài trăm hộ nuôi heo, một thí nghiệm quá lạ để khởi nghiệp, một công cụ mà chính mình cần. Phần lớn họ làm một mình. OpenYard là nơi để mang những thứ đó tới: có người xem, có người giúp khi bí, có người cổ vũ. Luật chỉ có một: phải miễn phí.", "v1.t": "Miễn phí là đủ", "v1.d": "Ai cũng dùng được mà không phải trả tiền là đưa lên OpenYard được. Mở mã nguồn thì càng tốt, nhưng không bắt buộc.", "v2.t": "Dự án vẫn là của bạn", "v2.d": "Bạn làm trên GitHub hay trang của mình. Chúng mình chỉ dẫn link, sao và công trạng vẫn về bạn.", "v3.t": "Cứ hỏi", "v3.d": "Bí code, bí thiết kế hay chưa biết dùng AI để làm app? Hỏi ở mục Thảo luận, kiểu gì cũng có người từng gặp.", "v4.t": "Góp ý thật", "v4.d": "Đăng bản mới lên là có người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "proj.eye": "Dự án", "proj.title": "Đang có gì trên OpenYard", "proj.lead": "App hữu ích, thí nghiệm kỳ quặc và công cụ cho dev, của nhóm lẫn của cộng đồng. Tất cả đều miễn phí, phần lớn mở mã nguồn, và mọi repo đều được đọc để tìm mã độc trước khi bạn cài.", "t.app": "App miễn phí", "t.oss": "Mã nguồn mở", "t.soon": "Sắp ra mắt", "fm.d": "Dành cho chủ trại chăn nuôi, thủy sản ở Việt Nam: ghi sổ trại, xem thời tiết, hỏi trợ lý AI bằng lời dễ hiểu, kết nối cảm biến IoT.", "ac.d": "Biến một chủ đề, một trang web hay một repo thành video ngắn hoàn chỉnh. Claude viết kịch bản, lồng tiếng và dựng hình; bạn chỉ việc duyệt rồi đăng.", "sm.d": "Một thế giới nơi mỗi quốc gia do một AI riêng cai trị, khởi đầu từ thời đồ đá. Bạn là Người Quan Sát, phân xử và ban chiếu chỉ.", "cs.d": "Hình nền chuyển động phía sau khung chat AI. Hai mươi cảnh, không cần tài khoản, dữ liệu không rời khỏi trình duyệt.", "cs.go": "Tiện ích trình duyệt", "idea.t": "Dự án tiếp theo có thể là của bạn.", "idea.d": "Bạn biết một nhóm người vẫn phải dùng sổ tay, bảng tính hay phần mềm quá đắt? Kể cho chúng mình nghe. Ý tưởng hay nhất thường đến từ chính người gặp khó khăn.", "idea.cta": "Gửi ý tưởng", "how.eye": "OpenYard hoạt động thế nào", "how.title": "Làm ở đâu cũng được. Mang lên đây. Làm tiếp.", "s1.t": "Làm ở đâu cũng được", "s1.d": "Trên GitHub, trang web hay kho ứng dụng của bạn. Công nghệ gì cũng được, có hay không dùng AI.", "s2.t": "Mang lên OpenYard", "s2.d": "Đăng dự án mất năm phút. Dự án có mặt trong mục Khoe dự án, nơi mọi người dùng thử.", "s3.t": "Nhận góp ý", "s3.d": "Mọi người dùng thử, báo lỗi và gợi ý nên làm gì tiếp.", "s4.t": "Giúp nhau", "s4.d": "Bí thì hỏi, có gì mới thì kể, thấy ai cần thì giúp.", "chat.hd": "OpenYard · Khoe dự án", "st1": "dự án trên OpenYard", "st2": "repo mã nguồn mở", "st3.v": "0₫", "st3": "là số tiền bạn phải trả", "join.title": "Ghé OpenYard chơi cùng mọi người.", "join.d": "Khoe thứ bạn đang làm, hỏi khi bí, giúp người khác khi rảnh. Dev, designer, người dịch, người test hay chỉ có ý tưởng đều được chào đón.", "join.cta": "Tìm chúng mình trên GitHub", "join.cta2": "Xem các dự án", "foot": "Miễn phí cho tất cả. Làm tại Việt Nam.", "foot.tag": "Cộng đồng của những người làm app miễn phí, ý tưởng điên rồ và công cụ mở.", "foot.dc": "Vào Discord", "foot.p": "Dự án", "foot.c": "Cộng đồng", "foot.c1": "Gửi dự án", "foot.c2": "Giới thiệu bản thân", "foot.c3": "Thảo luận", "foot.c4": "Việc dễ cho người mới", "foot.r": "Mã nguồn mở", "foot.r1": "Mã nguồn trang web", "foot.r2": "Hướng dẫn đóng góp", "foot.r3": "Tổ chức trên GitHub", "foot.r4": "Giấy phép MIT" };
 const EN = {};
 document.querySelectorAll("[data-i]").forEach(el => { EN[el.dataset.i] = el.hasAttribute("data-html") ? el.innerHTML : el.textContent; });
 document.querySelectorAll("[data-i-aria]").forEach(el => { EN[el.dataset.iAria] = el.getAttribute("aria-label"); });
@@ -808,7 +766,7 @@ function setLang(l){
   document.documentElement.lang = l;
   document.getElementById("lang").textContent = l === "vi" ? "EN" : "VI";
   try { localStorage.setItem("oy-lang", l); } catch (e) {}
-  splitMani(); restartDemo(); restartChat(); dispatchEvent(new Event("oy-lang"));
+  splitMani(); restartChat(); dispatchEvent(new Event("oy-lang"));
 }
 
 /* ---------- manifesto word reveal ---------- */
@@ -835,145 +793,29 @@ function onScroll(){
 }
 addEventListener("scroll", onScroll, { passive: true });
 
-/* ---------- hero demo: idea → app ---------- */
 const ICO = (n, c = "") => `<svg class="ico ${c}"><use href="#i-${n}"/></svg>`;
-const HX = { cols: 24, rows: 8 };
-const DEMOS = [
-  { id: "farm", name: "FarmMind", logo: "/logos/farmmind.svg", lc: "full", grad: "linear-gradient(135deg,#10b981,#a3e635)",
-    prompt: () => T("Build an app that reminds farmers which pigs need vaccines this week", "Làm giúp app nhắc chủ trại tuần này heo nào tới lịch tiêm"),
-    sub: () => T("AI assistant for farmers", "Trợ lý AI cho nhà nông"),
-    body: () => `
-      <div class="wx rv2">${[["13:00","sun","31°"],["14:00","sun","32°"],["15:00","rain","12mm",1],["16:00","rain","26°"],["17:00","cloud","27°"]].map(([h,i,v,n]) => `<div class="${n ? "cur" : ""}">${h}${ICO(i)}<b>${v}</b></div>`).join("")}</div>
-      <div class="row"><span class="tile" style="--tc:#f59e0b">${ICO("syringe")}</span>${T("Pen 3 · 12 pigs", "Chuồng 3 · 12 con")}<span class="r"><span class="pill p-a">${T("vaccine today", "hôm nay tiêm")}</span></span></div>
-      <div class="row"><span class="tile" style="--tc:#3b82f6">${ICO("rain")}</span>${T("Storm at 15:00", "15:00 có giông")}<span class="r">${T("AI: cover the pens first", "AI: nên che chuồng trước")}</span></div>
-      <div class="row"><span class="tile" style="--tc:#06b6d4">${ICO("droplet")}</span>${T("Pond 2 · DO 6.1 mg/L", "Ao 2 · oxy hoà tan 6,1 mg/L")}<span class="r"><span class="pill p-g">${T("normal", "ổn định")}</span></span></div>` },
-  { id: "clip", name: "AutoClip Studio", logo: "/logos/autoclip-studio.png", lc: "full", grad: "linear-gradient(135deg,#8b5cf6,#ff7eb0)",
-    prompt: () => T("Turn my GitHub repo into a 45-second video", "Biến repo GitHub của mình thành video 45 giây"),
-    sub: () => T("Topic in, finished short video out", "Nhập chủ đề, nhận video ngắn hoàn chỉnh"),
-    body: () => `
-      <div class="vprev rv2"><img src="/images/autoclip-studio.webp" alt=""><span class="pb">${ICO("play")}</span><span class="vt"><i></i></span></div>
-      <div class="row"><span class="tile" style="--tc:#ff4d6d">${ICO("mic")}</span>${T("Voiceover", "Lồng tiếng")}<span class="r" style="display:flex;gap:6px"><span class="tile" style="--tc:#8b5cf6;width:24px;height:24px">${ICO("music")}</span><span class="tile" style="--tc:#f59e0b;width:24px;height:24px">${ICO("captions")}</span></span></div>
-      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("film")}</span>${T("6 scenes · 45.2s", "6 cảnh · 45,2 giây")}<span class="r">1080×1920</span></div>` },
-  { id: "world", name: "Sovereign Minds", logo: "/logos/sovereign-minds.svg", lc: "", grad: "linear-gradient(135deg,#3b82f6,#8b5cf6)",
-    prompt: () => T("A world where every nation is run by its own AI", "Một thế giới mà mỗi quốc gia do một AI cai trị"),
-    sub: () => T("Open world of AI nations", "Thế giới mở của các quốc gia AI"),
-    body: () => `
-      <div class="hexm rv2">${`<div class="hr">${"<i></i>".repeat(HX.cols)}</div>`.repeat(HX.rows)}</div>
-      <div class="legend rv2">${[["#8b5cf6", T("Moon", "Nguyệt Quốc")], ["#f59e0b", T("Dune", "Sa Quốc")], ["#10b981", T("Grove", "Lâm Quốc")], ["#f43f5e", T("Ember", "Hoả Quốc")]].map(([c, n]) => `<span><span style="color:${c};display:grid">${ICO("flag")}</span>${n}</span>`).join("")}</div>
-      <div class="row"><span class="tile" style="--tc:#8b5cf6">${ICO("hourglass")}</span><span class="turn">${T("Stone age · turn 0", "Thời đồ đá · lượt 0")}</span><span class="r"><span class="pill p-v" style="display:inline-flex;align-items:center;gap:4px">${ICO("crown")}${T("4 nations", "4 quốc gia")}</span></span></div>` },
-  { id: "chat", name: "Chatscape", logo: "/logos/chatscape.png", lc: "full", grad: "linear-gradient(135deg,#06b6d4,#6ee7b7)",
-    prompt: () => T("Make my AI chat feel a little more alive", "Làm khung chat AI của mình sinh động hơn chút"),
-    sub: () => T("Living wallpapers for AI chat", "Hình nền sống động cho khung chat AI"),
-    body: () => `
-      <div class="cscene rv2">
-        <div class="bubble me" style="align-self:flex-end">${T("Pick a calm scene for tonight", "Chọn giúp mình một cảnh dịu nhẹ cho tối nay")}</div>
-        <div class="bubble" style="align-self:flex-start">${ICO("sparkles")}${T("Cloud Drift is on. 19 more in the picker.", "Đã bật Cloud Drift. Còn 19 cảnh khác.")}</div>
-      </div>
-      <div class="chips2 rv2"><span>${ICO("cloud")}Cloud Drift</span><span>${ICO("moon")}Fireflies</span><span>${ICO("fish")}Koi Pond</span><span>${ICO("sparkles")}+17</span></div>
-      <div class="row"><span class="tile" style="--tc:#10b981">${ICO("shield")}</span>${T("No account · runs in your browser", "Không cần tài khoản · chạy ngay trong trình duyệt")}<span class="r"><span class="pill p-b">${T("open source", "mã nguồn mở")}</span></span></div>` },
-];const STEPS = () => T(["Reading the problem", "Planning the app", "Writing code", "Running tests", "Shipping"], ["Đọc vấn đề", "Lên kế hoạch", "Viết code", "Chạy test", "Ra mắt"]);
-let demoTok = 0, demoIdx = 0;
-const dotsEl = document.getElementById("dots");
-dotsEl.innerHTML = DEMOS.map((d, i) => `<button aria-label="${d.name}" data-i-d="${i}"></button>`).join("");
-dotsEl.addEventListener("click", e => { const b = e.target.closest("button"); if (b) { demoIdx = +b.dataset.iD; restartDemo(); } });
-function restartDemo(){ demoTok++; runDemo(demoTok); }
-async function runDemo(tok){
-  const ptxt = document.getElementById("ptxt"), send = document.getElementById("send"), status = document.getElementById("status"),
-        stxt = document.getElementById("stxt"), sdone = document.getElementById("sdone"), result = document.getElementById("result");
-  const alive = () => tok === demoTok;
-  while (alive()) {
-    const d = DEMOS[demoIdx % DEMOS.length];
-    [...dotsEl.children].forEach((b, i) => b.classList.toggle("on", i === demoIdx % DEMOS.length));
-    result.classList.remove("on", "out"); status.classList.remove("on", "ok"); send.classList.remove("on", "go");
-    ptxt.innerHTML = `<span class="ph">${T("Describe a problem worth solving…", "Mô tả một vấn đề bạn muốn giải…")}</span>`;
-    await sleep(900); if (!alive()) return;
-    const text = d.prompt(); ptxt.innerHTML = `<span id="pt"></span><span class="cur"></span>`;
-    const pt = document.getElementById("pt"); send.classList.add("on");
-    for (let i = 1; i <= text.length; i++) { if (!alive()) return; pt.textContent = text.slice(0, i); await sleep(text[i - 1] === " " ? 55 : 28 + Math.random() * 30); }
-    await sleep(500); if (!alive()) return;
-    send.classList.add("go"); await sleep(180); send.classList.remove("go");
-    ptxt.querySelector(".cur")?.remove();
-    status.classList.add("on");
-    sdone.textContent = T("✓ Shipped, free for everyone", "✓ Đã ra mắt, ai cũng dùng miễn phí");
-    for (const s of STEPS()) { if (!alive()) return; stxt.textContent = s + "…"; await sleep(820); }
-    result.innerHTML = `<div class="rhead"><div class="ricon"><img class="${d.lc}" src="${d.logo}" alt=""></div><div><h3>${d.name}</h3><p>${d.sub()}</p></div><span class="tag">openyard</span></div><div class="rbody">${d.body()}</div>`;
-    status.classList.add("ok");
-    requestAnimationFrame(() => result.classList.add("on"));
-    await sleep(300);
-    const items = result.querySelectorAll(".row,.rv2");
-    for (const it of items) { if (!alive()) return; it.classList.add("on"); await sleep(170); }
-    const bar = result.querySelector(".bar i, .vt i"); if (bar) setTimeout(() => bar.style.width = "100%", 100);
-    if (d.id === "world") animateMap(result, tok);
-    await sleep(4200); if (!alive()) return;
-    result.classList.add("out"); status.classList.remove("on"); await sleep(650);
-    demoIdx++;
-  }
+
+/* ---------- from the community: live feed (/api/yard) ---------- */
+let YARD = null;
+const sinceT = ms => { const m = Math.max(0, Math.round((Date.now() - ms) / 60000)), h = Math.round(m / 60), d = Math.round(h / 24);
+  return m < 2 ? T("just now", "vừa xong") : m < 60 ? T(`${m} min ago`, `${m} phút trước`) : h < 24 ? T(`${h} h ago`, `${h} giờ trước`) : d < 30 ? T(`${d} days ago`, `${d} ngày trước`) : new Date(ms).toLocaleDateString(LANG === "vi" ? "vi-VN" : "en"); };
+const CATN = { showcase: ["Showcase", "Khoe dự án"], help: ["Help", "Hỏi đáp"], ideas: ["Ideas", "Ý tưởng"], progress: ["Progress", "Tiến độ"], general: ["General", "Chuyện chung"] };
+function renderYard(){
+  const feed = document.getElementById("yfeed"); if (!feed || !YARD) return;
+  const face = (login, src) => `<img class="face" src="${esc(src || (login ? `https://github.com/${login}.png?size=80` : "/favicon.svg"))}" alt="" loading="lazy">`;
+  const who = i => i.login ? `<b>@${esc(i.login)}</b>` : `<b>${T("Someone", "Ai đó")}</b>`;
+  feed.innerHTML = YARD.feed.length ? YARD.feed.map(i => {
+    const [pic, k, line, text] =
+      i.kind === "comment" ? [face(i.login, i.avatar), "chat", `${who(i)} ${T("commented on", "bình luận trong")} <b>${esc(i.name)}</b>`, i.text]
+      : i.kind === "project" ? [logoTag(i), "rocket", `${T("New project", "Dự án mới")}: <b>${esc(i.name)}</b>${i.login ? ` ${T("by", "của")} @${esc(i.login)}` : ""}`, (LANG === "vi" && i.tagline?.vi) || i.tagline?.en || ""]
+      : [face(i.login, i.avatar), "flag", `${who(i)} ${T("started a topic in", "mở chủ đề trong")} <b>${T(...(CATN[i.cat] || CATN.general))}</b>`, i.name];
+    return `<li><a href="${esc(i.href)}"><span class="yav">${pic}<span class="yk">${ICO(k)}</span></span><span class="ybody"><span class="yline">${line}</span>${text ? `<p class="ytext">${esc(text)}</p>` : ""}<small>${sinceT(i.at)}</small></span></a></li>`;
+  }).join("") : `<li class="yempty">${T("Quiet so far. Open a project and say what you think.", "Còn yên ắng. Mở một dự án và nói bạn nghĩ gì nhé.")}</li>`;
+  document.getElementById("ynums").innerHTML = [[YARD.talk, T("comments this week", "bình luận tuần này")], [YARD.likes, T("likes this week", "lượt thích tuần này")]].map(([v, l]) => `<div><b>${+v || 0}</b><span>${l}</span></div>`).join("");
+  document.getElementById("ypeople").innerHTML = `<span class="ystack">${YARD.faces.map(f => `<img src="${esc(f.src)}" alt="" title="${esc(f.label)}" loading="lazy">`).join("")}</span><b>${YARD.members} ${T("members", "thành viên")}</b><span>${T("Makers, testers and the curious", "Người làm, người test và người tò mò")}</span>`;
 }
-// A small hex world played by the Sovereign Minds rules: each nation starts as a tribe on a
-// capital and its 6 neighbours, claims one free land tile next to its border each turn
-// (river tiles first, never sea or mountain), and only sees within 3 tiles of its land.
-function hexWorld(){
-  const { cols, rows } = HX, N = cols * rows;
-  let s = 11; const rnd = () => (s = s * 16807 % 2147483647) / 2147483647;
-  const cube = i => { const r = Math.floor(i / cols), x = i % cols - (r - (r & 1)) / 2; return [x, r, -x - r]; };
-  const dist = (a, b) => { const p = cube(a), q = cube(b); return Math.max(...p.map((v, k) => Math.abs(v - q[k]))); };
-  const nbr = i => {
-    const r = Math.floor(i / cols), c = i % cols;
-    const d = r & 1 ? [[1, 0], [-1, 0], [0, -1], [1, -1], [0, 1], [1, 1]] : [[1, 0], [-1, 0], [-1, -1], [0, -1], [-1, 1], [0, 1]];
-    return d.map(([dc, dr]) => [c + dc, r + dr]).filter(([x, y]) => x >= 0 && x < cols && y >= 0 && y < rows).map(([x, y]) => y * cols + x);
-  };
-  const ter = Array.from({ length: N }, (_, i) => {
-    const r = Math.floor(i / cols), c = i % cols;
-    const e = 1 - ((c - (cols - 1) / 2) / (cols / 2 + .6)) ** 2 - ((r - (rows - 1) / 2) / (rows / 2 + .9)) ** 2 + (rnd() - .5) * .5;
-    return e < .2 ? "sea" : "land";
-  });
-  // a short mountain ridge and a river running from it to the sea
-  const mid = 2 * cols + Math.floor(cols / 2) - 1;
-  [mid - cols, mid, mid + 1, mid - cols - 1].forEach(i => ter[i] = "mtn");
-  let at = mid + cols + 1;
-  for (let k = 0; k < rows && ter[at] !== "sea"; k++) {
-    if (ter[at] === "land") ter[at] = "riv";
-    const down = nbr(at).filter(j => j > at + 1 && ter[j] !== "mtn");
-    if (!down.length) break; at = down[Math.floor(rnd() * down.length)];
-  }
-  // capitals as far apart as the map allows
-  const ok = i => ter[i] !== "sea" && ter[i] !== "mtn" && nbr(i).filter(j => ter[j] !== "sea").length >= 5;
-  const caps = [];
-  for (let i = 0; i < N && !caps.length; i++) if (ok(Math.floor(rows / 2) * cols + i)) caps.push(Math.floor(rows / 2) * cols + i);
-  while (caps.length < 4) {
-    let best = -1, bd = -1;
-    for (let i = 0; i < N; i++) if (ok(i)) { const d = Math.min(...caps.map(c => dist(c, i))); if (d > bd) { bd = d; best = i; } }
-    caps.push(best);
-  }
-  return { N, ter, dist, nbr, caps, rnd };
-}
-async function animateMap(root, tok){
-  const W = hexWorld(), cells = [...root.querySelectorAll(".hexm i")], C = ["#8b5cf6", "#f59e0b", "#10b981", "#f43f5e"];
-  const own = new Array(W.N).fill(-1), seen = new Array(W.N).fill(false), turnEl = root.querySelector(".turn");
-  const see = (i, rad) => { for (let j = 0; j < W.N; j++) if (W.dist(i, j) <= rad) seen[j] = true; };
-  const paint = () => cells.forEach((el, i) => {
-    el.className = [W.ter[i] === "land" ? "" : W.ter[i], seen[i] ? "" : "fog", W.caps.includes(i) ? "cap" : ""].join(" ").trim();
-    el.style.background = own[i] >= 0 ? C[own[i]] : "";
-  });
-  paint(); await sleep(350); if (tok !== demoTok) return;
-  // turn 0: every AI founds its nation on a capital and the 6 tiles around it
-  W.caps.forEach((c, k) => { [c, ...W.nbr(c)].forEach(i => { if (W.ter[i] !== "sea" && W.ter[i] !== "mtn") own[i] = k; }); see(c, 4); });
-  turnEl.textContent = T("Turn 0 · each AI names its nation", "Lượt 0 · mỗi AI tự đặt tên nước mình");
-  paint(); await sleep(700);
-  for (let turn = 1; turn <= 14 && tok === demoTok; turn++) {
-    W.caps.forEach((cap, k) => {
-      let best = -1, bs = -1e9;
-      for (let i = 0; i < W.N; i++) {
-        if (own[i] >= 0 || W.ter[i] === "sea" || W.ter[i] === "mtn" || !W.nbr(i).some(j => own[j] === k)) continue;
-        const sc = (W.ter[i] === "riv" ? 3 : 0) - W.dist(cap, i) * .7 + W.rnd() * 1.5;
-        if (sc > bs) { bs = sc; best = i; }
-      }
-      if (best >= 0) { own[best] = k; see(best, 3); }
-    });
-    turnEl.textContent = T(`Stone age · turn ${turn}`, `Thời đồ đá · lượt ${turn}`);
-    paint(); await sleep(170);
-  }
-}
+fetch("/api/yard").then(r => r.ok ? r.json() : null).then(d => { if (d) { YARD = d; renderYard(); } }).catch(() => {});
+addEventListener("oy-lang", renderYard);
 
 /* ---------- build-thread chat ---------- */
 const THREAD = () => [

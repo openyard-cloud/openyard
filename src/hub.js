@@ -213,8 +213,7 @@ function grid(list, now = Date.now()) {
 // login, signed in or not), the OpenYard GitHub organization's members and contributors,
 // and whoever sent a listing without naming themselves (one per listing). They all count as members; the faces show them, people with accounts and makers
 // first, then the rest by their project.
-function pulseBar(all, pulse) {
-  const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || p.owner?.login?.toLowerCase() || `p:${p.slug}`));
+export function members(all, pulse) {
   const person = (login, src) => [login.toLowerCase(), { label: `@${login}`, href: `/@${login}`, src: src || `https://github.com/${login}.png?size=56` }];
   const quiet = all.filter(p => !p.team && !p.maintainers.length && !p.owner); // sent without a name
   const seed = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h.toString(36); };
@@ -228,6 +227,11 @@ function pulseBar(all, pulse) {
     ...(pulse?.accounts || []).map(a => person(a.login, a.avatar)),
     ...quiet.map(p => [`p:${p.slug}`, { label: `${p.name}`, href: `/p/${p.slug}`, src: `/a/${seed(p.slug)}/${encodeURIComponent((p.name.trim()[0] || "?").toUpperCase())}.svg` }]),
   ]) if (!people.has(k)) people.set(k, v); // the first mention keeps its picture
+  return people;
+}
+function pulseBar(all, pulse) {
+  const makers = new Set(all.map(p => p.team ? "team" : p.maintainers[0]?.toLowerCase() || p.owner?.login?.toLowerCase() || `p:${p.slug}`));
+  const people = members(all, pulse);
   const faces = [...people.values()].slice(0, 12);
   const n = [[all.length, ["projects", "dự án"]], [makers.size, ["makers", "người làm"]], ...(pulse ? [[people.size, ["members", "thành viên"]], [pulse.likes, ["likes this week", "lượt thích tuần này"]], [pulse.talk, ["comments this week", "bình luận tuần này"]]] : [])];
   return `<div class="pulse up" style="--d:4"><span class="stack">${faces.map(f => `<a href="${esc(f.href)}" title="${esc(f.label)}"><img src="${esc(f.src)}" alt="${esc(f.label)}" loading="lazy"></a>`).join("")}${people.size > faces.length ? `<span class="more">+${people.size - faces.length}</span>` : ""}</span>
