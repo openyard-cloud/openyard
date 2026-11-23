@@ -124,6 +124,7 @@ export function homePage({ all, site, pulse, talk, now = Date.now() }) {
     { "@context": "https://schema.org", "@type": "WebSite", name: "OpenYard", url: ORIGIN, inLanguage: ["en", "vi"] },
     { "@context": "https://schema.org", "@type": "ItemList", name: "Trending on OpenYard", itemListElement: all.slice(0, 12).map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${ORIGIN}/p/${p.slug}`, name: p.name })) },
   ];
-  return page({ title: "OpenYard: free apps, wild ideas and open tools, every repository code-checked", desc, path: "/", jsonld, color: "#7c6cff", site, current: "/", body, css: D_CSS + HOME_CSS, extra: script })
+  return page({ vi: { title: "OpenYard: app miễn phí, ý tưởng điên rồ và công cụ mở, mọi repo đều được kiểm tra", desc: "OpenYard là cộng đồng của những người làm phần mềm miễn phí: chia sẻ app miễn phí, thí nghiệm kỳ quặc và công cụ mã nguồn mở bạn làm ra, nhận góp ý và giúp đỡ." },
+    title: "OpenYard: free apps, wild ideas and open tools, every repository code-checked", desc, path: "/", jsonld, color: "#7c6cff", site, current: "/", body, css: D_CSS + HOME_CSS, extra: script })
     .replace("<head>", '<head>\n<meta name="google-site-verification" content="2hCCiiJ5g1WgdzfvhrzISgLuNwzjvu_7Q9EiHIDazFw">');
 }

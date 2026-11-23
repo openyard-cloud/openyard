@@ -297,6 +297,6 @@ export function privacyPage({ site }) {
   ])}
   <div class="acts"><a class="btn line" href="/settings">${t("Open Settings", "Mở Cài đặt")}</a><a class="btn line" href="/discuss/help">${t("Ask in Discuss", "Hỏi ở Thảo luận")} ${ARROW}</a></div>
 </div>`;
-  return page({ title: "Privacy · OpenYard", desc: "What OpenYard keeps about you, why, and how to delete it.", path: "/privacy", color: "#10b981", site, body, css: ACC_CSS,
+  return page({ vi: { title: "Quyền riêng tư · OpenYard", desc: "OpenYard giữ gì về bạn, vì sao, và cách xoá." }, title: "Privacy · OpenYard", desc: "What OpenYard keeps about you, why, and how to delete it.", path: "/privacy", color: "#10b981", site, body, css: ACC_CSS,
     jsonld: [crumbs([["OpenYard", ORIGIN], ["Privacy", `${ORIGIN}/privacy`]])] });
 }
