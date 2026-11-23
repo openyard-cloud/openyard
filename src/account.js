@@ -37,6 +37,7 @@ const ACC_CSS = `
 .prof{display:flex;gap:22px;align-items:center;flex-wrap:wrap}.prof img{width:96px;height:96px;border-radius:50%;background:var(--bg2);box-shadow:var(--shadow),0 18px 50px -18px var(--c)}
 .prof h1{font-size:clamp(36px,5vw,56px)}.prof .sub{color:var(--muted);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;font-size:14.5px}.prof .sub a{display:inline-flex;align-items:center;gap:4px}.prof .sub a:hover{color:var(--ink)}.prof .ar{width:13px;height:13px}
 .bio{max-width:40em;margin:18px 0 0;font-size:17px;color:var(--ink)}
+.col .hero .wrap,.col .acc{max-width:768px}.col .acc>*{max-width:none}
 .priv h2{font-size:22px;margin:36px 0 10px}.priv p,.priv li{color:var(--muted);line-height:1.65}.priv ul{padding-left:20px}.priv b{color:var(--ink);font-weight:600}
 `;
 
@@ -104,7 +105,7 @@ export function welcomePage({ user, site, back }) {
     <div class="acts"><button class="btn dark" type="submit">${t("Continue", "Tiếp tục")}</button><button class="btn line" type="button" data-skip>${t("Skip for now", "Để sau")}</button><span class="msg" role="status"></span></div>
   </form>
 </div>`;
-  return page({ title: "Welcome to OpenYard", desc: "Set up your OpenYard account.", path: "/welcome", color: "#8b7cff", site, noindex: true, body, css: ACC_CSS, extra: ACC_JS, jsonld: [] });
+  return page({ title: "Welcome to OpenYard", desc: "Set up your OpenYard account.", path: "/welcome", color: "#8b7cff", site, noindex: true, body: `<div class="col">${body}</div>`, css: ACC_CSS, extra: ACC_JS, jsonld: [] });
 }
 
 export function settingsPage({ user, site, mine }) {
@@ -126,7 +127,7 @@ export function settingsPage({ user, site, mine }) {
     <div class="acts" style="margin-top:0"><input id="delc" autocomplete="off" spellcheck="false" placeholder="${esc(user.login)}"><button class="btn red" type="submit" disabled>${t("Delete account", "Xoá tài khoản")}</button><span class="msg" role="status"></span></div>
   </form>
 </div>`;
-  return page({ title: "Settings · OpenYard", desc: "Your OpenYard account.", path: "/settings", color: "#8b7cff", site, noindex: true, body, css: ACC_CSS, extra: ACC_JS, jsonld: [] });
+  return page({ title: "Settings · OpenYard", desc: "Your OpenYard account.", path: "/settings", color: "#8b7cff", site, noindex: true, body: `<div class="col">${body}</div>`, css: ACC_CSS, extra: ACC_JS, jsonld: [] });
 }
 
 const joined = ms => { const d = new Date(ms); return [d.toLocaleDateString("en-US", { month: "long", year: "numeric" }), `tháng ${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`]; };
