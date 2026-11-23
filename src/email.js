@@ -263,12 +263,13 @@ export async function signin(env, email, link, code, lang) {
 const link = (href, label) => `<a href="${href}" style="color:#8b5cf6">${label}</a>`;
 const li = items => `<ul style="margin:8px 0 0;padding-left:20px">${items.map(x => `<li style="margin:0 0 6px">${x}</li>`).join("")}</ul>`;
 const nums = (u, st) => `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:14px 0 0;width:100%"><tr>${[
-  [st.clicks, L(u, "visits", "lượt ghé")], [st.likes, L(u, "likes", "lượt thích")], [st.comments, L(u, "comments", "bình luận")]]
+  [st.views, L(u, "page views", "lượt xem")], [st.clicks, L(u, "clicks to your site", "lượt bấm sang trang bạn")], [st.likes, L(u, "likes", "lượt thích")], [st.comments, L(u, "comments", "bình luận")]]
   .map(([n, l]) => `<td style="padding:12px;border:1px solid #ececf0;border-radius:12px;text-align:center"><b style="display:block;font-size:22px">${+n || 0}</b><span style="color:#6b6b73;font-size:13px">${l}</span></td>`).join('<td style="width:8px"></td>')}</tr></table>`;
 async function stats(env, slug, since = 0) {
   const q = (sql, ...b) => env.DB.prepare(sql).bind(slug, ...b).first();
   const day = new Date(since).toISOString().slice(0, 10);
   return {
+    views: (await q("SELECT COALESCE(SUM(n), 0) AS n FROM views WHERE slug = ?1 AND day >= ?2", day)).n,
     clicks: (await q("SELECT COALESCE(SUM(n), 0) AS n FROM clicks WHERE slug = ?1 AND day >= ?2", day)).n,
     likes: (await q("SELECT COUNT(*) AS n FROM likes WHERE slug = ?1 AND created_at >= ?2", since)).n,
     comments: (await q("SELECT COUNT(*) AS n FROM comments WHERE slug = ?1 AND deleted = 0 AND created_at >= ?2", since)).n,
@@ -313,8 +314,8 @@ async function nurture(env, p, day, now) {
           L(u, `<b>Ask for the one thing you need:</b> testers, feedback on the design, a translator. Post it in ${link(`${ORIGIN}/discuss/help`, "Help")}.`, `<b>Hỏi đúng thứ bạn cần:</b> người test, góp ý thiết kế, người dịch. Đăng ở mục ${link(`${ORIGIN}/discuss/help`, "Hỏi đáp")}.`),
         ])}`
       : `<p style="margin:0">${L(u, "Here is the first week:", "Tuần đầu tiên:")}</p>${nums(u, st)}<p style="margin:14px 0 0">${L(u, `Shipped something since? Update the listing so the page says so, and tell people in ${link(`${ORIGIN}/discuss/progress`, "Building in public")}. Ideas for OpenYard itself are welcome in ${link(`${ORIGIN}/discuss/ideas`, "Ideas & feedback")}.`, `Có gì mới từ hôm đó? Cập nhật trang dự án cho đúng, và kể cho mọi người ở mục ${link(`${ORIGIN}/discuss/progress`, "Đang làm gì")}. Ý tưởng cho chính OpenYard thì gửi ở mục ${link(`${ORIGIN}/discuss/ideas`, "Ý tưởng & góp ý")}.`)}</p>`;
-    const m = layout(u, { pre: L(u, `${st.clicks} visits, ${st.likes} likes, ${st.comments} comments so far.`, `${st.clicks} lượt ghé, ${st.likes} lượt thích, ${st.comments} bình luận.`), title, html: body,
-      text: `${st.clicks} ${L(u, "visits", "lượt ghé")} · ${st.likes} ${L(u, "likes", "lượt thích")} · ${st.comments} ${L(u, "comments", "bình luận")}\n${page}`,
+    const m = layout(u, { pre: L(u, `${st.views} views, ${st.likes} likes, ${st.comments} comments so far.`, `${st.views} lượt xem, ${st.likes} lượt thích, ${st.comments} bình luận.`), title, html: body,
+      text: `${st.views} ${L(u, "page views", "lượt xem")} · ${st.clicks} ${L(u, "clicks to your site", "lượt bấm sang trang bạn")} · ${st.likes} ${L(u, "likes", "lượt thích")} · ${st.comments} ${L(u, "comments", "bình luận")}\n${page}`,
       button: [page, L(u, "See your page", "Xem trang dự án")], why: makerWhy(u, p.name) });
     await enqueue(env, u, `day${day}`, `day${day}:${p.slug}:${who_(u)}`, { subject: title, ...m });
   }

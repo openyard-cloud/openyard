@@ -691,6 +691,7 @@ export function projectPage(p, all, site, stats, now = Date.now(), vet = null) {
     : p.maintainers.map(h => `<span class="who"><img src="https://github.com/${esc(h)}.png?size=48" alt="" loading="lazy"><a href="https://github.com/${esc(h)}" target="_blank" rel="noopener">@${esc(h)}</a></span>`).join("");
   const facts = [
     [["Made by", "Người làm"], people],
+    p.views ? [["Views", "Lượt xem"], `${(+p.views).toLocaleString("en")}${p.views_7d ? ` <span style="color:var(--muted)">· ${t(`${(+p.views_7d).toLocaleString("en")} this week`, `${(+p.views_7d).toLocaleString("en")} tuần này`)}</span>` : ""}`] : null,
     [["Status", "Trạng thái"], p.status === "live" ? `<span class="pill on"><i class="dot"></i>${t(...STATUS.live)}</span>` : t(...STATUS[p.status])],
     [["Kind", "Thể loại"], p.kinds.map(k => `<a class="tg" href="/${KIND_PAGE[k]}">${t(...KIND[k])}</a>`).join("")],
     p.license ? [["License", "Giấy phép"], esc(p.license)] : null,
@@ -851,6 +852,11 @@ ${p.image ? `<dialog class="lb" id="lb"><img src="${esc(p.image)}" alt="${esc(p.
 ${siteFooter(site, `<a href="/discuss/help">${t("Something wrong with this listing? Tell us in Discuss", "Trang này có vấn đề? Báo ở Thảo luận")}</a>`)}
 ${LANG_JS}
 ${FX_JS}
+<script>
+// one view of this page, sent once the tab is actually visible (not prerendered in the background)
+(() => { const slug = ${JSON.stringify(p.slug)}, send = () => fetch("/api/view", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) }).catch(() => {});
+  if (document.visibilityState === "visible") send(); else document.addEventListener("visibilitychange", function f() { if (document.visibilityState === "visible") { document.removeEventListener("visibilitychange", f); send(); } }); })();
+</script>
 ${LIKE_JS}
 ${commentsJs(p.slug)}
 </body>
