@@ -19,6 +19,7 @@
 //   GET/POST /unsubscribe?t=   one-click email opt-out (email.js; Resend sends from the outbox)
 //   GET  /welcome, /settings, /privacy, /@<login>   first sign-in, account settings, privacy, public profile (account.js)
 //   GET  /api/vet/queue, POST /api/vet/<slug>   code checks, for the scanner workflow (VET_TOKEN)
+//   GET  /api/og/queue, POST /api/og/(project|topic)/<id>   share images, for the og workflow (VET_TOKEN)
 //   GET  /badge/<slug>.svg     README badge with the latest code check
 //   GET  /check, /check/<owner>/<repo>   check any public GitHub repository (POST /api/check, GET /api/check/status,
 //                                        GET /api/check/report; vetcode.openyard.cloud may call these three too)
@@ -298,6 +299,7 @@ async function submit(req, env, ctx) {
   ]);
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
+  ctx.waitUntil(wakeOg(env).catch(e => console.error(e)));
   ctx.waitUntil(track(env, "project submitted", user.id, { slug, type: f.type, kinds: f.kinds, has_repo: !!f.repo, lang: f.lang }));
   ctx.waitUntil(mail.live(env, slug, `/submit?edit=${slug}#${edit}`).then(() => mail.drain(env, 3)).catch(e => console.error("live mail", e)));
   return json({ slug, page: `/p/${slug}`, edit: `/submit?edit=${slug}#${edit}`, owner: user.login }, 201);
@@ -359,6 +361,7 @@ async function edit(req, env, ctx, slug) {
   if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
+  ctx.waitUntil(wakeOg(env).catch(e => console.error(e)));
   return json({ slug, page: `/p/${slug}` });
 }
 
@@ -584,6 +587,7 @@ async function topics(req, env, url, id, ctx) {
   const r = await env.DB.prepare("INSERT INTO topics (cat, title, body, user_id, created_at, last_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5) RETURNING id").bind(cat, title, body, user.id, now).first();
   ctx?.waitUntil(track(env, "topic started", user.id, { category: cat }));
   ctx?.waitUntil(announce(env, [topicPath({ id: r.id, title }), "/discuss", `/discuss/${cat}`]).catch(e => console.error(e)));
+  ctx?.waitUntil(wakeOg(env).catch(e => console.error(e)));
   return json({ id: r.id, url: topicPath({ id: r.id, title }) }, 201);
 }
 
@@ -711,6 +715,41 @@ async function announce(env, paths) {
 // Any public repository. A visitor asks on /check; the worker queues it and wakes the scanner
 // workflow with a repository_dispatch (DISPATCH_TOKEN); the six-hourly run picks up anything left.
 const repoRef = v => { const r = parseRepo(String(v || "").replace(/[#?].*$/, "")); return r && { ...r, key: `${r.owner}/${r.name}`.toLowerCase(), full: `${r.owner}/${r.name}` }; };
+
+// Share images. scripts/og.mjs --auto (the og workflow) asks what needs one, renders it with
+// Chrome and sends the PNG back. New and edited projects and new topics wake it right away.
+async function wakeOg(env) {
+  if (!env.DISPATCH_TOKEN) return;
+  const r = await fetch("https://api.github.com/repos/openyard-cloud/openyard/dispatches", {
+    method: "POST", headers: { Authorization: `Bearer ${env.DISPATCH_TOKEN}`, Accept: "application/vnd.github+json", "User-Agent": "openyard.cloud" },
+    body: JSON.stringify({ event_type: "og" }),
+  });
+  if (!r.ok) console.error("og dispatch", r.status, await r.text());
+}
+async function ogQueue(env, now) {
+  const all = await listProjects(env, now);
+  const { results: due } = await env.DB.prepare("SELECT slug FROM projects WHERE hidden = 0 AND (og IS NULL OR (og_at IS NOT NULL AND og_at < updated_at)) LIMIT 20").all();
+  const want = new Set(due.map(r => r.slug));
+  const { results: topics } = await env.DB.prepare(`SELECT t.id, t.cat, t.title, t.created_at, u.login, u.name, u.avatar,
+      (SELECT COUNT(*) FROM comments c WHERE c.slug = 't-' || t.id AND c.deleted = 0) AS replies
+    FROM topics t JOIN users u ON u.id = t.user_id WHERE t.deleted = 0 AND t.og IS NULL ORDER BY t.created_at DESC LIMIT 20`).all();
+  return json({ projects: all.filter(p => want.has(p.slug)), topics: topics.map(tp => ({ ...tp, cat: { slug: tp.cat, name: DCAT[tp.cat]?.name, c: DCAT[tp.cat]?.c } })) }, 200, { "Cache-Control": "no-store" });
+}
+async function ogSave(req, env, kind, id, now) {
+  const buf = new Uint8Array(await req.arrayBuffer());
+  if (buf.length < 1000 || buf.length > 1024 * 1024 || buf[0] !== 0x89 || buf[1] !== 0x50) return fail("Send a PNG under 1 MB.");
+  const row = kind === "project"
+    ? await env.DB.prepare("SELECT og FROM projects WHERE slug = ?1").bind(id).first()
+    : await env.DB.prepare("SELECT og FROM topics WHERE id = ?1").bind(+id).first();
+  if (!row) return fail("Not found.", 404);
+  const og = await storeUpload(env, { type: "image/png", buf }, now);
+  await env.DB.batch([
+    kind === "project" ? env.DB.prepare("UPDATE projects SET og = ?2, og_at = ?3 WHERE slug = ?1").bind(id, og, now) : env.DB.prepare("UPDATE topics SET og = ?2 WHERE id = ?1").bind(+id, og),
+    // the image it replaces, if it was one of ours
+    ...(row.og?.startsWith("/u/") ? [env.DB.prepare("DELETE FROM uploads WHERE id = ?1").bind(row.og.slice(3))] : []),
+  ]);
+  return json({ og });
+}
 
 async function wakeScanner(env, repo) {
   if (!env.DISPATCH_TOKEN) return;
@@ -896,6 +935,8 @@ const worker = {
         return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=120" } });
       }
       if (path === "/api/vet/queue" && req.method === "GET") return scanner(req, env) ? vetQueue(env) : fail("Not allowed.", 403);
+      if (path === "/api/og/queue" && req.method === "GET") return scanner(req, env) ? ogQueue(env, now) : fail("Not allowed.", 403);
+      if ((m = /^\/api\/og\/(project|topic)\/([a-z0-9-]+)$/.exec(path)) && req.method === "POST") return scanner(req, env) ? ogSave(req, env, m[1], m[2], now) : fail("Not allowed.", 403);
       if ((m = /^\/api\/vet\/([a-z0-9-]+)$/.exec(path)) && req.method === "POST") return scanner(req, env) ? vetSave(req, env, m[1], ctx) : fail("Not allowed.", 403);
       if ((m = /^\/badge\/([a-z0-9-]+)\.svg$/.exec(path))) {
         const v = await env.DB.prepare("SELECT v.verdict FROM vets v JOIN projects p ON p.slug = v.slug WHERE v.slug = ?1 AND p.hidden = 0").bind(m[1]).first();

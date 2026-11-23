@@ -1,0 +1,31 @@
+name: Share images
+# Renders the 1200×630 picture shown when a project or topic is shared (scripts/og.mjs --auto)
+# and sends it to openyard.cloud. The site wakes this when a project is submitted or edited
+# and when a topic is started; the six-hourly run picks up anything missed.
+on:
+  schedule:
+    - cron: "23 */6 * * *"
+  repository_dispatch:
+    types: [og]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: og
+  cancel-in-progress: false
+jobs:
+  og:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Render and send
+        env:
+          VET_TOKEN: ${{ secrets.VET_TOKEN }}
+          CHROME: /usr/bin/google-chrome
+        run: node scripts/og.mjs --auto
