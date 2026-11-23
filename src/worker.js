@@ -30,7 +30,7 @@ import { FOOTER_CSS, siteFooter, projectPage, sitemap, badge, checkPage, checkMa
 import * as mail from "./email.js";
 import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage, claimPage } from "./account.js";
-import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
+import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages, members } from "./hub.js";
 import { siteMeta, grabImage, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
@@ -774,6 +774,24 @@ async function pulse(env, now) {
   return { recent, likes, talk, people, accounts, crew };
 }
 
+// GET /api/yard: what is happening, for "From the community" on the home page. The newest
+// comments, projects and topics in one list, this week's numbers, and the members' faces.
+async function yard(env, now) {
+  const all = await listProjects(env, now), p = await pulse(env, now);
+  const { results: projects } = await env.DB.prepare(`SELECT p.slug, p.name, p.tagline, p.logo, p.color, p.maintainers, p.created_at, u.login, u.avatar FROM projects p
+    LEFT JOIN users u ON u.id = p.owner_id AND u.deleted_at IS NULL AND u.banned = 0 WHERE p.hidden = 0 AND p.created_at IS NOT NULL ORDER BY p.created_at DESC LIMIT 4`).all();
+  const { results: topics } = await env.DB.prepare(`SELECT t.id, t.cat, t.title, t.created_at, u.login, u.avatar FROM topics t JOIN users u ON u.id = t.user_id
+    WHERE t.deleted = 0 AND u.banned = 0 AND u.deleted_at IS NULL ORDER BY t.created_at DESC LIMIT 4`).all();
+  const json1 = (v, d) => { try { return JSON.parse(v); } catch { return d; } };
+  const feed = [
+    ...p.recent.map(c => ({ kind: "comment", at: c.created_at, login: c.login, avatar: c.avatar, name: c.name, href: c.href, text: c.body.length > 140 ? c.body.slice(0, 140) + "…" : c.body })),
+    ...projects.map(r => ({ kind: "project", at: r.created_at, login: r.login || json1(r.maintainers, [])[0] || null, avatar: r.avatar, name: r.name, href: `/p/${r.slug}`, tagline: json1(r.tagline, {}), logo: r.logo, color: r.color })),
+    ...topics.map(t => ({ kind: "topic", at: t.created_at, login: t.login, avatar: t.avatar, name: t.title, cat: t.cat, href: topicPath(t) })),
+  ].sort((a, b) => b.at - a.at).slice(0, 6);
+  const people = [...members(all, p).values()];
+  return { feed, likes: p.likes, talk: p.talk, members: people.length, faces: people.slice(0, 8).map(f => ({ label: f.label, href: f.href, src: f.src })) };
+}
+
 async function page(env, slug) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
@@ -791,6 +809,7 @@ export default {
       if ((path === "/api/projects" || path === "/projects.json") && req.method === "GET") {
         return json({ site: { ...SITE, turnstile: env.TURNSTILE_SITE_KEY || null }, projects: await listProjects(env, now) }, 200, { "Cache-Control": "public, max-age=60" });
       }
+      if (path === "/api/yard" && req.method === "GET") return json(await yard(env, now), 200, { "Cache-Control": "public, max-age=60" });
       if (path === "/api/github" && req.method === "GET") {
         const ref = parseRepo(url.searchParams.get("repo"));
         if (!ref) return fail("Paste a link like https://github.com/owner/repo");
