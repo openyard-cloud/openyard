@@ -1061,7 +1061,8 @@ export function llmsTxt(projects, checks) {
 }
 
 export function sitemap(projects, today, checks = [], pages = []) {
-  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check`, lastmod: today }, ...pages.map(p => ({ loc: ORIGIN + p, lastmod: today })), ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.added })),
+  // lastmod only where we know when a page really changed; `today` is the yard's newest activity (the home page)
+  const urls = [{ loc: `${ORIGIN}/`, lastmod: today }, { loc: `${ORIGIN}/check` }, ...pages.map(p => typeof p === "string" ? { loc: ORIGIN + p } : { loc: ORIGIN + p.path, lastmod: p.at || null }), ...projects.map(p => ({ loc: `${ORIGIN}/p/${p.slug}`, lastmod: p.at || p.added })),
     ...checks.map(c => ({ loc: `${ORIGIN}/check/${c.repo}`, lastmod: new Date(c.scanned_at).toISOString().slice(0, 10) }))];
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

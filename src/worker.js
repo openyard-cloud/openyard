@@ -357,6 +357,7 @@ async function edit(req, env, ctx, slug) {
   // a new address starts getting email again; the same one keeps its choice
   if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
+  ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   return json({ slug, page: `/p/${slug}` });
 }
 
@@ -581,6 +582,7 @@ async function topics(req, env, url, id, ctx) {
   if (n >= 5) return fail("That is five topics today. Reply to one, or come back tomorrow.", 429);
   const r = await env.DB.prepare("INSERT INTO topics (cat, title, body, user_id, created_at, last_at) VALUES (?1, ?2, ?3, ?4, ?5, ?5) RETURNING id").bind(cat, title, body, user.id, now).first();
   ctx?.waitUntil(track(env, "topic started", user.id, { category: cat }));
+  ctx?.waitUntil(announce(env, [topicPath({ id: r.id, title }), "/discuss", `/discuss/${cat}`]).catch(e => console.error(e)));
   return json({ id: r.id, url: topicPath({ id: r.id, title }) }, 201);
 }
 
@@ -983,8 +985,22 @@ export default {
       if (env.INDEXNOW_KEY && path === `/${env.INDEXNOW_KEY}.txt`) return new Response(env.INDEXNOW_KEY, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
       if (path === "/sitemap.xml") {
         const all = await listProjects(env, now), checks = (await env.DB.prepare("SELECT repo, scanned_at FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 2000").all()).results;
-        const tps = (await env.DB.prepare("SELECT id, title FROM topics WHERE deleted = 0 ORDER BY last_at DESC LIMIT 1000").all()).results;
-        return new Response(sitemap(all, today(now), checks, [...HUB_PATHS, "/privacy", "/discuss", ...DCATS.map(c => `/discuss/${c.slug}`), ...tps.map(topicPath), ...tagPages(all).map(x => `/tags/${x}`), ...[...new Set(all.flatMap(p => p.maintainers))].map(x => `/@${x}`)]), { headers: { "Content-Type": "application/xml" } });
+        const tps = (await env.DB.prepare("SELECT id, cat, title, last_at FROM topics WHERE deleted = 0 ORDER BY last_at DESC LIMIT 1000").all()).results;
+        // when each page last changed: a project's own edits and its newest comment; lists follow their newest project
+        const changed = new Map((await env.DB.prepare(`SELECT p.slug, MAX(COALESCE(p.updated_at, 0), COALESCE((SELECT MAX(c.created_at) FROM comments c WHERE c.slug = p.slug AND c.deleted = 0), 0)) AS at
+          FROM projects p WHERE p.hidden = 0`).all()).results.map(r => [r.slug, r.at]));
+        const day = ms => ms ? new Date(ms).toISOString().slice(0, 10) : null;
+        const atOf = p => changed.get(p.slug) || Date.parse(p.added);
+        const newest = list => day(Math.max(0, ...list.map(atOf)));
+        const talkAt = cat => day(Math.max(0, ...tps.filter(tp => !cat || tp.cat === cat).map(tp => tp.last_at), ...(!cat || cat === "showcase" ? all.map(atOf) : [])));
+        const pages = [
+          ...HUB_PATHS.map(x => ({ path: x, at: CAT[x.slice(1)] ? newest(all.filter(CAT[x.slice(1)].test)) : null })),
+          { path: "/privacy" }, { path: "/discuss", at: talkAt() }, ...DCATS.map(c => ({ path: `/discuss/${c.slug}`, at: talkAt(c.slug) })),
+          ...tps.map(tp => ({ path: topicPath(tp), at: day(tp.last_at) })),
+          ...tagPages(all).map(x => ({ path: `/tags/${x}`, at: newest(all.filter(p => (p.tags || []).includes(x))) })),
+          ...[...new Set(all.flatMap(p => p.maintainers))].map(x => ({ path: `/@${x}` })),
+        ];
+        return new Response(sitemap(all.map(p => ({ ...p, at: day(atOf(p)) })), talkAt() || today(now), checks, pages), { headers: { "Content-Type": "application/xml" } });
       }
     } catch (e) {
       console.error(e);
