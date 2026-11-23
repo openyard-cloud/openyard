@@ -17,7 +17,7 @@ export const DCATS = [
 export const DCAT = Object.fromEntries(DCATS.map(c => [c.slug, c]));
 export const topicPath = tp => `/discuss/t/${tp.id}-${String(tp.title).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "topic"}`;
 
-const D_CSS = `
+export const D_CSS = `
 .dcols{display:grid;grid-template-columns:240px minmax(0,1fr);gap:28px;align-items:start}
 @media (max-width:900px){.dcols{grid-template-columns:minmax(0,1fr)}.topicp .dnav{order:2}}
 .dnav{position:sticky;top:88px;display:flex;flex-direction:column;gap:4px}@media (max-width:900px){.dnav{position:static;flex-direction:row;flex-wrap:wrap}}
@@ -57,15 +57,17 @@ const catNav = (current, counts, signedHint = true) => `<div class="dnav reveal"
 </div>`;
 
 /** /discuss and /discuss/<cat>. items: topics and projects mixed, newest activity first. */
-export function discussPage({ items, cat, counts, site, now = Date.now() }) {
-  const C = cat ? DCAT[cat] : null;
-  const row = x => {
+/** One line in a list of discussions: a topic, or a project's thread in Showcase. */
+export const topicRow = (x, now = Date.now()) => {
     const k = DCAT[x.cat];
     return `<li><a href="${esc(x.href)}">${x.kind === "project" ? `<img class="av sq" src="${esc(x.logo || "/favicon.svg")}" alt="" loading="lazy">` : `<img class="av" src="${face(x)}" alt="" loading="lazy">`}
     <div class="tx"><b>${x.pinned ? `<span class="pin">${t("Pinned", "Ghim")}</span> ` : ""}${esc(x.title)}</b>${x.excerpt ? `<p>${esc(x.excerpt)}</p>` : ""}
       <div class="mt"><span class="ct" style="--k:${k.c}"><i></i>${t(...k.name)}</span><span>${x.login ? `@${esc(x.login)}` : x.team ? "OpenYard team" : t("a community member", "một thành viên")}</span><span>${t(...since(x.last_at, now))}</span></div></div>
     <span class="rp">${ic(I.talk)}${+x.replies || 0}</span></a></li>`;
-  };
+};
+export function discussPage({ items, cat, counts, site, now = Date.now() }) {
+  const C = cat ? DCAT[cat] : null;
+  const row = x => topicRow(x, now);
   const body = `<header class="hero hub dh"><div class="aura" aria-hidden="true"><i></i><i></i><i></i></div><div class="wrap">
   <div class="tags up" style="--d:1"><span class="pill on">${t("Discuss", "Thảo luận")}</span></div>
   <h1 class="up" style="--d:2">${C ? t(...C.name) : t("Talk in the yard", "Trò chuyện trong OpenYard")}</h1>

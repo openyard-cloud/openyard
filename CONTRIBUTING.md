@@ -25,7 +25,7 @@ npx wrangler@4 d1 execute openyard-preview --remote --file migrations/000X_name.
 
 ## Work on the site
 
-The home page (`public/index.html`) and the submit form (`public/submit.html`) are plain HTML, CSS and JavaScript. `src/worker.js` serves the API, project pages (template in `src/pages.js`), the sitemap and the GitHub stats cron. Run `npm run dev`, check light and dark mode, English and Vietnamese, and a narrow window before opening a pull request.
+`src/worker.js` serves the API and renders the pages: the home page (`src/home.js`), project pages (`src/pages.js`), lists and about pages (`src/hub.js`) and Discuss (`src/discuss.js`), plus the sitemap and the GitHub stats cron. The submit form (`public/submit.html`) is plain HTML, CSS and JavaScript. Run `npm run dev`, check light and dark mode, English and Vietnamese, and a narrow window before opening a pull request.
 
 ## Pull requests made with AI
 

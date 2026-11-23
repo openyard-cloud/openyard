@@ -414,7 +414,7 @@ export const head = ({ title, desc, url, image, jsonld, noindex = false, md = nu
 <script>document.documentElement.classList.add("js")</script>
 </head>`;
 
-// The same top bar and footer on every page the Worker renders; the home page (public/index.html) mirrors them.
+// The same top bar and footer on every page the Worker renders, the home page included; submit.html mirrors them.
 const NAV = [["/projects", ["Projects", "Dự án"]], ["/discuss", ["Discuss", "Thảo luận"]], ["/check", ["Check a repo", "Kiểm tra repo"]], ["/submit", ["Submit", "Gửi dự án"]]];
 export const siteNav = (site, current = "", extra = "") => `<nav><div class="wrap">
   <a class="brand" href="/"><img src="/favicon.svg" alt="" width="24" height="24"><span>Open<em>Yard</em></span></a>

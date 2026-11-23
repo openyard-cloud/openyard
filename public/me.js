@@ -21,6 +21,7 @@
 
   fetch("/api/me", { credentials: "same-origin" }).then(r => r.ok ? r.json() : null).then(u => {
     if (!u) return;
+    window.OY_ME = u; dispatchEvent(new CustomEvent("oy-me", { detail: u })); // the home page greets them
     const wrap = document.createElement("div");
     wrap.className = "mewrap";
     const draw = () => {

@@ -372,7 +372,7 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
       const r = await fetch(editing ? `/api/edit/${encodeURIComponent(editSlug)}` : "/api/submit", { method: "POST", body: fd });
       const d = await r.json();
       if (!r.ok) throw new Error((document.documentElement.lang === "vi" && d.error_vi || d.error));
-      if (d.removed) { location.href = "/#projects"; return; }
+      if (d.removed) { location.href = "/projects"; return; }
       if (editing) { location.href = d.page; return; }
       $("formgrid").hidden = true; document.querySelector(".hero").hidden = true;
       $("done-page").href = d.page;
