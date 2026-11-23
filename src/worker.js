@@ -32,7 +32,7 @@ import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage, claimPage } from "./account.js";
 import { listPage, tagPage, aboutPage, communityPage, CAT, HUB_PATHS, tagPages } from "./hub.js";
 import { homePage } from "./home.js";
-import { siteMeta, grabImage, publicHttps, dnsTxt } from "./scrape.js";
+import { siteMeta, grabImage, grabLogo, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
 import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
@@ -113,7 +113,7 @@ async function readImage(file, max) {
 // its square (tile); an SVG sits on white with some room around it.
 async function sitePictures(env, f, now) {
   const out = { logo: null, image: null, logoStyle: null };
-  if (!f.logoFile && f.logoUrl) { const g = await grabImage(f.logoUrl, { logo: true }); if (g) { out.logo = await storeUpload(env, g, now); out.logoStyle = g.type === "image/svg+xml" ? null : "tile"; } }
+  if (!f.logoFile && (f.logoUrls?.length || f.logoUrl)) { const g = await grabLogo(f.logoUrls || [f.logoUrl]); if (g) { out.logo = await storeUpload(env, g, now); out.logoStyle = g.type === "image/svg+xml" ? null : "tile"; } }
   if (!f.imageFile && f.imageUrl) { const g = await grabImage(f.imageUrl); if (g) out.image = await storeUpload(env, g, now); }
   return out;
 }
@@ -176,8 +176,8 @@ async function siteLookup(req, env, url) {
   const m = await siteMeta(target.href);
   if (!m) return fail("Could not read that page.", 404);
   // check the pictures now, so the form only shows ones that can be kept
-  const [logo, image] = await Promise.all([m.icon ? grabImage(m.icon, { logo: true }) : null, m.image ? grabImage(m.image) : null]);
-  return json({ name: m.name, title: m.title, description: m.description, logo: logo ? m.icon : null, image: image ? m.image : null }, 200, { "Cache-Control": "private, max-age=300" });
+  const [logo, image] = await Promise.all([grabLogo(m.icons), m.image ? grabImage(m.image) : null]);
+  return json({ name: m.name, title: m.title, description: m.description, logo: logo?.url || null, image: image ? m.image : null }, 200, { "Cache-Control": "private, max-age=300" });
 }
 
 // Cron, once a day: the people of the OpenYard GitHub organization (site.config.json repo).
@@ -205,7 +205,7 @@ async function fillPictures(env, now = Date.now()) {
     await env.DB.prepare("UPDATE projects SET scraped_at = ?2 WHERE slug = ?1").bind(p.slug, now).run();
     const m = await siteMeta(p.url).catch(() => null);
     if (!m) continue;
-    const site = await sitePictures(env, { logoUrl: p.logo ? null : m.icon, imageUrl: p.image ? null : m.image }, now);
+    const site = await sitePictures(env, { logoUrls: p.logo ? null : m.icons, imageUrl: p.image ? null : m.image }, now);
     if (site.logo) await env.DB.prepare("UPDATE projects SET logo = ?2, logo_style = ?3 WHERE slug = ?1 AND logo IS NULL").bind(p.slug, site.logo, site.logoStyle).run();
     if (site.image) await env.DB.prepare("UPDATE projects SET image = ?2 WHERE slug = ?1 AND image IS NULL").bind(p.slug, site.image).run();
     console.log("pictures", p.slug, !!site.logo, !!site.image);
