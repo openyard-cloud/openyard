@@ -1,5 +1,5 @@
 // Pages that gather projects or explain OpenYard, rendered by the Worker so search engines read
-// the full list (the home page builds its grid in the browser):
+// the full list:
 //   /projects                     every project, with search and sort
 //   /apps, /open-source,
 //   /for-people, /wild-ideas, /dev-tools   one page per type or kind, each with its own words
@@ -39,7 +39,7 @@ const ALL = { slug: "projects", test: () => true, c: "#6d5bd0", name: ["All", "T
 export const CAT = Object.fromEntries([ALL, ...CATS].map(c => [c.slug, c]));
 
 const fold = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").toLowerCase();
-const tagCounts = list => { const m = new Map(); list.forEach(p => (p.tags || []).forEach(x => m.set(x, (m.get(x) || 0) + 1))); return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])); };
+export const tagCounts = list => { const m = new Map(); list.forEach(p => (p.tags || []).forEach(x => m.set(x, (m.get(x) || 0) + 1))); return [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])); };
 /** Tags with a page worth indexing. */
 export const tagPages = all => tagCounts(all).filter(([, n]) => n >= 2).map(([x]) => x);
 export const HUB_PATHS = ["/projects", ...CATS.map(c => `/${c.slug}`), "/about", "/community"];
@@ -150,7 +150,7 @@ const HUB_JS = `<script>
 })();
 </script>`;
 
-const logoTag = (p, size) => p.logo
+export const logoTag = (p, size) => p.logo
   ? `<img class="${logoClass(p)}" src="${esc(p.logo)}" alt="" width="${size}" height="${size}" loading="lazy">`
   : `<span class="ini" style="--c:${esc(p.color || "#6d5bd0")}">${initials(p.name)}</span>`;
 
@@ -239,14 +239,14 @@ function pulseBar(all, pulse) {
 }
 
 // "Being talked about": the latest comments across the yard, each linking to its thread.
-function rail(pulse, now = Date.now()) {
+export function rail(pulse, now = Date.now(), { top = "", bottom = "" } = {}) {
   const list = pulse?.recent || [];
-  return `<aside class="lrail">
+  return `<aside class="lrail">${top}
     <div class="box reveal"><span class="eyebrow">${t("Being talked about", "Đang bàn tán")}</span>
       ${list.length ? `<ul class="feed">${list.map(c => `<li><a href="${esc(c.href || `/p/${c.slug}#comments`)}"><img src="${esc(c.avatar || `https://github.com/${c.login}.png?size=48`)}" alt="" width="28" height="28" loading="lazy"><div><b>@${esc(c.login)}</b> ${t("on", "trên")} <b>${esc(c.name)}</b><p>${esc(c.body.length > 110 ? c.body.slice(0, 110) + "…" : c.body)}</p><small>${t(...since(c.created_at, now))}</small></div></a></li>`).join("")}</ul>`
         : `<p class="quiet">${t("No comments yet. Open a project and be the first to say what you think.", "Chưa có bình luận nào. Mở một dự án và là người đầu tiên nói bạn nghĩ gì.")}</p>`}
     </div>
-    <a class="box dcard reveal" href="/discuss">${ic(I.talk)}<div><b>${t("Join the conversation", "Tham gia thảo luận")}</b><small>${t("Help, ideas, building in public", "Hỏi đáp, ý tưởng, chuyện làm sản phẩm")}</small></div></a>
+    <a class="box dcard reveal" href="/discuss">${ic(I.talk)}<div><b>${t("Join the conversation", "Tham gia thảo luận")}</b><small>${t("Help, ideas, building in public", "Hỏi đáp, ý tưởng, chuyện làm sản phẩm")}</small></div></a>${bottom}
   </aside>`;
 }
 
