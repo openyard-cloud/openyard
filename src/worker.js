@@ -59,15 +59,16 @@ const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
 // What the community did on OpenYard this week, the same for every project: likes and people
-// commenting count most, then visits, plus a boost that fades over a listing's first two
+// commenting count most, then clicks through to the project and page views (capped, since views
+// are the easiest to inflate), plus a boost that fades over a listing's first two
 // weeks. GitHub is a small capped extra (new stars, at most 6, as much as 3 likes), so a
 // project without a repository can trend as well as one with a busy repository.
-function trend(p, s, clicks, talk, now, likes = 0) {
+function trend(p, s, clicks, talk, now, likes = 0, views = 0) {
   const age = (now - Date.parse(p.added)) / DAY;
-  return Math.round((buzz(s, clicks, talk, likes) + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
+  return Math.round((buzz(s, clicks, talk, likes, views) + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
 }
-// the week's activity alone, without the boost for new listings
-const buzz = (s, clicks, talk, likes) => likes * 2 + talk * 2 + clicks * 0.5 + (s ? Math.min(s.stars_7d * 2, 6) : 0);
+// the week's activity alone, without the boost for new listings; 10 views weigh one click-through, at most 4
+const buzz = (s, clicks, talk, likes, views = 0) => likes * 2 + talk * 2 + clicks * 0.5 + Math.min(views * 0.1, 4) + (s ? Math.min(s.stars_7d * 2, 6) : 0);
 
 function toApi(row, now) {
   const p = {
@@ -80,13 +81,15 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0), buzz: Math.round(buzz(s, row.clicks || 0, row.talk || 0, row.likes_7d || 0) * 10) / 10 };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, views: row.views || 0, views_7d: row.views_7d || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0, row.views_7d || 0), buzz: Math.round(buzz(s, row.clicks || 0, row.talk || 0, row.likes_7d || 0, row.views_7d || 0) * 10) / 10 };
 }
 
 async function listProjects(env, now = Date.now()) {
   const since = today(now - 7 * DAY);
   const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated, v.verdict AS v_verdict, v.scanned_at AS v_scanned,
       (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks,
+      (SELECT SUM(n) FROM views w WHERE w.slug = p.slug) AS views,
+      (SELECT SUM(n) FROM views w WHERE w.slug = p.slug AND w.day >= ?1) AS views_7d,
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
       (SELECT COUNT(DISTINCT m.user_id) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0 AND m.created_at > ?2) AS talk,
       (SELECT COUNT(*) FROM likes k WHERE k.slug = p.slug) AS likes,
@@ -302,6 +305,24 @@ async function submit(req, env, ctx) {
 // Who may change a project: the private edit link, or a signed-in person who submitted it or is listed as its maker.
 // maintainers are GitHub usernames, so only a GitHub account can match one
 const owns = (user, row) => !!user && (row.owner_id === user.id || (user.provider !== "email" && JSON.parse(row.maintainers || "[]").some(m => m.toLowerCase() === user.login.toLowerCase())));
+// POST /api/view {slug}: the project page says it was seen. Counted once per visitor, project and
+// day, never for its own makers, and not for browsers that say they are bots. Scripts run only in
+// real browsers, so crawlers that do not run JavaScript are not counted at all.
+const BOTS = /bot|crawl|spider|slurp|preview|headless|lighthouse|monitor|fetch|curl|wget|python|scrapy/i;
+async function view(req, env, url) {
+  const done = new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+  const ua = req.headers.get("User-Agent") || "";
+  if (req.headers.get("Origin") !== url.origin || !ua || BOTS.test(ua)) return done;
+  let b; try { b = await req.json(); } catch { return done; }
+  const slug = String(b.slug || "").slice(0, 80), now = Date.now(), day = today(now);
+  const row = await env.DB.prepare("SELECT owner_id, maintainers FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
+  if (!row || owns(await currentUser(req, env), row)) return done;
+  const seen = await sha256(`${req.headers.get("CF-Connecting-IP") || "0"}|${ua}|${slug}|${day}|openyard-view`);
+  const r = await env.DB.prepare("INSERT INTO view_seen (hash, created_at) VALUES (?1, ?2) ON CONFLICT DO NOTHING").bind(seen, now).run();
+  if (r.meta.changes) await env.DB.prepare("INSERT INTO views (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(slug, day).run();
+  return done;
+}
+
 async function authorize(env, slug, tok, user) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
@@ -365,6 +386,7 @@ async function refreshStats(env, now = Date.now()) {
     try { await refreshOne(env, slug, ref, now); } catch (e) { if (e instanceof RateLimited) break; console.error(slug, e); }
   }
   await env.DB.prepare("DELETE FROM submits WHERE created_at < ?1").bind(now - 2 * DAY).run();
+  await env.DB.prepare("DELETE FROM view_seen WHERE created_at < ?1").bind(now - 2 * DAY).run();
 }
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
@@ -782,7 +804,7 @@ async function page(env, slug) {
   const stats = await env.DB.prepare("SELECT * FROM stats WHERE slug = ?1").bind(slug).first();
   const vet = await env.DB.prepare("SELECT * FROM vets WHERE slug = ?1").bind(slug).first();
   const here = all.find(p => p.slug === slug);
-  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0, owner: here?.owner }, all, SITE, stats, now, vet);
+  return projectPage({ ...toApi(row, now), likes: here?.likes || 0, comments: here?.comments || 0, views: here?.views || 0, views_7d: here?.views_7d || 0, owner: here?.owner }, all, SITE, stats, now, vet);
 }
 
 export default {
@@ -792,6 +814,7 @@ export default {
       if ((path === "/api/projects" || path === "/projects.json") && req.method === "GET") {
         return json({ site: { ...SITE, turnstile: env.TURNSTILE_SITE_KEY || null }, projects: await listProjects(env, now) }, 200, { "Cache-Control": "public, max-age=60" });
       }
+      if (path === "/api/view" && req.method === "POST") return view(req, env, url);
       if (path === "/api/github" && req.method === "GET") {
         const ref = parseRepo(url.searchParams.get("repo"));
         if (!ref) return fail("Paste a link like https://github.com/owner/repo");
