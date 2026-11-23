@@ -180,7 +180,7 @@ export const crumbs = items => ({ "@context": "https://schema.org", "@type": "Br
 const collection = (name, url, desc, list) => ({ "@context": "https://schema.org", "@type": "CollectionPage", name, url, description: desc, isPartOf: { "@type": "WebSite", name: "OpenYard", url: ORIGIN },
   mainEntity: { "@type": "ItemList", numberOfItems: list.length, itemListElement: list.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: `${ORIGIN}/p/${p.slug}`, name: p.name })) } });
 
-export const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "", extra = "", css = "", vi = null }) => `${head({ title, desc, url: ORIGIN + path, image: IMG, jsonld, noindex, vi }).replace("</style>", `${HUB_CSS}${css}</style>`)}
+export const page = ({ title, desc, path, jsonld, color, noindex = false, body, site, current = "", extra = "", css = "", vi = null, image = IMG }) => `${head({ title, desc, url: ORIGIN + path, image, jsonld, noindex, vi }).replace("</style>", `${HUB_CSS}${css}</style>`)}
 <body style="--c:${esc(color)}">
 ${siteNav(site, current)}
 <main>${body}</main>

@@ -1,8 +1,11 @@
-// Renders a 1200×630 share image for projects to public/og/<slug>.png with a local
-// Chrome-family browser, reading the list from the live site: npm run og [slug…]
-// Pages without one share the screenshot. After rendering, commit the PNG and point the
-// project at it with the SQL command this prints.
-import { writeFileSync, mkdirSync, existsSync, rmSync, mkdtempSync } from "node:fs";
+// Renders 1200×630 share images with a Chrome-family browser.
+//
+//   npm run og [slug…]          projects, to public/og/<slug>.png, printing the SQL that points
+//                               each project at its file (the old, by-hand way)
+//   node scripts/og.mjs --auto  what the site says needs one (new or edited projects, new
+//                               topics), sent straight back to it. The og workflow runs this,
+//                               woken by the site; needs VET_TOKEN (the scanner's token).
+import { writeFileSync, readFileSync, mkdirSync, existsSync, rmSync, mkdtempSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -10,7 +13,9 @@ import { execFileSync } from "node:child_process";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PUBLIC = join(ROOT, "public"), OUT = join(PUBLIC, "og");
-const API = process.env.OY_API || "https://openyard.cloud/api/projects";
+const SITE = process.env.SITE || "https://openyard.cloud";
+const API = process.env.OY_API || `${SITE}/api/projects`;
+const AUTO = process.argv.includes("--auto");
 const BROWSERS = [
   process.env.CHROME,
   "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -59,16 +64,59 @@ ${p.image ? `<div class="shot"><img src="${src(p.image)}"></div>` : p.logo ? `<d
   <div class="f"><img src="${file(join(ROOT, "public", "favicon.svg"))}"><b>Open<em>Yard</em></b><span>openyard.cloud/p/${esc(p.slug)}</span></div>
 </div></body></html>`;
 
-const only = process.argv.slice(2);
-const projects = (await (await fetch(API)).json()).projects.filter(p => !only.length || only.includes(p.slug));
-mkdirSync(OUT, { recursive: true });
+// A discussion topic: its category, the question itself, who asked and how many answered.
+const topicHtml = tp => `<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+html,body{width:1200px;height:630px;overflow:hidden;background:#0a0a0c;color:#f4f4f5;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.bg{position:absolute;inset:0;background:radial-gradient(700px 460px at 8% 10%,${tp.cat.c || "#b67cff"}77,transparent 70%),radial-gradient(620px 420px at 100% 100%,#7c9cff38,transparent 70%)}
+.w{position:absolute;inset:72px 80px 64px;display:flex;flex-direction:column}
+.k{align-self:flex-start;display:inline-flex;align-items:center;gap:12px;font-size:24px;font-weight:600;padding:8px 20px;border-radius:999px;border:1.5px solid rgba(255,255,255,.22);color:#e4e4e7}
+.k i{width:14px;height:14px;border-radius:50%;background:${tp.cat.c || "#b67cff"}}
+h1{margin-top:34px;font-size:${tp.title.length > 70 ? 56 : tp.title.length > 40 ? 66 : 78}px;font-weight:700;letter-spacing:-.04em;line-height:1.08;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.by{margin-top:auto;display:flex;align-items:center;gap:16px;font-size:26px;font-weight:600}
+.by img{width:56px;height:56px;border-radius:50%;background:#222;object-fit:cover}
+.by span{color:#a1a1aa;font-weight:500}
+.f{display:flex;align-items:center;gap:12px;margin-top:30px;font-size:24px;font-weight:600;letter-spacing:-.02em}
+.f img{width:34px;height:34px}.f em{font-style:normal;background:linear-gradient(100deg,#7c9cff,#b67cff 35%,#ff7eb0 70%,#ffc56b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.f span{color:#8b8b95;font-weight:500;font-size:21px;margin-left:8px}
+</style></head><body><div class="bg"></div><div class="w">
+  <span class="k"><i></i>${esc(tp.cat.name?.[0] || "Discuss")} · ${esc(tp.cat.name?.[1] || "Thảo luận")}</span>
+  <h1>${esc(tp.title)}</h1>
+  <div class="by"><img src="${esc(tp.avatar ? new URL(tp.avatar, SITE).href : `https://github.com/${tp.login}.png?size=112`)}">${esc(tp.name || "@" + tp.login)}<span>· ${tp.replies} ${tp.replies === 1 ? "reply" : "replies"}</span></div>
+  <div class="f"><img src="${file(join(ROOT, "public", "favicon.svg"))}"><b>Open<em>Yard</em></b><span>openyard.cloud/discuss</span></div>
+</div></body></html>`;
+
 const tmp = mkdtempSync(join(tmpdir(), "openyard-og-"));
-for (const p of projects) {
-  const page = join(tmp, `${p.slug}.html`), png = join(OUT, `${p.slug}.png`);
-  writeFileSync(page, html(p));
+const shoot = (name, page, png) => {
+  const f = join(tmp, `${name}.html`);
+  writeFileSync(f, page);
   execFileSync(browser, ["--headless=new", "--hide-scrollbars", "--force-device-scale-factor=1", "--window-size=1200,630",
-    "--virtual-time-budget=4000", "--allow-file-access-from-files", `--screenshot=${png}`, file(page)], { stdio: "ignore" });
-  console.log(`public/og/${p.slug}.png`);
-  console.log(`  npx wrangler@4 d1 execute openyard --remote --command "UPDATE projects SET og = '/og/${p.slug}.png' WHERE slug = '${p.slug}'"`);
+    "--virtual-time-budget=4000", "--allow-file-access-from-files", `--screenshot=${png}`, file(f)], { stdio: "ignore" });
+};
+
+if (AUTO) {
+  const auth = { Authorization: `Bearer ${process.env.VET_TOKEN || ""}` };
+  const r = await fetch(`${SITE}/api/og/queue`, { headers: auth });
+  if (!r.ok) { console.error("queue", r.status, await r.text()); process.exit(1); }
+  const { projects, topics } = await r.json();
+  const send = async (kind, id, png) => {
+    const res = await fetch(`${SITE}/api/og/${kind}/${id}`, { method: "POST", headers: { ...auth, "Content-Type": "image/png" }, body: readFileSync(png) });
+    console.log(kind, id, res.ok ? (await res.json()).og : `failed ${res.status} ${await res.text()}`);
+  };
+  for (const p of projects) { const png = join(tmp, `p-${p.slug}.png`); shoot(`p-${p.slug}`, html(p), png); await send("project", p.slug, png); }
+  for (const tp of topics) { const png = join(tmp, `t-${tp.id}.png`); shoot(`t-${tp.id}`, topicHtml(tp), png); await send("topic", tp.id, png); }
+  if (!projects.length && !topics.length) console.log("nothing to render");
+} else {
+  const only = process.argv.slice(2);
+  const projects = (await (await fetch(API)).json()).projects.filter(p => !only.length || only.includes(p.slug));
+  mkdirSync(OUT, { recursive: true });
+  for (const p of projects) {
+    const png = join(OUT, `${p.slug}.png`);
+    shoot(p.slug, html(p), png);
+    console.log(`public/og/${p.slug}.png`);
+    console.log(`  npx wrangler@4 d1 execute openyard --remote --command "UPDATE projects SET og = '/og/${p.slug}.png' WHERE slug = '${p.slug}'"`);
+  }
 }
 rmSync(tmp, { recursive: true, force: true });

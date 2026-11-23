@@ -115,7 +115,7 @@ document.getElementById("deltopic").addEventListener("click", async e => {
   if (r.ok) location.href = "/discuss/${C.slug}";
 });
 </script>` : "";
-  return page({ vi: { title: `${tp.title} · Thảo luận · OpenYard` }, title: `${tp.title} · Discuss · OpenYard`, desc: tp.body.replace(/\s+/g, " ").slice(0, 155), path: topicPath(tp), color: C.c, site, current: "/discuss", body, css: D_CSS, extra: commentsJs(`t-${tp.id}`) + del,
+  return page({ vi: { title: `${tp.title} · Thảo luận · OpenYard` }, title: `${tp.title} · Discuss · OpenYard`, ...(tp.og ? { image: { url: ORIGIN + tp.og, w: 1200, h: 630 } } : {}), desc: tp.body.replace(/\s+/g, " ").slice(0, 155), path: topicPath(tp), color: C.c, site, current: "/discuss", body, css: D_CSS, extra: commentsJs(`t-${tp.id}`) + del,
     jsonld: [{ "@context": "https://schema.org", "@type": "DiscussionForumPosting", headline: tp.title, text: tp.body.slice(0, 2000), url, datePublished: new Date(tp.created_at).toISOString(), author: { "@type": "Person", name: author.name || author.login, url: `${ORIGIN}/@${author.login}` }, commentCount: replies },
       crumbs([["OpenYard", ORIGIN], ["Discuss", `${ORIGIN}/discuss`], [C.name[0], `${ORIGIN}/discuss/${C.slug}`], [tp.title, url]])] });
 }
