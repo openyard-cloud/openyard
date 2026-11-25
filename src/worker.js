@@ -221,6 +221,24 @@ async function fillPictures(env, now = Date.now()) {
   }
 }
 
+// GET /api/github?repo=: what the submit form fills in, before signing in too. Every answer costs
+// the GITHUB_TOKEN quota that keeps trending fresh, so answers are kept an hour per repository
+// (ten minutes for one that does not exist) and a connection may ask GitHub 60 new ones an hour.
+async function githubLookup(req, env, ctx, url, ref) {
+  const key = new Request(`${url.origin}/__github/${ref.owner.toLowerCase()}/${ref.name.toLowerCase()}`);
+  const kept = await caches.default.match(key);
+  if (kept) return kept;
+  const now = Date.now(), ipKeys = await ipHashes(req.headers.get("CF-Connecting-IP") || "0", "github", now);
+  if (await hitCount(env, "github", ipKeys, now - 3600000) >= 60) return fail("Too many look-ups. Fill the form by hand.", 429);
+  await hit(env, "github", ipKeys[0], now).run();
+  let info;
+  try { info = await repoInfo(env, ref); } catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
+  const res = info ? json(info, 200, { "Cache-Control": "public, max-age=3600" }) : fail("Repository not found or private.", 404);
+  if (!info) res.headers.set("Cache-Control", "public, max-age=600");
+  ctx.waitUntil(caches.default.put(key, res.clone()).catch(() => {}));
+  return res;
+}
+
 async function storeUpload(env, img, now) {
   const id = token().slice(0, 20);
   await env.DB.prepare("INSERT INTO uploads (id, type, data, created_at) VALUES (?1, ?2, ?3, ?4)").bind(id, img.type, img.buf, now).run();
@@ -890,8 +908,7 @@ const worker = {
       if (path === "/api/github" && req.method === "GET") {
         const ref = parseRepo(url.searchParams.get("repo"));
         if (!ref) return fail("Paste a link like https://github.com/owner/repo");
-        try { const info = await repoInfo(env, ref); return info ? json(info, 200, { "Cache-Control": "public, max-age=300" }) : fail("Repository not found or private.", 404); }
-        catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
+        return githubLookup(req, env, ctx, url, ref);
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
       if (path === "/ph.js") return clientScript(env);
