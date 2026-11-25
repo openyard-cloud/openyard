@@ -31,7 +31,9 @@ export async function currentUser(req, env) {
     WHERE s.token_hash = ?1 AND s.expires_at > ?2 AND u.deleted_at IS NULL`).bind(await sha256(tok), Date.now()).first();
 }
 
-export const isAdmin = (env, user) => !!user && String(env.ADMIN_LOGINS || "").toLowerCase().split(/[,\s]+/).includes(user.login.toLowerCase());
+// Admins are GitHub accounts named by their numeric GitHub id (ADMIN_IDS), never by login: a login
+// can be renamed and then registered by someone else, and email accounts pick their own nickname.
+export const isAdmin = (env, user) => !!user && user.provider === "github" && String(env.ADMIN_IDS || "").split(/[,\s]+/).filter(Boolean).includes(String(user.id));
 
 // Returns the session cookie and whether the person still has to see /welcome.
 // A deleted account that signs in again starts over as a new one.
