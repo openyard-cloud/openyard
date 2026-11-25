@@ -729,8 +729,11 @@ function readSummary(b) {
   const label = (Array.isArray(b.label) ? b.label : []).slice(0, 12).map(x => ({ cap: clip(x.cap, 60), files: +x.files || 0 })).filter(x => x.cap);
   const notes = (Array.isArray(b.notes) ? b.notes : []).slice(0, 8).filter(x => SEVERITIES.includes(x.severity))
     .map(x => ({ severity: x.severity, rule: clip(x.rule, 60), title: clip(x.title, 120), file: clip(x.file, 200), line: +x.line || 0 }));
-  const sk = b.skipped || {}, skipped = { patterns: (Array.isArray(sk.patterns) ? sk.patterns : []).slice(0, 20).map(x => clip(x, 100)), lines: +sk.lines || 0 };
-  return { commit: b.commit, verdict: b.verdict, version: clip(b.version, 20), files: +b.files || 0, label, notes, skipped };
+  const sk = b.skipped || {}, all = Array.isArray(sk.patterns) ? sk.patterns : [];
+  const skipped = { patterns: all.slice(0, 20).map(x => clip(x, 100)), count: Math.max(+sk.count || 0, all.length), lines: +sk.lines || 0 };
+  // code the project told vetcode to skip was not read, so the check cannot say "clear" (whatever an older scanner sent)
+  const verdict = b.verdict === "clear" && (skipped.count || skipped.lines) ? "review" : b.verdict;
+  return { commit: b.commit, verdict, version: clip(b.version, 20), files: +b.files || 0, label, notes, skipped };
 }
 
 // Abilities the code did not have at the previously checked commit: how a hijacked update shows up.

@@ -51,11 +51,13 @@ export function summarize(report, ignored = []) {
   const notes = pub.sort((a, b) => decided.has(key(b)) - decided.has(key(a)) || RANK[a.severity] - RANK[b.severity])
     .slice(0, 8).map(f => ({ severity: f.severity, rule: f.rule, title: f.title, file: rel(f.file), line: f.line || 0 }));
   const worst = Math.min(...notes.map(n => RANK[n.severity]), 9);
-  const verdict = report.verdict
+  const read = report.verdict
     ? (pub.some(f => decided.has(key(f))) ? "warning" : worst <= 1 ? "review" : "clear")
     : (worst === 0 ? "warning" : worst === 1 ? "review" : "clear");
-  // What the project tells vetcode to skip is published, so nothing can be hidden quietly.
-  const skipped = { patterns: (ignored || []).slice(0, 20), lines: report.stats?.suppressedLines || 0 };
+  // What the project tells vetcode to skip is published (the first 20 patterns, and how many there
+  // are), so nothing can be hidden quietly; and code that was not read cannot be called clear.
+  const skipped = { patterns: (ignored || []).slice(0, 20), count: (ignored || []).length, lines: report.stats?.suppressedLines || 0 };
+  const verdict = read === "clear" && (skipped.count || skipped.lines) ? "review" : read;
   return { version: report.version, files: report.stats?.files || 0, label, notes, skipped, verdict };
 }
 
