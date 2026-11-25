@@ -352,6 +352,17 @@ async function view(req, env, url) {
   return done;
 }
 
+// GET /go/<slug> counts toward Trending: once per connection, project and day (not per browser, so
+// changing the User-Agent does not count again), and not for clients that say they are bots. It
+// shares the seen-hashes of views, which the cron deletes after two days.
+async function click(req, env, slug, now) {
+  const ua = req.headers.get("User-Agent") || "";
+  if (!ua || BOTS.test(ua)) return;
+  const day = today(now), seen = await sha256(`${req.headers.get("CF-Connecting-IP") || "0"}|${slug}|${day}|openyard-click`);
+  const r = await env.DB.prepare("INSERT INTO view_seen (hash, created_at) VALUES (?1, ?2) ON CONFLICT DO NOTHING").bind(seen, now).run();
+  if (r.meta.changes) await env.DB.prepare("INSERT INTO clicks (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(slug, day).run();
+}
+
 async function authorize(env, slug, tok, user) {
   const row = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
   if (!row) return null;
@@ -971,7 +982,7 @@ const worker = {
       if ((m = /^\/go\/([a-z0-9-]+)$/.exec(path))) {
         const p = await env.DB.prepare("SELECT url FROM projects WHERE slug = ?1 AND hidden = 0").bind(m[1]).first();
         if (!p) return Response.redirect(url.origin + "/projects", 302);
-        ctx.waitUntil(env.DB.prepare("INSERT INTO clicks (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(m[1], today(now)).run());
+        ctx.waitUntil(click(req, env, m[1], now).catch(e => console.error("click", e)));
         return Response.redirect(p.url, 302);
       }
       if ((m = /^\/p\/([a-z0-9-]+?)(?:\.html)?\/?$/.exec(path))) {
