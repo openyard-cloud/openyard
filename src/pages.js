@@ -823,6 +823,7 @@ ${siteNav(site, "/projects", `<a class="np" href="/go/${esc(p.slug)}" target="_b
     <span class="pill on">${t(...type)}</span>${p.status !== "live" ? `<span class="pill">${t(...STATUS[p.status])}</span>` : ""}
     <span class="stat">${ic(I.heart)}<b class="lk">${+p.likes || 0}</b></span>
     <a class="stat" href="#comments">${ic(I.talk)}<b>${+p.comments || 0}</b></a>
+    <span class="stat">${ic(I.eye)}<b>${(+p.views || 0).toLocaleString("en")}</b></span>
     ${st?.stars != null ? `<span class="stat">${ic(I.star)}<b>${+st.stars}</b></span>` : ""}
     <span class="stat">${t(days === 0 ? "Joined today" : `Joined ${days} day${days === 1 ? "" : "s"} ago`, days === 0 ? "Lên hôm nay" : `Lên ${days} ngày trước`)}</span>
   </div>
