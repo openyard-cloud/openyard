@@ -76,8 +76,9 @@ function trend(p, s, clicks, talk, now, likes = 0, views = 0) {
   const age = (now - Date.parse(p.added)) / DAY;
   return Math.round((buzz(s, clicks, talk, likes, views) + (age < 14 ? 6 * (1 - age / 14) : 0)) * 10) / 10;
 }
-// the week's activity alone, without the boost for new listings; 10 views weigh one click-through, at most 4
-const buzz = (s, clicks, talk, likes, views = 0) => likes * 2 + talk * 2 + clicks * 0.5 + Math.min(views * 0.1, 4) + (s ? Math.min(s.stars_7d * 2, 6) : 0);
+// the week's activity alone, without the boost for new listings; a page view weighs as much as a
+// click-through, capped at 6 (12 views, as much as 3 likes) since views are the easiest to inflate
+const buzz = (s, clicks, talk, likes, views = 0) => likes * 2 + talk * 2 + clicks * 0.5 + Math.min(views * 0.5, 6) + (s ? Math.min(s.stars_7d * 2, 6) : 0);
 
 function toApi(row, now) {
   const p = {
