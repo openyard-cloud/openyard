@@ -91,13 +91,16 @@ function toApi(row, now) {
   };
   const s = row.st_updated ? { stars: row.stars, forks: row.forks, stars_7d: row.stars_7d, prs_7d: row.prs_7d, issues_7d: row.issues_7d, commits_7d: row.commits_7d, discussions_7d: row.discussions_7d, pushed_at: row.pushed_at } : null;
   const v = row.v_verdict ? { verdict: row.v_verdict, scanned_at: row.v_scanned } : null;
-  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0, views: row.views || 0, views_7d: row.views_7d || 0, ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0, row.views_7d || 0), buzz: Math.round(buzz(s, row.clicks || 0, row.talk || 0, row.likes_7d || 0, row.views_7d || 0) * 10) / 10 };
+  return { ...p, ...(s ? { stats: s } : {}), ...(v ? { vet: v } : {}), comments: row.comments || 0, likes: row.likes || 0,
+    // shown views: page views plus click-throughs to the project (/go); trending weighs the two apart
+    views: (row.views || 0) + (row.clicks_all || 0), views_7d: (row.views_7d || 0) + (row.clicks || 0), ...(row.owner ? { owner: { login: row.owner.split("\t")[0], avatar: row.owner.split("\t")[1] || null } } : {}), trend: trend(p, s, row.clicks || 0, row.talk || 0, now, row.likes_7d || 0, row.views_7d || 0), buzz: Math.round(buzz(s, row.clicks || 0, row.talk || 0, row.likes_7d || 0, row.views_7d || 0) * 10) / 10 };
 }
 
 async function listProjects(env, now = Date.now()) {
   const since = today(now - 7 * DAY);
   const { results } = await env.DB.prepare(`SELECT p.*, s.stars, s.forks, s.stars_7d, s.prs_7d, s.issues_7d, s.commits_7d, s.discussions_7d, s.pushed_at, s.updated_at AS st_updated, v.verdict AS v_verdict, v.scanned_at AS v_scanned,
       (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug AND c.day >= ?1) AS clicks,
+      (SELECT SUM(n) FROM clicks c WHERE c.slug = p.slug) AS clicks_all,
       (SELECT SUM(n) FROM views w WHERE w.slug = p.slug) AS views,
       (SELECT SUM(n) FROM views w WHERE w.slug = p.slug AND w.day >= ?1) AS views_7d,
       (SELECT COUNT(*) FROM comments m WHERE m.slug = p.slug AND m.deleted = 0) AS comments,
