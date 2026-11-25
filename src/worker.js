@@ -299,8 +299,8 @@ async function submit(req, env, ctx) {
   if (user.banned) return fail("Not allowed.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
   if (String(form.get("website") || "")) return fail("Could not verify you are human. Reload and try again.", 403); // honeypot
-  const ipHash = await sha256(ip + "|openyard|" + today(now));
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
+  const [ipHash, ipHashBefore] = await ipHashes(ip, "openyard", now);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - DAY, ipHashBefore).first();
   const { mine } = await env.DB.prepare("SELECT COUNT(*) AS mine FROM projects WHERE owner_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
   if (n >= SUBMITS_PER_DAY || mine >= SUBMITS_PER_DAY) return fail("That is five projects today. Try again tomorrow.", 429);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
@@ -483,8 +483,8 @@ async function emailSignin(req, env, url, ctx) {
     const email = String(b.email || "").trim().toLowerCase();
     if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email address looks wrong.");
     if (!(await tsOk(env, b.ts, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
-    const ipHash = await sha256(ip + "|signin|" + today(now));
-    const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - 3600000).first();
+    const [ipHash, ipHashBefore] = await ipHashes(ip, "signin", now);
+    const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - 3600000, ipHashBefore).first();
     const { e } = await env.DB.prepare("SELECT COUNT(*) AS e FROM login_tokens WHERE email = ?1 AND created_at > ?2").bind(email, now - 3600000).first();
     if (a >= 6 || e >= 3) return fail("Too many sign-in emails. Wait an hour, or sign in with GitHub.", 429);
     const tok = randomToken(24), th = await sha256(tok);
@@ -841,8 +841,8 @@ async function checkRequest(req, env, ctx) {
   // Older results are read again: the repository may have new commits since.
   if (row && ((row.status === "queued" || row.status === "running") && now - row.requested_at < 20 * 60000 || row.status === "done" && now - (row.scanned_at || 0) < 5 * 60000))
     return json({ repo: row.repo, status: row.status });
-  const ipHash = await sha256(ip + "|check|" + today(now));
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
+  const [ipHash, ipHashBefore] = await ipHashes(ip, "check", now);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - DAY, ipHashBefore).first();
   if (n >= CHECKS_PER_DAY) return fail("That is a lot of checks from this connection today. Try again tomorrow.", 429);
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO repo_checks (repo_key, repo, status, requested_at) VALUES (?1, ?2, 'queued', ?3)
