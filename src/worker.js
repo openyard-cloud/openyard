@@ -37,7 +37,7 @@ import { VI_OK, viPath, toVietnamese } from "./i18n.js";
 import { siteMeta, grabImage, grabLogo, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
-import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
+import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken, fromUs } from "./auth.js";
 import { clientScript, relay, track, RELAY } from "./analytics.js";
 
 const DAY = 86400000;
@@ -136,7 +136,7 @@ async function claimToken(env, slug, user) {
 // POST /api/claim/<slug> { how: meta | dns | github, emailOk }: check the proof, then the listing is theirs.
 async function claim(req, env, url, slug) {
   const user = await currentUser(req, env);
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   const p = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
@@ -267,6 +267,7 @@ async function checkHuman(env, form, ip) {
 
 async function submit(req, env, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   // a project belongs to an account: signing in (GitHub, or a link sent to an email) is the check against spam
   const user = await currentUser(req, env);
   if (!user) return fail("Sign in to submit a project.", 401);
@@ -315,7 +316,7 @@ const BOTS = /bot|crawl|spider|slurp|preview|headless|lighthouse|monitor|fetch|c
 async function view(req, env, url) {
   const done = new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
   const ua = req.headers.get("User-Agent") || "";
-  if (req.headers.get("Origin") !== url.origin || !ua || BOTS.test(ua)) return done;
+  if (!fromUs(req, url) || !ua || BOTS.test(ua)) return done;
   let b; try { b = await req.json(); } catch { return done; }
   const slug = String(b.slug || "").slice(0, 80), now = Date.now(), day = today(now);
   const row = await env.DB.prepare("SELECT owner_id, maintainers FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
@@ -340,6 +341,7 @@ async function edit(req, env, ctx, slug) {
     const row = await authorize(env, slug, req.headers.get("X-Edit-Token"), await currentUser(req, env));
     return row ? json({ ...toApi(row, now), contactEmail: row.contact_email }, 200, { "Cache-Control": "private, no-store" }) : fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   }
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
   const row = await authorize(env, slug, String(form.get("token") || ""), await currentUser(req, env));
   if (!row) return fail("Open your private edit link, or sign in as the person who submitted it.", 403);
@@ -425,6 +427,8 @@ async function tsOk(env, token, ip) {
 // press buttons); POST /auth/email/confirm signs in, making the account on first use.
 async function emailSignin(req, env, url, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0", path = url.pathname, secure = url.protocol === "https:";
+  // every POST here signs someone in or sends mail: only from our own pages (no login CSRF)
+  if (req.method === "POST" && !fromUs(req, url)) return fail("Bad origin.", 403);
   if (path === "/auth/email" && req.method === "POST") {
     let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
     const email = String(b.email || "").trim().toLowerCase();
@@ -489,6 +493,7 @@ async function me(req, env, path, ctx) {
   const user = await currentUser(req, env), now = Date.now(), priv = { "Cache-Control": "private, no-store" };
   if (req.method === "GET" && path === "/api/me") return json(meJson(user, env), 200, priv);
   if (req.method !== "POST") return fail("Not allowed.", 405);
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   if (!(req.headers.get("Content-Type") || "").startsWith("application/json")) return fail("Send JSON.", 415);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
@@ -542,7 +547,7 @@ async function likes(req, env, url, ctx) {
       WHERE l.slug = ?1 AND u.deleted_at IS NULL AND u.banned = 0 ORDER BY l.created_at DESC LIMIT 8`).bind(slug).all();
     return json({ count: n, liked: mine, signedIn: !!user, people }, 200, priv);
   }
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in to like projects.", 401);
   if (user.banned) return fail("Not allowed.", 403);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
@@ -567,7 +572,7 @@ const threadExists = (env, key) => /^t-\d+$/.test(key)
 // POST /api/topics starts a discussion; DELETE /api/topics/<id> removes one (its author or an admin).
 async function topics(req, env, url, id, ctx) {
   const user = await currentUser(req, env), now = Date.now();
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   if (user.banned) return fail("Not allowed.", 403);
   if (req.method === "DELETE") {
@@ -626,7 +631,7 @@ async function comments(req, env, url, id, ctx) {
     return json({ me: user ? { login: user.login, avatar: user.avatar, admin } : null, comments: list }, 200, { "Cache-Control": "private, no-store" });
   }
   // a cookie alone must not be enough: the request has to come from our own pages
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in with GitHub to comment.", 401);
   if (user.banned) return fail("You cannot comment here.", 403);
   if (req.method === "DELETE") {

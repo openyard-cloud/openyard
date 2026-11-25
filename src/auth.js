@@ -35,6 +35,15 @@ export async function currentUser(req, env) {
 // can be renamed and then registered by someone else, and email accounts pick their own nickname.
 export const isAdmin = (env, user) => !!user && user.provider === "github" && String(env.ADMIN_IDS || "").split(/[,\s]+/).filter(Boolean).includes(String(user.id));
 
+// A cookie alone must not be enough to change anything: the request has to come from our own
+// pages. Browsers send Origin with every POST; a page with Referrer-Policy: no-referrer sends
+// "null", and then Sec-Fetch-Site (which browsers always set) says whether it was this site.
+export const fromUs = (req, url) => {
+  const o = req.headers.get("Origin");
+  if (o && o !== "null") return o === url.origin;
+  return req.headers.get("Sec-Fetch-Site") === "same-origin";
+};
+
 // Returns the session cookie and whether the person still has to see /welcome.
 // A deleted account that signs in again starts over as a new one.
 async function startSession(env, profile, email, secure, ctx) {
@@ -108,6 +117,7 @@ export async function handleAuth(req, env, url, ctx) {
     return redirect(landing(s, back), [clear, s.set]);
   }
   if (path === "/auth/logout" && req.method === "POST") {
+    if (!fromUs(req, url)) return new Response("Bad origin.", { status: 403 });
     const tok = cookies(req)[COOKIE];
     if (tok) await env.DB.prepare("DELETE FROM sessions WHERE token_hash = ?1").bind(await sha256(tok)).run();
     return new Response(null, { status: 204, headers: { "Set-Cookie": cookie(COOKIE, "", 0, secure) } });
