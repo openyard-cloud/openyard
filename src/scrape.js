@@ -57,6 +57,8 @@ export async function dnsTxt(host) {
   } catch { return []; }
 }
 
+const STORE = /^https:\/\/(play\.google\.com\/store\/apps\/|apps\.apple\.com\/)/i;
+
 export async function siteMeta(url) {
   const r = await get(url, "text/html,application/xhtml+xml");
   if (!r || !/html/i.test(r.headers.get("Content-Type") || "")) return null;
@@ -84,11 +86,11 @@ export async function siteMeta(url) {
     .on("meta", { element: meta })
     .on("link", { element: link })
     .on("title", { element() { inTitle = true; }, text(t) { if (inTitle) title += t.text; if (t.lastInTextNode) inTitle = false; } });
-  // only the head matters; stop after 512 KB
+  // only the head matters, but some heads are long: Google Play puts og:image past the first 1 MB
   const capped = new Response(new ReadableStream({
     async start(c) {
       const rd = r.body.getReader(); let n = 0;
-      for (;;) { const { done, value } = await rd.read(); if (done || (n += value.length) > 512 * 1024) { if (!done) rd.cancel(); break; } c.enqueue(value); }
+      for (;;) { const { done, value } = await rd.read(); if (done || (n += value.length) > 2 * 1024 * 1024) { if (!done) rd.cancel(); break; } c.enqueue(value); }
       c.close();
     },
   }), { headers: { "Content-Type": "text/html" } });
@@ -99,7 +101,18 @@ export async function siteMeta(url) {
   // within the size limit wins (grabLogo), so one oversized icon does not leave a project bare.
   const declared = m.icons.filter(i => i.href);
   const rank = i => i.apple ? 0 : i.svg ? 1 : i.px >= 64 ? 2 : 3;
-  m.icons = [...new Set([...declared.sort((a, b) => rank(a) - rank(b) || b.px - a.px).map(i => i.href), abs("/apple-touch-icon.png"), abs("/favicon.ico")].filter(Boolean))];
+  // Last resort: Google's favicon service, which serves the site's own icon scaled to 256px (a
+  // logo too big to keep, say) and answers 404 for a site without one.
+  const host = (() => { try { return new URL(base).hostname; } catch { return ""; } })();
+  const s2 = host && `https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=256`;
+  m.icons = [...new Set([...declared.sort((a, b) => rank(a) - rank(b) || b.px - a.px).map(i => i.href), abs("/apple-touch-icon.png"), abs("/favicon.ico"), s2].filter(Boolean))];
+  // An app store page: its share picture is the app's icon, and its own icons are the store's.
+  // Both stores serve any size from the URL, so ask for 256px instead of the full-size original.
+  if (STORE.test(base)) {
+    const sized = u => u.replace(/^(https:\/\/play-lh\.googleusercontent\.com\/[^=?#]+)(=[^?#]*)?$/, "$1=s256")
+      .replace(/^(https:\/\/[\w.-]*mzstatic\.com\/.+\/)\d+x\d+\w*\.(png|jpe?g|webp)$/, "$1256x256bb.png");
+    m.icons = m.image ? [sized(m.image)] : []; m.image = null;
+  }
   m.icon = m.icons[0] || null;
   // a share picture that is only the site's icon is not a banner
   const bare = u => String(u || "").split(/[?#]/)[0];
