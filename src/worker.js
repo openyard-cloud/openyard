@@ -57,6 +57,13 @@ const isHttps = v => { try { return new URL(v).protocol === "https:"; } catch { 
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async s => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
 const token = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24)))).replace(/[+/=]/g, c => ({ "+": "-", "/": "_", "=": "" })[c]);
+// A connection is kept only as a hash with the day in it, so it cannot be followed for long. A limit
+// over the last 24 hours (or hour) also checks yesterday's hash, so it does not start again at midnight UTC.
+const ipHashes = async (ip, tag, now) => [await sha256(`${ip}|${tag}|${today(now)}`), await sha256(`${ip}|${tag}|${today(now - DAY)}`)];
+// The hits table (rate limits): how many of `kind` any of `keys` had since `since`, and record one.
+const hitCount = async (env, kind, keys, since) => (await env.DB.prepare(`SELECT COUNT(*) AS n FROM hits WHERE kind = ?1 AND created_at > ?2 AND key IN (${keys.map((_, i) => `?${i + 3}`).join(", ")})`)
+  .bind(kind, since, ...keys).first()).n;
+const hit = (env, kind, key, now) => env.DB.prepare("INSERT INTO hits (kind, key, created_at) VALUES (?1, ?2, ?3)").bind(kind, key, now);
 const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "project";
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
@@ -394,6 +401,7 @@ async function refreshStats(env, now = Date.now()) {
   }
   await env.DB.prepare("DELETE FROM submits WHERE created_at < ?1").bind(now - 2 * DAY).run();
   await env.DB.prepare("DELETE FROM view_seen WHERE created_at < ?1").bind(now - 2 * DAY).run();
+  await env.DB.prepare("DELETE FROM hits WHERE created_at < ?1").bind(now - 2 * DAY).run();
 }
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
@@ -462,13 +470,21 @@ async function emailSignin(req, env, url, ctx) {
     let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
     const email = String(b.email || "").trim().toLowerCase(), code = String(b.code || "").replace(/\D/g, "");
     if (code.length !== 6) return fail("Type the 6-digit code from the email.");
-    const row = await env.DB.prepare("SELECT token_hash, code_hash, tries, back FROM login_tokens WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL ORDER BY created_at DESC LIMIT 1").bind(email, now).first();
-    if (!row) return fail("That code has expired. Ask for a new one.", 410);
-    if (row.tries >= 5) return fail("Too many wrong codes. Ask for a new one.", 429);
-    if ((await sha256(`${row.token_hash}|${code}`)) !== row.code_hash) {
-      await env.DB.prepare("UPDATE login_tokens SET tries = tries + 1 WHERE token_hash = ?1").bind(row.token_hash).run();
-      return fail(row.tries >= 4 ? "Too many wrong codes. Ask for a new one." : "That code is not right. Check the email and try again.", 400);
+    // at most 20 codes an hour from one connection, whatever the address
+    const ipKeys = await ipHashes(ip, "code", now);
+    if (await hitCount(env, "code", ipKeys, now - 3600000) >= 20) return fail("Too many codes from this connection. Wait an hour, or sign in with GitHub.", 429);
+    await hit(env, "code", ipKeys[0], now).run();
+    // Count the try before comparing, in one statement: requests sent at the same time cannot all
+    // see tries < 5 and get more than five guesses between them.
+    const row = await env.DB.prepare(`UPDATE login_tokens SET tries = tries + 1 WHERE token_hash = (SELECT token_hash FROM login_tokens
+        WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL ORDER BY created_at DESC LIMIT 1) AND tries < 5
+      RETURNING token_hash, code_hash, tries, back`).bind(email, now).first();
+    if (!row) {
+      const live = await env.DB.prepare("SELECT 1 FROM login_tokens WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL").bind(email, now).first();
+      return live ? fail("Too many wrong codes. Ask for a new one.", 429) : fail("That code has expired. Ask for a new one.", 410);
     }
+    if ((await sha256(`${row.token_hash}|${code}`)) !== row.code_hash)
+      return fail(row.tries >= 5 ? "Too many wrong codes. Ask for a new one." : "That code is not right. Check the email and try again.", 400);
     const used = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL RETURNING email").bind(row.token_hash, now).first();
     if (!used) return fail("That code has expired. Ask for a new one.", 410);
     const sess = await signInEmail(env, email, secure, now, ctx);

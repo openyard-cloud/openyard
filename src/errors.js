@@ -40,6 +40,8 @@ const VI = {
   "That is five projects today. Try again tomorrow.": "Hôm nay bạn đã gửi năm dự án. Hãy thử lại vào ngày mai.",
   "That is five topics today. Reply to one, or come back tomorrow.": "Hôm nay bạn đã mở năm chủ đề. Hãy trả lời một chủ đề, hoặc quay lại vào ngày mai.",
   "That nickname is taken.": "Biệt danh này đã có người dùng.",
+  "Too many changes to this project today. Try again tomorrow.": "Hôm nay dự án này đã được sửa quá nhiều lần. Hãy thử lại vào ngày mai.",
+  "Too many codes from this connection. Wait an hour, or sign in with GitHub.": "Đã nhập quá nhiều mã từ kết nối này. Đợi một tiếng, hoặc đăng nhập bằng GitHub.",
   "Too many look-ups. Fill the form by hand.": "Đọc trang quá nhiều lần. Hãy tự điền form.",
   "Too many sign-in emails. Wait an hour, or sign in with GitHub.": "Đã gửi quá nhiều email đăng nhập. Đợi một tiếng, hoặc đăng nhập bằng GitHub.",
   "Too many wrong codes. Ask for a new one.": "Sai mã quá nhiều lần. Hãy lấy mã mới.",
