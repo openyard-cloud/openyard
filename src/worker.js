@@ -356,6 +356,10 @@ async function edit(req, env, ctx, slug) {
     await env.DB.prepare("UPDATE projects SET hidden = 1, updated_at = ?2 WHERE slug = ?1").bind(slug, now).run();
     return json({ removed: slug });
   }
+  // Each change may store new pictures: at most 20 a day per project and 40 per connection.
+  const ipKeys = await ipHashes(req.headers.get("CF-Connecting-IP") || "0", "edit", now);
+  if (await hitCount(env, "edit", [slug], now - DAY) >= 20 || await hitCount(env, "edit", ipKeys, now - DAY) >= 40) return fail("Too many changes to this project today. Try again tomorrow.", 429);
+  await env.DB.batch([hit(env, "edit", slug, now), hit(env, "edit", ipKeys[0], now)]);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
   const site = await sitePictures(env, { ...f, logoUrl: row.logo ? null : f.logoUrl, imageUrl: row.image ? null : f.imageUrl }, now);
   const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : row.logo || site.logo || (f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null);
@@ -366,6 +370,9 @@ async function edit(req, env, ctx, slug) {
       logo = ?11, logo_style = ?12, image = ?13, color = ?14, maintainers = ?15, tags = ?16, updated_at = ?17 WHERE slug = ?1`)
     .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(merge(row.tagline, f.tagline)), JSON.stringify(merge(row.description, f.description)),
       f.url, f.repo, f.license, logo, f.logoFile ? "tile" : row.logo ? row.logo_style : site.logoStyle, image, f.color, JSON.stringify(f.maintainers.length ? f.maintainers : JSON.parse(row.maintainers)), JSON.stringify(f.tags), now).run();
+  // the pictures it replaces, if they were ours: nothing else points at a project's uploads
+  const gone = [[row.logo, logo], [row.image, image]].filter(([old, nu]) => old?.startsWith("/u/") && old !== nu).map(([old]) => old.slice(3));
+  if (gone.length) await env.DB.batch(gone.map(id => env.DB.prepare("DELETE FROM uploads WHERE id = ?1").bind(id)));
   // a new address starts getting email again; the same one keeps its choice
   if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
