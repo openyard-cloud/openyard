@@ -55,7 +55,7 @@ function projectRow(p, i, now, numbered) {
     <span class="rk">${numbered ? i + 1 : ""}</span><span class="lg">${logoTag(p, 48)}</span>
     <span><b>${esc(p.name)}</b><p class="ptl">${t(en(p.tagline), vi(p.tagline))}</p>
       <span class="mt"><span>${maker(p)}</span><span>${t(...TYPE(p))}</span>${p.kinds.filter(k => KIND[k]).map(k => `<span class="kd" style="--kc:${kc[k]}">${t(...KIND[k])}</span>`).join("")}${fresh ? `<span class="nw">${t("New", "Mới")}</span>` : ""}</span></span>
-    <span class="st"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span>${ic(I.talk)}${+p.comments || 0}</span></span>
+    <span class="st"><span class="${p.likes ? "on" : ""}">${ic(I.heart)}${+p.likes || 0}</span><span>${ic(I.talk)}${+p.comments || 0}</span><span class="vw">${ic(I.eye)}${(+p.views || 0).toLocaleString("en")}</span></span>
   </a></li>`;
 }
 
