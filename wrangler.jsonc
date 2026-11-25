@@ -23,7 +23,8 @@
     "ADMIN_IDS": "69312926",
     // IndexNow key (public by design: served at /<key>.txt); tells Bing, Yandex and others about new pages
     "INDEXNOW_KEY": "1f6e54887a1437cf51811144db0cb242",
-    // Email through Resend (the RESEND_API_KEY secret); its free plan sends 100 a day, so we stop at 90
+    // Email through Resend (the RESEND_API_KEY secret); its free plan sends 100 a day, so we stop at 90,
+    // of which 25 (EMAIL_SIGNIN_RESERVE, optional) only sign-in emails may use
     "EMAIL_FROM": "OpenYard <hello@openyard.cloud>",
     "EMAIL_DAILY_LIMIT": "90",
     // PostHog analytics (src/analytics.js), cookieless. The project key is public by design: it

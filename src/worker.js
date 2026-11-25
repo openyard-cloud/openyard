@@ -379,7 +379,8 @@ async function edit(req, env, ctx, slug) {
   }
   if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
-  const row = await authorize(env, slug, String(form.get("token") || ""), await currentUser(req, env));
+  const user = await currentUser(req, env);
+  const row = await authorize(env, slug, String(form.get("token") || ""), user);
   if (!row) return fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   if (form.get("remove") === "yes") {
     await env.DB.prepare("UPDATE projects SET hidden = 1, updated_at = ?2 WHERE slug = ?1").bind(slug, now).run();
@@ -402,8 +403,12 @@ async function edit(req, env, ctx, slug) {
   // the pictures it replaces, if they were ours: nothing else points at a project's uploads
   const gone = [[row.logo, logo], [row.image, image]].filter(([old, nu]) => old?.startsWith("/u/") && old !== nu).map(([old]) => old.slice(3));
   if (gone.length) await env.DB.batch(gone.map(id => env.DB.prepare("DELETE FROM uploads WHERE id = ?1").bind(id)));
-  // a new address starts getting email again; the same one keeps its choice
-  if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
+  // A new address gets email only when it is the signed-in person's own (proven at sign-in): anyone
+  // holding the edit link could otherwise point our mail at a stranger. The same one keeps its choice.
+  if (f.email && f.email !== row.contact_email) {
+    const proven = !!user?.email && user.email.toLowerCase() === f.email;
+    await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = ?4, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang, proven ? 1 : 0).run();
+  }
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   ctx.waitUntil(wakeOg(env).catch(e => console.error(e)));
