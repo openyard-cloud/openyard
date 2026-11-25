@@ -262,6 +262,9 @@ input:focus,textarea:focus,select:focus{border-color:#8b7cff;box-shadow:0 0 0 4p
   }
   $("fill").addEventListener("click", fill);
   $("f-repo").addEventListener("change", fill);
+  /* /submit?repo=https://github.com/owner/name (from a code check): fill the form from that repository */
+  const preRepo = new URLSearchParams(location.search).get("repo");
+  if (preRepo && /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/?$/.test(preRepo) && !new URLSearchParams(location.search).get("edit")) { $("f-repo").value = preRepo; fill(); }
 
   /* the project's own site: name, description, logo and banner, read as soon as the link is typed */
   let site = null, siteFor = "", siteTimer = 0;

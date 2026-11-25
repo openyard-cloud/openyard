@@ -966,7 +966,20 @@ const FAQ = [
    ["Nothing. OpenYard and vetcode are free and open source.", "Không. OpenYard và vetcode đều miễn phí và mã nguồn mở."]],
 ];
 
-export function checkPage({ ref, row, recent = [], site, turnstile, now = Date.now() }) {
+/** /admin/invites: checked repositories that read fine and have no listing yet, with a note to adapt. */
+export function invitesPage(rows, now = Date.now()) {
+  const note = r => `Hi! I checked ${r.repo} with vetcode on OpenYard (${ORIGIN}/check/${r.repo}) and it reads ${r.verdict === "clear" ? "clean" : "fine"}. OpenYard is a small community for people who make free software; if you would like, you can list it at ${ORIGIN}/submit?repo=https://github.com/${r.repo} for feedback, testers and a project page. No pressure either way.`;
+  const days = r => Math.max(0, Math.round((now - r.scanned_at) / 86400000));
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Invites · OpenYard</title>
+<style>body{font:15px/1.5 Inter,system-ui,sans-serif;margin:0;padding:24px 16px;max-width:900px;margin-inline:auto;color:#111;background:#fff}@media (prefers-color-scheme:dark){body{color:#eee;background:#111}}h1{font-size:22px;margin:0 0 4px}p.l{color:#888;margin:0 0 20px}
+li{list-style:none;border-top:1px solid #8884;padding:14px 0}ul{padding:0}b a{color:inherit}.m{color:#888;font-size:13px}.v{font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid #8886;margin-left:6px}textarea{width:100%;box-sizing:border-box;margin-top:8px;font:13px/1.4 inherit;min-height:74px;background:transparent;color:inherit;border:1px solid #8886;border-radius:8px;padding:8px}</style></head><body>
+<h1>Invite candidates</h1><p class="l">${rows.length} repositories checked in the last 30 days that read fine and are not listed. Pick a few, write to each maker where they invite contact (Discussions, site, socials). Nothing is sent from here.</p>
+<ul>${rows.map(r => `<li><b><a href="https://github.com/${esc(r.repo)}" target="_blank" rel="noopener">${esc(r.repo)}</a></b><span class="v">${esc(r.verdict)}</span>
+  <div class="m">checked ${days(r)} day${days(r) === 1 ? "" : "s"} ago · ${+r.files || 0} files · <a href="/check/${esc(r.repo)}">check page</a> · <a href="https://github.com/${esc(r.repo)}/discussions" target="_blank" rel="noopener">discussions</a></div>
+  <textarea readonly onclick="this.select()">${esc(note(r))}</textarea></li>`).join("") || "<li>Nothing yet.</li>"}</ul></body></html>`;
+}
+
+export function checkPage({ ref, row, listed = null, recent = [], site, turnstile, now = Date.now() }) {
   const full = ref ? `${ref.owner}/${ref.name}` : "";
   const url = ref ? `${ORIGIN}/check/${full}` : `${ORIGIN}/check`;
   const repoUrl = ref ? `https://github.com/${full}` : null;
@@ -1011,6 +1024,8 @@ ${siteNav(site, "/check")}
 </div></header>
 <div class="wrap">
   ${state}${none}${result}
+  ${listed ? `<a class="box dcard reveal invite" href="/p/${esc(listed)}">${ic(I.star)}<div><b>${t("Listed on OpenYard", "Đã có trên OpenYard")}</b><small>${t("See its project page, likes and comments", "Xem trang dự án, lượt thích và bình luận")}</small></div></a>`
+    : done && row.verdict !== "warning" ? `<a class="box dcard reveal invite" href="/submit?repo=${encodeURIComponent(repoUrl)}">${ic(I.star)}<div><b>${t("Made this? List it on OpenYard", "Bạn làm dự án này? Đưa nó lên OpenYard")}</b><small>${t("Free. A project page with this check, feedback from people who make things, and testers. The form fills itself from GitHub.", "Miễn phí. Có trang dự án kèm kết quả kiểm tra này, góp ý từ người cùng làm sản phẩm và người dùng thử. Form tự điền từ GitHub.")}</small></div></a>` : ""}
   ${ref && !busy ? agentHandoff(full, done ? row.verdict : "") : ""}
   ${ref ? "" : `<ol class="how">${how.map(([icon, x], i) => `<li class="reveal" style="--d:${i}">${ic(icon)}<span>${t(...x)}</span></li>`).join("")}</ol>
   <section class="faq"><h2 class="reveal">${t("Questions", "Câu hỏi thường gặp")}</h2>${FAQ.map(([q, a]) => `<details class="reveal"><summary>${t(...q)}</summary><p>${t(...a)}</p></details>`).join("")}</section>`}
