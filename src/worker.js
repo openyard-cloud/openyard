@@ -37,7 +37,7 @@ import { VI_OK, viPath, toVietnamese } from "./i18n.js";
 import { siteMeta, grabImage, grabLogo, publicHttps, dnsTxt } from "./scrape.js";
 import { vi as errVi } from "./errors.js";
 import { parseRepo, repoInfo, repoActivity, RateLimited, orgPeople } from "./github.js";
-import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken } from "./auth.js";
+import { handleAuth, currentUser, isAdmin, sessionFor, landing, safeReturn, randomToken, fromUs } from "./auth.js";
 import { clientScript, relay, track, RELAY } from "./analytics.js";
 
 const DAY = 86400000;
@@ -57,6 +57,13 @@ const isHttps = v => { try { return new URL(v).protocol === "https:"; } catch { 
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
 const sha256 = async s => hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)));
 const token = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(24)))).replace(/[+/=]/g, c => ({ "+": "-", "/": "_", "=": "" })[c]);
+// A connection is kept only as a hash with the day in it, so it cannot be followed for long. A limit
+// over the last 24 hours (or hour) also checks yesterday's hash, so it does not start again at midnight UTC.
+const ipHashes = async (ip, tag, now) => [await sha256(`${ip}|${tag}|${today(now)}`), await sha256(`${ip}|${tag}|${today(now - DAY)}`)];
+// The hits table (rate limits): how many of `kind` any of `keys` had since `since`, and record one.
+const hitCount = async (env, kind, keys, since) => (await env.DB.prepare(`SELECT COUNT(*) AS n FROM hits WHERE kind = ?1 AND created_at > ?2 AND key IN (${keys.map((_, i) => `?${i + 3}`).join(", ")})`)
+  .bind(kind, since, ...keys).first()).n;
+const hit = (env, kind, key, now) => env.DB.prepare("INSERT INTO hits (kind, key, created_at) VALUES (?1, ?2, ?3)").bind(kind, key, now);
 const slugify = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/gi, "d").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "project";
 
 // Trending: GitHub activity this week plus clicks from the site, with a fading boost for new listings.
@@ -136,7 +143,7 @@ async function claimToken(env, slug, user) {
 // POST /api/claim/<slug> { how: meta | dns | github, emailOk }: check the proof, then the listing is theirs.
 async function claim(req, env, url, slug) {
   const user = await currentUser(req, env);
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
   const p = await env.DB.prepare("SELECT * FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
@@ -214,6 +221,24 @@ async function fillPictures(env, now = Date.now()) {
   }
 }
 
+// GET /api/github?repo=: what the submit form fills in, before signing in too. Every answer costs
+// the GITHUB_TOKEN quota that keeps trending fresh, so answers are kept an hour per repository
+// (ten minutes for one that does not exist) and a connection may ask GitHub 60 new ones an hour.
+async function githubLookup(req, env, ctx, url, ref) {
+  const key = new Request(`${url.origin}/__github/${ref.owner.toLowerCase()}/${ref.name.toLowerCase()}`);
+  const kept = await caches.default.match(key);
+  if (kept) return kept;
+  const now = Date.now(), ipKeys = await ipHashes(req.headers.get("CF-Connecting-IP") || "0", "github", now);
+  if (await hitCount(env, "github", ipKeys, now - 3600000) >= 60) return fail("Too many look-ups. Fill the form by hand.", 429);
+  await hit(env, "github", ipKeys[0], now).run();
+  let info;
+  try { info = await repoInfo(env, ref); } catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
+  const res = info ? json(info, 200, { "Cache-Control": "public, max-age=3600" }) : fail("Repository not found or private.", 404);
+  if (!info) res.headers.set("Cache-Control", "public, max-age=600");
+  ctx.waitUntil(caches.default.put(key, res.clone()).catch(() => {}));
+  return res;
+}
+
 async function storeUpload(env, img, now) {
   const id = token().slice(0, 20);
   await env.DB.prepare("INSERT INTO uploads (id, type, data, created_at) VALUES (?1, ?2, ?3, ?4)").bind(id, img.type, img.buf, now).run();
@@ -267,14 +292,15 @@ async function checkHuman(env, form, ip) {
 
 async function submit(req, env, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0";
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   // a project belongs to an account: signing in (GitHub, or a link sent to an email) is the check against spam
   const user = await currentUser(req, env);
   if (!user) return fail("Sign in to submit a project.", 401);
   if (user.banned) return fail("Not allowed.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
   if (String(form.get("website") || "")) return fail("Could not verify you are human. Reload and try again.", 403); // honeypot
-  const ipHash = await sha256(ip + "|openyard|" + today(now));
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
+  const [ipHash, ipHashBefore] = await ipHashes(ip, "openyard", now);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM submits WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - DAY, ipHashBefore).first();
   const { mine } = await env.DB.prepare("SELECT COUNT(*) AS mine FROM projects WHERE owner_id = ?1 AND created_at > ?2").bind(user.id, now - DAY).first();
   if (n >= SUBMITS_PER_DAY || mine >= SUBMITS_PER_DAY) return fail("That is five projects today. Try again tomorrow.", 429);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
@@ -315,7 +341,7 @@ const BOTS = /bot|crawl|spider|slurp|preview|headless|lighthouse|monitor|fetch|c
 async function view(req, env, url) {
   const done = new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
   const ua = req.headers.get("User-Agent") || "";
-  if (req.headers.get("Origin") !== url.origin || !ua || BOTS.test(ua)) return done;
+  if (!fromUs(req, url) || !ua || BOTS.test(ua)) return done;
   let b; try { b = await req.json(); } catch { return done; }
   const slug = String(b.slug || "").slice(0, 80), now = Date.now(), day = today(now);
   const row = await env.DB.prepare("SELECT owner_id, maintainers FROM projects WHERE slug = ?1 AND hidden = 0").bind(slug).first();
@@ -324,6 +350,17 @@ async function view(req, env, url) {
   const r = await env.DB.prepare("INSERT INTO view_seen (hash, created_at) VALUES (?1, ?2) ON CONFLICT DO NOTHING").bind(seen, now).run();
   if (r.meta.changes) await env.DB.prepare("INSERT INTO views (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(slug, day).run();
   return done;
+}
+
+// GET /go/<slug> counts toward Trending: once per connection, project and day (not per browser, so
+// changing the User-Agent does not count again), and not for clients that say they are bots. It
+// shares the seen-hashes of views, which the cron deletes after two days.
+async function click(req, env, slug, now) {
+  const ua = req.headers.get("User-Agent") || "";
+  if (!ua || BOTS.test(ua)) return;
+  const day = today(now), seen = await sha256(`${req.headers.get("CF-Connecting-IP") || "0"}|${slug}|${day}|openyard-click`);
+  const r = await env.DB.prepare("INSERT INTO view_seen (hash, created_at) VALUES (?1, ?2) ON CONFLICT DO NOTHING").bind(seen, now).run();
+  if (r.meta.changes) await env.DB.prepare("INSERT INTO clicks (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(slug, day).run();
 }
 
 async function authorize(env, slug, tok, user) {
@@ -340,13 +377,19 @@ async function edit(req, env, ctx, slug) {
     const row = await authorize(env, slug, req.headers.get("X-Edit-Token"), await currentUser(req, env));
     return row ? json({ ...toApi(row, now), contactEmail: row.contact_email }, 200, { "Cache-Control": "private, no-store" }) : fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   }
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   let form; try { form = await req.formData(); } catch { return fail("Send the form as multipart/form-data."); }
-  const row = await authorize(env, slug, String(form.get("token") || ""), await currentUser(req, env));
+  const user = await currentUser(req, env);
+  const row = await authorize(env, slug, String(form.get("token") || ""), user);
   if (!row) return fail("Open your private edit link, or sign in as the person who submitted it.", 403);
   if (form.get("remove") === "yes") {
     await env.DB.prepare("UPDATE projects SET hidden = 1, updated_at = ?2 WHERE slug = ?1").bind(slug, now).run();
     return json({ removed: slug });
   }
+  // Each change may store new pictures: at most 20 a day per project and 40 per connection.
+  const ipKeys = await ipHashes(req.headers.get("CF-Connecting-IP") || "0", "edit", now);
+  if (await hitCount(env, "edit", [slug], now - DAY) >= 20 || await hitCount(env, "edit", ipKeys, now - DAY) >= 40) return fail("Too many changes to this project today. Try again tomorrow.", 429);
+  await env.DB.batch([hit(env, "edit", slug, now), hit(env, "edit", ipKeys[0], now)]);
   let f; try { f = await readForm(env, form); } catch (e) { return fail(e.message); }
   const site = await sitePictures(env, { ...f, logoUrl: row.logo ? null : f.logoUrl, imageUrl: row.image ? null : f.imageUrl }, now);
   const logo = f.logoFile ? await storeUpload(env, f.logoFile, now) : row.logo || site.logo || (f.ref ? `https://github.com/${f.ref.owner}.png?size=200` : null);
@@ -357,8 +400,15 @@ async function edit(req, env, ctx, slug) {
       logo = ?11, logo_style = ?12, image = ?13, color = ?14, maintainers = ?15, tags = ?16, updated_at = ?17 WHERE slug = ?1`)
     .bind(slug, f.name, f.type, JSON.stringify(f.kinds), f.status, JSON.stringify(merge(row.tagline, f.tagline)), JSON.stringify(merge(row.description, f.description)),
       f.url, f.repo, f.license, logo, f.logoFile ? "tile" : row.logo ? row.logo_style : site.logoStyle, image, f.color, JSON.stringify(f.maintainers.length ? f.maintainers : JSON.parse(row.maintainers)), JSON.stringify(f.tags), now).run();
-  // a new address starts getting email again; the same one keeps its choice
-  if (f.email && f.email !== row.contact_email) await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = 1, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang).run();
+  // the pictures it replaces, if they were ours: nothing else points at a project's uploads
+  const gone = [[row.logo, logo], [row.image, image]].filter(([old, nu]) => old?.startsWith("/u/") && old !== nu).map(([old]) => old.slice(3));
+  if (gone.length) await env.DB.batch(gone.map(id => env.DB.prepare("DELETE FROM uploads WHERE id = ?1").bind(id)));
+  // A new address gets email only when it is the signed-in person's own (proven at sign-in): anyone
+  // holding the edit link could otherwise point our mail at a stranger. The same one keeps its choice.
+  if (f.email && f.email !== row.contact_email) {
+    const proven = !!user?.email && user.email.toLowerCase() === f.email;
+    await env.DB.prepare("UPDATE projects SET contact_email = ?2, contact_ok = ?4, contact_lang = ?3 WHERE slug = ?1").bind(slug, f.email, f.lang, proven ? 1 : 0).run();
+  }
   if (f.ref) ctx.waitUntil(refreshOne(env, slug, f.ref, now).catch(() => {}));
   ctx.waitUntil(announce(env, [`/p/${slug}`]).catch(e => console.error(e)));
   ctx.waitUntil(wakeOg(env).catch(e => console.error(e)));
@@ -392,6 +442,7 @@ async function refreshStats(env, now = Date.now()) {
   }
   await env.DB.prepare("DELETE FROM submits WHERE created_at < ?1").bind(now - 2 * DAY).run();
   await env.DB.prepare("DELETE FROM view_seen WHERE created_at < ?1").bind(now - 2 * DAY).run();
+  await env.DB.prepare("DELETE FROM hits WHERE created_at < ?1").bind(now - 2 * DAY).run();
 }
 
 // Comments: anyone can read; signed-in GitHub users can post and remove their own.
@@ -425,13 +476,15 @@ async function tsOk(env, token, ip) {
 // press buttons); POST /auth/email/confirm signs in, making the account on first use.
 async function emailSignin(req, env, url, ctx) {
   const now = Date.now(), ip = req.headers.get("CF-Connecting-IP") || "0", path = url.pathname, secure = url.protocol === "https:";
+  // every POST here signs someone in or sends mail: only from our own pages (no login CSRF)
+  if (req.method === "POST" && !fromUs(req, url)) return fail("Bad origin.", 403);
   if (path === "/auth/email" && req.method === "POST") {
     let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
     const email = String(b.email || "").trim().toLowerCase();
     if (email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email address looks wrong.");
     if (!(await tsOk(env, b.ts, ip))) return fail("Could not verify you are human. Reload and try again.", 403);
-    const ipHash = await sha256(ip + "|signin|" + today(now));
-    const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - 3600000).first();
+    const [ipHash, ipHashBefore] = await ipHashes(ip, "signin", now);
+    const { a } = await env.DB.prepare("SELECT COUNT(*) AS a FROM login_tokens WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - 3600000, ipHashBefore).first();
     const { e } = await env.DB.prepare("SELECT COUNT(*) AS e FROM login_tokens WHERE email = ?1 AND created_at > ?2").bind(email, now - 3600000).first();
     if (a >= 6 || e >= 3) return fail("Too many sign-in emails. Wait an hour, or sign in with GitHub.", 429);
     const tok = randomToken(24), th = await sha256(tok);
@@ -458,13 +511,21 @@ async function emailSignin(req, env, url, ctx) {
     let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
     const email = String(b.email || "").trim().toLowerCase(), code = String(b.code || "").replace(/\D/g, "");
     if (code.length !== 6) return fail("Type the 6-digit code from the email.");
-    const row = await env.DB.prepare("SELECT token_hash, code_hash, tries, back FROM login_tokens WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL ORDER BY created_at DESC LIMIT 1").bind(email, now).first();
-    if (!row) return fail("That code has expired. Ask for a new one.", 410);
-    if (row.tries >= 5) return fail("Too many wrong codes. Ask for a new one.", 429);
-    if ((await sha256(`${row.token_hash}|${code}`)) !== row.code_hash) {
-      await env.DB.prepare("UPDATE login_tokens SET tries = tries + 1 WHERE token_hash = ?1").bind(row.token_hash).run();
-      return fail(row.tries >= 4 ? "Too many wrong codes. Ask for a new one." : "That code is not right. Check the email and try again.", 400);
+    // at most 20 codes an hour from one connection, whatever the address
+    const ipKeys = await ipHashes(ip, "code", now);
+    if (await hitCount(env, "code", ipKeys, now - 3600000) >= 20) return fail("Too many codes from this connection. Wait an hour, or sign in with GitHub.", 429);
+    await hit(env, "code", ipKeys[0], now).run();
+    // Count the try before comparing, in one statement: requests sent at the same time cannot all
+    // see tries < 5 and get more than five guesses between them.
+    const row = await env.DB.prepare(`UPDATE login_tokens SET tries = tries + 1 WHERE token_hash = (SELECT token_hash FROM login_tokens
+        WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL ORDER BY created_at DESC LIMIT 1) AND tries < 5
+      RETURNING token_hash, code_hash, tries, back`).bind(email, now).first();
+    if (!row) {
+      const live = await env.DB.prepare("SELECT 1 FROM login_tokens WHERE email = ?1 AND used_at IS NULL AND expires_at > ?2 AND code_hash IS NOT NULL").bind(email, now).first();
+      return live ? fail("Too many wrong codes. Ask for a new one.", 429) : fail("That code has expired. Ask for a new one.", 410);
     }
+    if ((await sha256(`${row.token_hash}|${code}`)) !== row.code_hash)
+      return fail(row.tries >= 5 ? "Too many wrong codes. Ask for a new one." : "That code is not right. Check the email and try again.", 400);
     const used = await env.DB.prepare("UPDATE login_tokens SET used_at = ?2 WHERE token_hash = ?1 AND used_at IS NULL RETURNING email").bind(row.token_hash, now).first();
     if (!used) return fail("That code has expired. Ask for a new one.", 410);
     const sess = await signInEmail(env, email, secure, now, ctx);
@@ -489,6 +550,7 @@ async function me(req, env, path, ctx) {
   const user = await currentUser(req, env), now = Date.now(), priv = { "Cache-Control": "private, no-store" };
   if (req.method === "GET" && path === "/api/me") return json(meJson(user, env), 200, priv);
   if (req.method !== "POST") return fail("Not allowed.", 405);
+  if (!fromUs(req, new URL(req.url))) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   if (!(req.headers.get("Content-Type") || "").startsWith("application/json")) return fail("Send JSON.", 415);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
@@ -497,6 +559,8 @@ async function me(req, env, path, ctx) {
     // Comments are emptied rather than removed so replies keep their place; the profile disappears.
     await env.DB.batch([
       env.DB.prepare("UPDATE comments SET deleted = 1, body = '' WHERE user_id = ?1").bind(user.id),
+      // their address goes from the listings too (it was copied there as the contact), so no more mail to it
+      ...(user.email ? [env.DB.prepare("UPDATE projects SET contact_email = NULL, contact_ok = 0 WHERE contact_email = ?1 COLLATE NOCASE").bind(user.email)] : []),
       env.DB.prepare("UPDATE projects SET owner_id = NULL WHERE owner_id = ?1").bind(user.id),
       env.DB.prepare("DELETE FROM likes WHERE user_id = ?1").bind(user.id),
       env.DB.prepare(`UPDATE users SET login = 'deleted-' || id, name = NULL, avatar = NULL, bio = NULL, email = NULL, email_ok = 0, email_ok_at = ?2,
@@ -542,7 +606,7 @@ async function likes(req, env, url, ctx) {
       WHERE l.slug = ?1 AND u.deleted_at IS NULL AND u.banned = 0 ORDER BY l.created_at DESC LIMIT 8`).bind(slug).all();
     return json({ count: n, liked: mine, signedIn: !!user, people }, 200, priv);
   }
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in to like projects.", 401);
   if (user.banned) return fail("Not allowed.", 403);
   let b; try { b = await req.json(); } catch { return fail("Send JSON."); }
@@ -567,7 +631,7 @@ const threadExists = (env, key) => /^t-\d+$/.test(key)
 // POST /api/topics starts a discussion; DELETE /api/topics/<id> removes one (its author or an admin).
 async function topics(req, env, url, id, ctx) {
   const user = await currentUser(req, env), now = Date.now();
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in first.", 401);
   if (user.banned) return fail("Not allowed.", 403);
   if (req.method === "DELETE") {
@@ -626,7 +690,7 @@ async function comments(req, env, url, id, ctx) {
     return json({ me: user ? { login: user.login, avatar: user.avatar, admin } : null, comments: list }, 200, { "Cache-Control": "private, no-store" });
   }
   // a cookie alone must not be enough: the request has to come from our own pages
-  if (req.headers.get("Origin") !== url.origin) return fail("Bad origin.", 403);
+  if (!fromUs(req, url)) return fail("Bad origin.", 403);
   if (!user) return fail("Sign in with GitHub to comment.", 401);
   if (user.banned) return fail("You cannot comment here.", 403);
   if (req.method === "DELETE") {
@@ -667,8 +731,11 @@ function readSummary(b) {
   const label = (Array.isArray(b.label) ? b.label : []).slice(0, 12).map(x => ({ cap: clip(x.cap, 60), files: +x.files || 0 })).filter(x => x.cap);
   const notes = (Array.isArray(b.notes) ? b.notes : []).slice(0, 8).filter(x => SEVERITIES.includes(x.severity))
     .map(x => ({ severity: x.severity, rule: clip(x.rule, 60), title: clip(x.title, 120), file: clip(x.file, 200), line: +x.line || 0 }));
-  const sk = b.skipped || {}, skipped = { patterns: (Array.isArray(sk.patterns) ? sk.patterns : []).slice(0, 20).map(x => clip(x, 100)), lines: +sk.lines || 0 };
-  return { commit: b.commit, verdict: b.verdict, version: clip(b.version, 20), files: +b.files || 0, label, notes, skipped };
+  const sk = b.skipped || {}, all = Array.isArray(sk.patterns) ? sk.patterns : [];
+  const skipped = { patterns: all.slice(0, 20).map(x => clip(x, 100)), count: Math.max(+sk.count || 0, all.length), lines: +sk.lines || 0 };
+  // code the project told vetcode to skip was not read, so the check cannot say "clear" (whatever an older scanner sent)
+  const verdict = b.verdict === "clear" && (skipped.count || skipped.lines) ? "review" : b.verdict;
+  return { commit: b.commit, verdict, version: clip(b.version, 20), files: +b.files || 0, label, notes, skipped };
 }
 
 // Abilities the code did not have at the previously checked commit: how a hijacked update shows up.
@@ -774,8 +841,8 @@ async function checkRequest(req, env, ctx) {
   // Older results are read again: the repository may have new commits since.
   if (row && ((row.status === "queued" || row.status === "running") && now - row.requested_at < 20 * 60000 || row.status === "done" && now - (row.scanned_at || 0) < 5 * 60000))
     return json({ repo: row.repo, status: row.status });
-  const ipHash = await sha256(ip + "|check|" + today(now));
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash = ?1 AND created_at > ?2").bind(ipHash, now - DAY).first();
+  const [ipHash, ipHashBefore] = await ipHashes(ip, "check", now);
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM check_hits WHERE ip_hash IN (?1, ?3) AND created_at > ?2").bind(ipHash, now - DAY, ipHashBefore).first();
   if (n >= CHECKS_PER_DAY) return fail("That is a lot of checks from this connection today. Try again tomorrow.", 429);
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO repo_checks (repo_key, repo, status, requested_at) VALUES (?1, ?2, 'queued', ?3)
@@ -862,8 +929,7 @@ const worker = {
       if (path === "/api/github" && req.method === "GET") {
         const ref = parseRepo(url.searchParams.get("repo"));
         if (!ref) return fail("Paste a link like https://github.com/owner/repo");
-        try { const info = await repoInfo(env, ref); return info ? json(info, 200, { "Cache-Control": "public, max-age=300" }) : fail("Repository not found or private.", 404); }
-        catch (e) { if (e instanceof RateLimited) return fail("GitHub is busy, fill the form by hand.", 503); throw e; }
+        return githubLookup(req, env, ctx, url, ref);
       }
       if (path === "/api/submit" && req.method === "POST") return submit(req, env, ctx);
       if (path === "/ph.js") return clientScript(env);
@@ -926,7 +992,7 @@ const worker = {
       if ((m = /^\/go\/([a-z0-9-]+)$/.exec(path))) {
         const p = await env.DB.prepare("SELECT url FROM projects WHERE slug = ?1 AND hidden = 0").bind(m[1]).first();
         if (!p) return Response.redirect(url.origin + "/projects", 302);
-        ctx.waitUntil(env.DB.prepare("INSERT INTO clicks (slug, day, n) VALUES (?1, ?2, 1) ON CONFLICT (slug, day) DO UPDATE SET n = n + 1").bind(m[1], today(now)).run());
+        ctx.waitUntil(click(req, env, m[1], now).catch(e => console.error("click", e)));
         return Response.redirect(p.url, 302);
       }
       if ((m = /^\/p\/([a-z0-9-]+?)(?:\.html)?\/?$/.exec(path))) {

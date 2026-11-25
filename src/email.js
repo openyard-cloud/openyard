@@ -3,8 +3,9 @@
 //
 // Messages go into the outbox table first and are sent by drain(): right after the event that
 // made them, and every hour from the cron for anything left over. drain() keeps under
-// EMAIL_DAILY_LIMIT messages in any 24 hours (Resend's free plan stops at 100 a day), skips
-// messages older than three days, and rechecks consent just before sending.
+// EMAIL_DAILY_LIMIT messages in any 24 hours (Resend's free plan stops at 100 a day), less a share
+// kept for sign-in emails (EMAIL_SIGNIN_RESERVE, 25 by default), skips messages older than three
+// days, and rechecks consent just before sending.
 //
 //   welcome   once, when someone first turns email on
 //   reply     someone answered your comment
@@ -97,12 +98,16 @@ async function enqueue(env, u, kind, dedupe, mail) {
     .bind(dedupe, u.id, kind, mail.subject, mail.html, mail.text, Date.now(), u.contact || null).run();
 }
 
-/** Sends waiting messages, at most `max` now and never more than the daily budget. */
+// Part of the daily budget only sign-in emails may use, so a busy day of comments (or someone
+// posting many on purpose) cannot stop people from signing in. EMAIL_SIGNIN_RESERVE sets it.
+const signinReserve = env => Math.max(0, +env.EMAIL_SIGNIN_RESERVE || 25);
+/** Sends waiting messages, at most `max` now and never more than the daily budget less the sign-in reserve. */
 export async function drain(env, max = 10) {
   if (!ready(env)) return 0;
   const now = Date.now(), budget = +env.EMAIL_DAILY_LIMIT || 90;
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM outbox WHERE sent_at > ?1").bind(now - DAY).first();
-  const take = Math.min(max, budget - n);
+  // sign-in emails are not counted here: they have their own share of the budget (signin())
+  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM outbox WHERE sent_at > ?1 AND kind != 'signin'").bind(now - DAY).first();
+  const take = Math.min(max, budget - signinReserve(env) - n);
   if (take <= 0) return 0;
   const { results } = await env.DB.prepare(`UPDATE outbox SET claimed_at = ?1, tries = tries + 1 WHERE id IN (
       SELECT id FROM outbox WHERE sent_at IS NULL AND tries < 5 AND created_at > ?2 AND (claimed_at IS NULL OR claimed_at < ?3) ORDER BY id LIMIT ?4)
@@ -234,8 +239,10 @@ export async function digest(env, all, now = Date.now()) {
 export async function signin(env, email, link, code, lang) {
   if (!ready(env)) return false;
   const now = Date.now(), budget = +env.EMAIL_DAILY_LIMIT || 90;
-  const { n } = await env.DB.prepare("SELECT COUNT(*) AS n FROM outbox WHERE sent_at > ?1").bind(now - DAY).first();
-  if (n >= budget + 8) return false; // a few over the budget for sign-ins, never the provider's limit
+  const { n, s } = await env.DB.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(kind = 'signin'), 0) AS s FROM outbox WHERE sent_at > ?1").bind(now - DAY).first();
+  // the reserve is always there; past it, whatever the rest of the budget left (and a few over it,
+  // never the provider's limit)
+  if (s >= signinReserve(env) && n >= budget + 8) return false;
   const u = { lang, contact: "signin", unsub_token: "" };
   const title = L(u, `${code} is your OpenYard code`, `${code} là mã đăng nhập OpenYard`);
   const html = `<p style="margin:0">${L(u, "Type this code on the sign-in page:", "Nhập mã này ở trang đăng nhập:")}</p>
