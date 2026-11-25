@@ -27,7 +27,7 @@
 //   GET  /badge/gh/<owner>/<repo>.svg              badge for any checked repository
 // The cron trigger refreshes GitHub stats a few repositories at a time.
 import SITE from "../site.config.json";
-import { ORIGIN, FOOTER_CSS, siteFooter, projectPage, sitemap, badge, checkPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
+import { ORIGIN, FOOTER_CSS, siteFooter, projectPage, sitemap, badge, checkPage, invitesPage, checkMarkdown, checkReport, projectMarkdown, llmsTxt } from "./pages.js";
 import * as mail from "./email.js";
 import { discussPage, topicPage, newTopicPage, DCAT, DCATS, topicPath } from "./discuss.js";
 import { welcomePage, settingsPage, profilePage, privacyPage, signinPage, signinConfirmPage, claimPage } from "./account.js";
@@ -785,6 +785,21 @@ async function announce(env, paths) {
 
 // Any public repository. A visitor asks on /check; the worker queues it and wakes the scanner
 // workflow with a repository_dispatch (DISPATCH_TOKEN); the six-hourly run picks up anything left.
+// The listing a repository already has (projects.repo is the link as typed: any case, maybe with / or .git).
+const REPO_NORM = "lower(rtrim(replace(p.repo, '.git', ''), '/'))";
+const listedSlug = async (env, key) => (await env.DB.prepare(`SELECT slug FROM projects p WHERE hidden = 0 AND ${REPO_NORM} = ?1`).bind(`https://github.com/${key}`).first())?.slug || null;
+
+// GET /admin/invites: finished checks that read fine and are not listed yet, newest first. The admin
+// picks a few and writes to each maker by hand; nothing is sent from here.
+async function invites(req, env, now) {
+  if (!isAdmin(env, await currentUser(req, env))) return new Response("Not found.", { status: 404 });
+  const { results } = await env.DB.prepare(`SELECT c.repo, c.verdict, c.scanned_at, c.files FROM repo_checks c
+    WHERE c.status = 'done' AND c.verdict IN ('clear', 'review') AND c.scanned_at > ?1
+      AND NOT EXISTS (SELECT 1 FROM projects p WHERE ${REPO_NORM} = 'https://github.com/' || c.repo_key)
+    ORDER BY c.scanned_at DESC LIMIT 100`).bind(now - 30 * DAY).all();
+  return new Response(invitesPage(results, now), { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex" } });
+}
+
 const repoRef = v => { const r = parseRepo(String(v || "").replace(/[#?].*$/, "")); return r && { ...r, key: `${r.owner}/${r.name}`.toLowerCase(), full: `${r.owner}/${r.name}` }; };
 
 // Share images. scripts/og.mjs --auto (the og workflow) asks what needs one, renders it with
@@ -1085,11 +1100,13 @@ const worker = {
         const checks = (await env.DB.prepare("SELECT repo, verdict FROM repo_checks WHERE status = 'done' ORDER BY scanned_at DESC LIMIT 50").all()).results;
         return new Response(llmsTxt(await listProjects(env, now), checks), { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=600" } });
       }
+      if (path === "/admin/invites" && req.method === "GET") return invites(req, env, now);
       if ((m = /^\/check\/([\w.-]+)\/([\w.-]+?)\/?$/.exec(path))) {
         const ref = repoRef(`https://github.com/${m[1]}/${m[2]}`);
         const row = ref && await env.DB.prepare("SELECT * FROM repo_checks WHERE repo_key = ?1").bind(ref.key).first();
         const shown = row ? { owner: row.repo.split("/")[0], name: row.repo.split("/")[1] } : ref;
-        return new Response(checkPage({ ref: shown, row, recent: await recentChecks(env), site: SITE, turnstile: env.TURNSTILE_SITE_KEY, now }),
+        const listed = ref && await listedSlug(env, ref.key);
+        return new Response(checkPage({ ref: shown, row, listed, recent: await recentChecks(env), site: SITE, turnstile: env.TURNSTILE_SITE_KEY, now }),
           { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
       }
       if ((m = /^\/badge\/gh\/([\w.-]+)\/([\w.-]+?)\.svg$/.exec(path))) {
