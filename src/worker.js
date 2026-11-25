@@ -559,6 +559,8 @@ async function me(req, env, path, ctx) {
     // Comments are emptied rather than removed so replies keep their place; the profile disappears.
     await env.DB.batch([
       env.DB.prepare("UPDATE comments SET deleted = 1, body = '' WHERE user_id = ?1").bind(user.id),
+      // their address goes from the listings too (it was copied there as the contact), so no more mail to it
+      ...(user.email ? [env.DB.prepare("UPDATE projects SET contact_email = NULL, contact_ok = 0 WHERE contact_email = ?1 COLLATE NOCASE").bind(user.email)] : []),
       env.DB.prepare("UPDATE projects SET owner_id = NULL WHERE owner_id = ?1").bind(user.id),
       env.DB.prepare("DELETE FROM likes WHERE user_id = ?1").bind(user.id),
       env.DB.prepare(`UPDATE users SET login = 'deleted-' || id, name = NULL, avatar = NULL, bio = NULL, email = NULL, email_ok = 0, email_ok_at = ?2,
