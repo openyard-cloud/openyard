@@ -670,6 +670,7 @@ function checkSection(V, { repoUrl, badgeMd, badgeSrc, now, sub = "" }) {
     <div class="vgrid">
       <div class="verdict ${esc(V.verdict)} reveal">${ic(V.verdict === "clear" ? I.shield : I.alert)}<div><b>${t(VERDICT[V.verdict][0], VERDICT[V.verdict][1])}</b>
         <span>${t(`${+V.files || 0} files read · vetcode ${V.version}`, `Đã đọc ${+V.files || 0} file · vetcode ${V.version}`)}</span>
+        ${V.verdict === "review" && !vnotes.length && (vskip.patterns?.length || vskip.lines) ? `<span class="why">${t("No findings in the code that was read. It is not rated clear only because the project skips part of its code from the check (listed below).", "Không có phát hiện nào trong phần code đã đọc. Chưa được đánh giá an toàn chỉ vì dự án yêu cầu bỏ qua một phần code khi kiểm tra (liệt kê bên dưới).")}</span>` : ""}
         <ul>${[["Malware and stealers", "Mã độc và mã đánh cắp"], ["Install scripts and hooks", "Script cài đặt và hook"], ["Hidden or encoded code", "Code bị giấu hoặc mã hoá"], ["CI and AI agent setup", "Cấu hình CI và AI agent"]].map(x => `<li>${ic(I.check)}${t(...x)}</li>`).join("")}</ul></div></div>
       <div class="vlabel reveal" style="--d:1"><h3>${t("What the code can do", "Code này làm được gì")}</h3>
         ${vlabel.length ? `<ul>${vlabel.map(x => { const [icon, name] = CAP[x.cap] || [I.code, [x.cap, x.cap]]; return `<li>${ic(icon)}<span>${t(...name)}</span>${vnew.has(x.cap) ? `<em title="${esc(V.changed_from || "")}">${t("New", "Mới")}</em>` : ""}<small>${t(`${x.files} file${x.files === 1 ? "" : "s"}`, `${x.files} file`)}</small></li>`; }).join("")}</ul>`
@@ -1049,6 +1050,7 @@ const mdCheck = (V, repoUrl) => {
   return [`Verdict: ${VERDICT[V.verdict][0]}.`, `Checked ${new Date(V.scanned_at).toISOString().slice(0, 10)} at commit ${V.commit_sha.slice(0, 7)} by vetcode ${V.version}, reading ${V.files} files without running anything.`, "",
     "What the code can do:", ...(label.length ? label.map(x => `- ${(CAP[x.cap] || [0, [x.cap]])[1][0]} (${x.files} file${x.files === 1 ? "" : "s"})${changed.has(x.cap) ? " (new since the previous check)" : ""}`) : ["- None of the sensitive abilities checked: secrets, network, other programs, user and machine details, startup folders, code built at runtime."]),
     ...(notes.length ? ["", "Malware and supply-chain findings:", ...notes.map(n => `- ${n.severity}: ${n.title} (${n.rule}) at ${repoUrl ? `${repoUrl}/blob/${V.commit_sha}/${n.file}#L${n.line}` : `${n.file}:${n.line}`}`)] : []),
+    ...(V.verdict === "review" && !notes.length && (skip.patterns?.length || skip.lines) ? ["", "No findings in the code that was read. It is not rated clear only because the repository skips part of its code from the check."] : []),
     ...(skip.patterns?.length ? ["", `The repository asks vetcode to skip: ${skip.patterns.join(", ")}${skip.count > skip.patterns.length ? ` and ${skip.count - skip.patterns.length} more patterns` : ""}. Skipped code was not read, so the result is at most "worth a look".`] : []),
     "", "These are patterns, not proof. Vulnerability candidates and leaked-secret locations are not published."].join("\n");
 };
